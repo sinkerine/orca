@@ -189,6 +189,12 @@ export function useSourceControlCreatePrIntentReview({
           repoId: activeRepo.id,
           provider: eligibility.provider,
           base: fields.base,
+          ...(eligibility.provider === 'github' && eligibility.baseRepository
+            ? { baseRepository: eligibility.baseRepository }
+            : {}),
+          ...(eligibility.provider === 'github' && eligibility.headRepository
+            ? { headRepository: eligibility.headRepository }
+            : {}),
           head: normalizeHostedReviewHeadRef(token.branch),
           title,
           body: fields.body,

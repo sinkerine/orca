@@ -117,6 +117,12 @@ export function useSourceControlHostedReviewCreation({
           repoId: activeRepo.id,
           provider: hostedReviewCreateProvider,
           base,
+          ...(hostedReviewCreateProvider === 'github' && hostedReviewCreation.baseRepository
+            ? { baseRepository: hostedReviewCreation.baseRepository }
+            : {}),
+          ...(hostedReviewCreateProvider === 'github' && hostedReviewCreation.headRepository
+            ? { headRepository: hostedReviewCreation.headRepository }
+            : {}),
           head: normalizeHostedReviewHeadRef(branchName),
           title,
           body: prBody,

@@ -248,7 +248,7 @@ describe('CreateHostedReviewComposer generate tooltip', () => {
     renderDom(<InteractiveBaseComposer />)
     const input = screen.getByRole('combobox', { name: 'Pull Request base branch' })
 
-    expect(screen.getByText('Base branch').getAttribute('for')).toBe(input.id)
+    expect(screen.getByText('Base repository and branch').getAttribute('for')).toBe(input.id)
     expect(input.className).toContain('w-full')
     expect(screen.getByText('from branch-login-issue')).toBeTruthy()
   })

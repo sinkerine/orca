@@ -69,6 +69,8 @@ export function ChecksPanelEmptyContent({
     panelContextKey,
     prAiGenerationEnabled,
     prBase,
+    prBaseRepository,
+    prHeadRepository,
     prBaseQuery,
     prBaseResults,
     prBaseSearchError,
@@ -265,6 +267,8 @@ export function ChecksPanelEmptyContent({
               branch={branch}
               base={prBase}
               repoDefaultBase={prRepoDefaultBaseRef}
+              baseRepository={prBaseRepository}
+              headRepository={prHeadRepository}
               setBase={handlePrBaseChange}
               title={prTitle}
               setTitle={handlePrTitleChange}

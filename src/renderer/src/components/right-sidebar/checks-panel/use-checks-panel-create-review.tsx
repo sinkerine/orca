@@ -237,6 +237,12 @@ export function useChecksPanelCreateReview(model: ChecksPanelCreateReviewInput) 
           repoId: repo.id,
           provider: hostedReviewCreateProvider,
           base,
+          ...(hostedReviewCreateProvider === 'github' && hostedReviewCreation?.baseRepository
+            ? { baseRepository: hostedReviewCreation.baseRepository }
+            : {}),
+          ...(hostedReviewCreateProvider === 'github' && hostedReviewCreation?.headRepository
+            ? { headRepository: hostedReviewCreation.headRepository }
+            : {}),
           head: normalizeHostedReviewHeadRef(branch),
           title,
           body: prBody,
@@ -357,6 +363,8 @@ export function useChecksPanelCreateReview(model: ChecksPanelCreateReviewInput) 
       hostedReviewCreateCopy.shortLabel,
       hostedReviewCreateCopy.titleLabel,
       hostedReviewCreateProvider,
+      hostedReviewCreation?.baseRepository,
+      hostedReviewCreation?.headRepository,
       hostedReviewCreation?.blockedReason,
       panelContextKey,
       prBase,
