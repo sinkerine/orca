@@ -2,13 +2,15 @@ import { getAgentResumeArgv, type ResumableTuiAgent } from '../../../../shared/a
 import { buildAgentResumeLaunchCommand } from '../../../../shared/agent-resume-launch-command'
 import { resolveStartupShell } from '../../../../shared/tui-agent-startup-shell'
 import { useAppStore } from '../../store'
+import { getRendererAppPlatform } from '@/lib/renderer-app-platform'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 
-export function useForkableAgentSessions(
-  tab: TerminalTab
-): { agent: ResumableTuiAgent; launchCommand: string }[] {
-  return useAppStore((s) => {
-    const sessions: { agent: ResumableTuiAgent; launchCommand: string }[] = []
+type ForkableAgentSession = { agent: ResumableTuiAgent; launchCommand: string }
+
+export function useForkableAgentSessions(tab: TerminalTab): ForkableAgentSession[] {
+  // Why: a selector returning a fresh array re-renders forever; select a stable string instead.
+  const serializedSessions = useAppStore((s) => {
+    const sessions: ForkableAgentSession[] = []
     const panePrefix = `${tab.id}:`
     for (const [paneKey, status] of Object.entries(s.agentStatusByPaneKey)) {
       if (!paneKey.startsWith(panePrefix) || !status.providerSession) {
@@ -39,10 +41,11 @@ export function useForkableAgentSessions(
           resumableAgent,
           originalCommand,
           forkArgv,
-          resolveStartupShell(process.platform)
+          resolveStartupShell(getRendererAppPlatform())
         )
       })
     }
-    return sessions
+    return sessions.length > 0 ? JSON.stringify(sessions) : ''
   })
+  return serializedSessions ? (JSON.parse(serializedSessions) as ForkableAgentSession[]) : []
 }

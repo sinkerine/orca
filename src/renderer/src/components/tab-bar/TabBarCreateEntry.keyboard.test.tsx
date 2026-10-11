@@ -264,7 +264,7 @@ describe('TabBarCreateEntry keyboard navigation', () => {
     setQuery('gem')
     submitForm()
 
-    expect(onLaunchAgent).toHaveBeenCalledWith('gemini')
+    expect(onLaunchAgent).toHaveBeenCalledWith(agentOptions[0])
   })
 
   it('does not relaunch Codex when a structured launch is already pending', () => {

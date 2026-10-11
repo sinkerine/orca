@@ -93,8 +93,12 @@ vi.mock('@/lib/use-tab-agent', () => ({
 }))
 
 vi.mock('../../store', () => ({
-  useAppStore: (selector: (state: { unreadTerminalTabs: Record<string, boolean> }) => unknown) =>
-    selector({ unreadTerminalTabs: {} })
+  useAppStore: (
+    selector: (state: {
+      agentStatusByPaneKey: Record<string, unknown>
+      unreadTerminalTabs: Record<string, boolean>
+    }) => unknown
+  ) => selector({ agentStatusByPaneKey: {}, unreadTerminalTabs: {} })
 }))
 
 vi.mock('@/store', () => ({
