@@ -55,6 +55,8 @@ export function SourceControlCommitSurface({
     openSourceControlAiSettings,
     prAiGenerationEnabled,
     prBase,
+    prBaseRepository,
+    prHeadRepository,
     prBaseQuery,
     prBaseResults,
     prBaseSearchError,
@@ -93,6 +95,8 @@ export function SourceControlCommitSurface({
         branch={branchName}
         base={prBase}
         repoDefaultBase={prRepoDefaultBaseRef}
+        baseRepository={prBaseRepository}
+        headRepository={prHeadRepository}
         setBase={setPrBase}
         title={prTitle}
         setTitle={setPrTitle}

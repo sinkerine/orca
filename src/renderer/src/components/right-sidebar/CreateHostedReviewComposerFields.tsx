@@ -14,12 +14,15 @@ import {
   COMPOSER_TEXTAREA_CLASS
 } from './create-hosted-review-composer-field-class'
 import type { HostedReviewStackParent } from './useHostedReviewStackParent'
+import type { GitHubRepositoryIdentity } from '../../../../shared/github/pull-request-types'
 
 type CreateHostedReviewComposerFieldsProps = {
   copy: LocalizedHostedReviewCopy
   base: string
   setBase: (value: string) => void
   repoDefaultBase: string | null
+  baseRepository?: GitHubRepositoryIdentity | null
+  headRepository?: GitHubRepositoryIdentity | null
   title: string
   setTitle: (value: string) => void
   body: string
@@ -50,6 +53,8 @@ export function CreateHostedReviewComposerFields({
   base,
   setBase,
   repoDefaultBase,
+  baseRepository,
+  headRepository,
   title,
   setTitle,
   body,
@@ -138,6 +143,8 @@ export function CreateHostedReviewComposerFields({
         base={base}
         setBase={setBase}
         repoDefaultBase={repoDefaultBase}
+        baseRepository={baseRepository}
+        headRepository={headRepository}
         editing={baseEditing}
         setEditing={setBaseEditing}
         baseQuery={baseQuery}

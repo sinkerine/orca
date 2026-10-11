@@ -196,6 +196,8 @@ export function useSourceControlCreateReviewComposer({
     handleGeneratePullRequestFieldsClick,
     prAiGenerationEnabled,
     prBase,
+    prBaseRepository: hostedReviewCreation?.baseRepository ?? null,
+    prHeadRepository: hostedReviewCreation?.headRepository ?? null,
     prBaseQuery,
     prBaseResults,
     prBaseSearchError,
