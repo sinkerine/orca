@@ -15,6 +15,7 @@ import {
 import { translate } from '@/i18n/i18n'
 import { createLocalizedCatalog } from '@/i18n/localized-catalog'
 import { AGENT_FAVICON_ASSETS } from './agent-favicon-assets'
+import { getRendererAppPlatform } from './renderer-app-platform'
 
 export type AgentCatalogEntry = {
   id: TuiAgent
@@ -40,7 +41,7 @@ function getCatalogPlatform(): NodeJS.Platform {
   if (userAgent) {
     return 'linux'
   }
-  return typeof process === 'undefined' ? 'linux' : process.platform
+  return getRendererAppPlatform()
 }
 
 export const getAgentCatalog = createLocalizedCatalog((): AgentCatalogEntry[] => [
