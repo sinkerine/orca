@@ -3,6 +3,7 @@ import {
   type AgentProviderSessionMetadata,
   type ResumableTuiAgent
 } from './agent-session-resume'
+import { getAgentForkArgv, isForkableTuiAgent } from './agent-session-fork'
 import type { SessionOptionValue } from './native-chat-session-options'
 import { buildSleepingAgentLaunchConfig } from './sleeping-agent-launch-config'
 import { resolveAgentLaunchCommand } from './tui-agent-launch-command'
@@ -22,11 +23,17 @@ export function buildAgentResumeStartupPlan(args: {
   agentEnv?: Record<string, string> | null
   agentCommand?: string | null
   ompResumeFilePath?: string | null
+  /** Branch the provider session instead of continuing it; launchConfig stays the plain base command. */
+  fork?: boolean
   sessionOptions?: Record<string, SessionOptionValue>
   sessionOptionsOverrideAgentArgs?: boolean
   isRemote?: boolean
 }): AgentStartupPlan | null {
-  const argv = getAgentResumeArgv(args.agent, args.providerSession, args.ompResumeFilePath)
+  const argv = args.fork
+    ? isForkableTuiAgent(args.agent)
+      ? getAgentForkArgv(args.agent, args.providerSession)
+      : null
+    : getAgentResumeArgv(args.agent, args.providerSession, args.ompResumeFilePath)
   if (!argv) {
     return null
   }

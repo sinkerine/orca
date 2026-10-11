@@ -20,3 +20,5 @@ Rules when adding tests or scripts:
 - Tag a spec `@headful` only when it needs real pixels; it still runs in the background.
 - Native-focus tests belong on an isolated display or CI. Do not set `ORCA_E2E_FOREGROUND=1`
   on the user’s desktop; it cannot override explicit background mode.
+- On a Wayland desktop with no Xvfb, a hidden window never paints and new terminal tabs never
+  spawn a PTY. Run with `ORCA_E2E_OFFSCREEN_OZONE=1` to render offscreen instead of going headful.

@@ -1,87 +1,88 @@
-import { getAgentResumeArgv, type ResumableTuiAgent } from '../../../../shared/agent-session-resume'
-import { buildAgentResumeLaunchCommand } from '../../../../shared/agent-resume-launch-command'
-import { resolveStartupShell } from '../../../../shared/tui-agent-startup-shell'
 import { useAppStore } from '../../store'
-import { getRendererAppPlatform } from '@/lib/renderer-app-platform'
-import { TUI_AGENT_CONFIG, getTuiAgentLaunchCommand } from '../../../../shared/tui-agent-config'
-import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
+import type { AppState } from '../../store/types'
+import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
+import { getAgentForkArgv, isForkableTuiAgent } from '../../../../shared/agent-session-fork'
+import type { ForkableTuiAgent } from '../../../../shared/agent-session-fork'
+import { isTerminalLeafId, makePaneKey } from '../../../../shared/stable-pane-id'
+import type { AgentSessionForkSource } from '@/lib/agent-session-fork-startup-plan'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 
-export type ForkableAgentSession = { agent: ResumableTuiAgent; launchCommand: string }
+export type ForkableAgentSession = AgentSessionForkSource & { agent: ForkableTuiAgent }
 
-const FORKABLE_AGENTS = new Set<ResumableTuiAgent>(['pi', 'codex', 'claude'])
+type ForkableAgentSessionState = Pick<
+  AppState,
+  | 'agentStatusByPaneKey'
+  | 'sleepingAgentSessionsByPaneKey'
+  | 'terminalLayoutsByTabId'
+  | 'getAgentLaunchConfigForStatusEntry'
+>
 
-function isForkableAgent(agent: TuiAgent | null): agent is ResumableTuiAgent {
-  return agent !== null && FORKABLE_AGENTS.has(agent as ResumableTuiAgent)
+function focusedPaneFirst(paneKeys: string[], focusedPaneKey: string | null): string[] {
+  return focusedPaneKey && paneKeys.includes(focusedPaneKey)
+    ? [focusedPaneKey, ...paneKeys.filter((paneKey) => paneKey !== focusedPaneKey)]
+    : paneKeys
 }
 
-function buildForkableSession(
-  agent: ResumableTuiAgent,
-  providerSession: NonNullable<AgentStatusEntry['providerSession']>,
-  launchConfig: { agentCommand?: string; agentArgs?: string } | undefined
-): ForkableAgentSession | null {
-  if (!getAgentResumeArgv(agent, providerSession)) {
-    return null
-  }
-  const baseCommand =
-    launchConfig?.agentCommand ??
-    getTuiAgentLaunchCommand(TUI_AGENT_CONFIG[agent], getRendererAppPlatform())
-  const forkArgv =
-    agent === 'pi'
-      ? ['pi', '--fork', providerSession.transcriptPath!]
-      : agent === 'codex'
-        ? ['codex', 'fork', providerSession.id]
-        : ['claude', '--resume', providerSession.id, '--fork-session']
-  const originalCommand = [baseCommand, launchConfig?.agentArgs]
-    .filter((value) => value?.trim())
-    .join(' ')
-  return {
-    agent,
-    launchCommand: buildAgentResumeLaunchCommand(
-      agent,
-      originalCommand,
-      forkArgv,
-      resolveStartupShell(getRendererAppPlatform())
-    )
-  }
-}
-
-export function useForkableAgentSession(
-  tab: TerminalTab,
+/**
+ * The provider session a tab's detected agent can branch from. Identity comes
+ * from `tabAgent` (live hook/process status) and never from a launch command,
+ * so aliased and wrapped launches fork the agent that is actually running.
+ */
+export function resolveForkableAgentSession(
+  state: ForkableAgentSessionState,
+  tab: Pick<TerminalTab, 'id'>,
   tabAgent: TuiAgent | null
 ): ForkableAgentSession | null {
-  const serializedSession = useAppStore((s) => {
-    if (!isForkableAgent(tabAgent)) {
-      return ''
-    }
-    const panePrefix = `${tab.id}:`
-    for (const [paneKey, status] of Object.entries(s.agentStatusByPaneKey)) {
-      if (
-        paneKey.startsWith(panePrefix) &&
-        status.agentType === tabAgent &&
-        status.providerSession
-      ) {
-        const session = buildForkableSession(
-          tabAgent,
-          status.providerSession,
-          s.getAgentLaunchConfigForStatusEntry(status)
-        )
-        if (session) {
-          return JSON.stringify(session)
-        }
+  if (!isForkableTuiAgent(tabAgent)) {
+    return null
+  }
+  const panePrefix = `${tab.id}:`
+  const activeLeafId = state.terminalLayoutsByTabId[tab.id]?.activeLeafId
+  const focusedPaneKey =
+    activeLeafId && isTerminalLeafId(activeLeafId) ? makePaneKey(tab.id, activeLeafId) : null
+  const ownPaneKeys = (record: Record<string, unknown>): string[] =>
+    focusedPaneFirst(
+      Object.keys(record).filter((paneKey) => paneKey.startsWith(panePrefix)),
+      focusedPaneKey
+    )
+
+  for (const paneKey of ownPaneKeys(state.agentStatusByPaneKey)) {
+    const status = state.agentStatusByPaneKey[paneKey]
+    if (
+      status.agentType === tabAgent &&
+      status.providerSession &&
+      getAgentForkArgv(tabAgent, status.providerSession)
+    ) {
+      const launchConfig = state.getAgentLaunchConfigForStatusEntry(status)
+      return {
+        agent: tabAgent,
+        providerSession: status.providerSession,
+        ...(launchConfig ? { launchConfig } : {})
       }
     }
-    // Restarted tabs may have restored provider identity before their first hook event.
-    for (const [paneKey, record] of Object.entries(s.sleepingAgentSessionsByPaneKey)) {
-      if (paneKey.startsWith(panePrefix) && record.agent === tabAgent) {
-        const session = buildForkableSession(tabAgent, record.providerSession, record.launchConfig)
-        if (session) {
-          return JSON.stringify(session)
-        }
+  }
+  // Restarted tabs may have restored provider identity before their first hook event.
+  for (const paneKey of ownPaneKeys(state.sleepingAgentSessionsByPaneKey)) {
+    const record = state.sleepingAgentSessionsByPaneKey[paneKey]
+    if (record.agent === tabAgent && getAgentForkArgv(tabAgent, record.providerSession)) {
+      return {
+        agent: tabAgent,
+        providerSession: record.providerSession,
+        ...(record.launchConfig ? { launchConfig: record.launchConfig } : {})
       }
     }
-    return ''
-  })
-  return serializedSession ? (JSON.parse(serializedSession) as ForkableAgentSession) : null
+  }
+  return null
+}
+
+/** Whether the tab's detected agent has a session the context menu can fork. */
+export function useCanForkAgentSession(tab: TerminalTab, tabAgent: TuiAgent | null): boolean {
+  return useAppStore(
+    (s) =>
+      resolveForkableAgentSession(s, tab, tabAgent) !== null &&
+      // Why: a paired runtime host rebuilds agent launches from the agent id, which would
+      // silently drop the fork argv and start an unrelated fresh session.
+      getRuntimeEnvironmentIdForWorktree(s, tab.worktreeId) === null
+  )
 }

@@ -9,6 +9,19 @@ if (process.argv[2] === 'app-server') {
   process.exit(2)
 }
 
+// Lets specs assert the exact argv a launch delivered and post hooks as that launch.
+if (process.env.GOLDEN_STUB_AGENT_ARGV_LOG) {
+  require('node:fs').appendFileSync(
+    process.env.GOLDEN_STUB_AGENT_ARGV_LOG,
+    `${JSON.stringify({
+      argv: process.argv.slice(2),
+      paneKey: process.env.ORCA_PANE_KEY,
+      worktreeId: process.env.ORCA_WORKTREE_ID,
+      launchToken: process.env.ORCA_AGENT_LAUNCH_TOKEN
+    })}\n`
+  )
+}
+
 const ESC = '\x1b'
 const keyboardProtocolMode = process.argv.includes('--keyboard-protocol')
 const keyboardProtocolAgent = process.argv.includes('--grok') ? 'Grok' : 'Codex'

@@ -227,7 +227,7 @@ describe('SortableTabContextMenu', () => {
   it('shows one enabled fork action for the detected tab agent', () => {
     const onForkAgentSession = vi.fn()
     const { container } = renderMenu({
-      forkableAgentSession: { agent: 'codex', launchCommand: "codex fork 'session-1'" },
+      canForkAgentSession: true,
       onForkAgentSession
     })
 
@@ -236,7 +236,14 @@ describe('SortableTabContextMenu', () => {
     expect(getButton(container, 'Fork session in new tab').disabled).toBe(false)
 
     act(() => getButton(container, 'Fork session in new tab').click())
-    expect(onForkAgentSession).toHaveBeenCalledWith('codex', "codex fork 'session-1'")
+    expect(onForkAgentSession).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the fork action visible but disabled without a forkable session', () => {
+    const onForkAgentSession = vi.fn()
+    const { container } = renderMenu({ onForkAgentSession })
+
+    expect(getButton(container, 'Fork session in new tab').disabled).toBe(true)
   })
 
   it('dispatches split requests and activates inactive terminal tabs first', () => {

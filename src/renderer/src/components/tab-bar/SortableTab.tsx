@@ -25,7 +25,7 @@ import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-widt
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
-import { useForkableAgentSession } from './use-forkable-agent-sessions'
+import { resolveForkableAgentSession, useCanForkAgentSession } from './use-forkable-agent-sessions'
 import {
   isTerminalTabActivityLive,
   resolveTerminalTabActivityStatus,
@@ -117,7 +117,7 @@ export default function SortableTab({
 
   // Why: use hook status + title evidence so the icon reflects the harness running now, not just the launch command.
   const tabAgent = useTabAgent(tab)
-  const forkableAgentSession = useForkableAgentSession(tab, tabAgent)
+  const canForkAgentSession = useCanForkAgentSession(tab, tabAgent)
 
   // Why: with a provider icon shown, strip the agent's own leading glyph so the tab doesn't show two icons for one agent.
   const displayTitle =
@@ -405,13 +405,18 @@ export default function SortableTab({
         isChatView={isChatView}
         onToggleViewMode={onToggleViewMode}
         canSplitTerminal={canSplitTerminal}
-        forkableAgentSession={forkableAgentSession}
-        onForkAgentSession={(agent, launchCommand) => {
+        canForkAgentSession={canForkAgentSession}
+        onForkAgentSession={() => {
+          // Why: resolve at click time so the fork targets the session running now, not a stale render.
+          const session = resolveForkableAgentSession(useAppStore.getState(), tab, tabAgent)
+          if (!session) {
+            return
+          }
           launchAgentInNewTab({
-            agent,
+            agent: session.agent,
             worktreeId: tab.worktreeId,
             groupId,
-            launchCommandOverride: launchCommand,
+            forkSession: session,
             launchSource: 'terminal_context_menu'
           })
         }}
