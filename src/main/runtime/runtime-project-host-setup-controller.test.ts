@@ -159,17 +159,21 @@ describe('RuntimeProjectHostSetupController primary selection', () => {
       invalidateResolvedWorktrees: vi.fn(),
       invalidateWorktreeScan: vi.fn(),
       notifyReposChanged: vi.fn(),
-      listResolvedWorktrees: async () => [
-        {
-          id: `${remoteRepo.id}::${REMOTE_PATH}`,
-          instanceId: 'occupant-1',
-          repoId: remoteRepo.id,
-          hostId: 'local',
-          path: REMOTE_PATH,
-          isArchived: false,
-          git: { isBare: false, prunable: false, branch: 'main' }
-        } as never
-      ],
+      listResolvedWorktrees: (() => {
+        let calls = 0
+        return async () => [
+          {
+            id: `${remoteRepo.id}::${REMOTE_PATH}`,
+            instanceId: 'occupant-1',
+            repoId: remoteRepo.id,
+            hostId: 'local',
+            path: REMOTE_PATH,
+            isArchived: false,
+            ...(calls++ > 0 ? { peerFingerprint: 'test-peer' } : {}),
+            git: { isBare: false, prunable: false, branch: 'main' }
+          } as never
+        ]
+      })(),
       getOwnPeerFingerprint: () => 'test-peer',
       verifyAuthoritativeWorktree: async () => true,
       flushPrimaryPersistence: async () => {},
@@ -249,7 +253,13 @@ describe('RuntimeProjectHostSetupController primary selection', () => {
         path: '/peer/worktree',
         branch: 'main',
         isArchived: false,
-        git: { path: '/peer/worktree', head: 'head', branch: 'main', isBare: false, isMainWorktree: false }
+        git: {
+          path: '/peer/worktree',
+          head: 'head',
+          branch: 'main',
+          isBare: false,
+          isMainWorktree: false
+        }
       } as never
     ])
     const controller = new RuntimeProjectHostSetupController({
