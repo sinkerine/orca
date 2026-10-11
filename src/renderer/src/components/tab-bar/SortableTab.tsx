@@ -7,6 +7,7 @@ import { isImeCompositionKeyDown } from '@/lib/ime-composition-keyboard-event'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
+import { launchAgentInNewTab } from '@/lib/launch-agent-in-new-tab'
 import type { TabDragItemData } from '../tab-group/useTabDragSplit'
 import { useAppStore } from '../../store'
 import {
@@ -24,6 +25,7 @@ import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-widt
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
+import { useForkableAgentSessions } from './use-forkable-agent-sessions'
 import {
   isTerminalTabActivityLive,
   resolveTerminalTabActivityStatus,
@@ -115,6 +117,7 @@ export default function SortableTab({
 
   // Why: use hook status + title evidence so the icon reflects the harness running now, not just the launch command.
   const tabAgent = useTabAgent(tab)
+  const forkableAgentSessions = useForkableAgentSessions(tab)
 
   // Why: with a provider icon shown, strip the agent's own leading glyph so the tab doesn't show two icons for one agent.
   const displayTitle =
@@ -402,6 +405,16 @@ export default function SortableTab({
         isChatView={isChatView}
         onToggleViewMode={onToggleViewMode}
         canSplitTerminal={canSplitTerminal}
+        forkableAgentSessions={forkableAgentSessions}
+        onForkAgentSession={(agent, launchCommand) => {
+          launchAgentInNewTab({
+            agent,
+            worktreeId: tab.worktreeId,
+            groupId,
+            launchCommandOverride: launchCommand,
+            launchSource: 'terminal_context_menu'
+          })
+        }}
       />
     </>
   )
