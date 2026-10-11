@@ -14,6 +14,7 @@ import { localProvider } from './provider/registry'
 import { finishPtyShutdown } from './provider/liveness'
 import type { GetSelectedCodexHomePath, PrepareClaudeAuth } from './host-env/types'
 import { installPtyInspectIpcHandlers } from './ipc/inspect'
+import { installPtyClaudeLiveSessionIpcHandler } from './ipc/claude-live-session'
 import { installPtyKillIpcHandler } from './ipc/renderer-kill'
 import { installPtyWriteIpcHandlers } from './ipc/write'
 import { installPtySpawnIpcHandler } from './ipc/spawn'
@@ -119,6 +120,7 @@ export function registerPtyHandlers(
   ipcMain.removeHandler('pty:getForegroundProcess')
   ipcMain.removeHandler('pty:inspectProcess')
   ipcMain.removeHandler('pty:confirmForegroundProcess')
+  ipcMain.removeHandler('pty:resolveClaudeSessionId')
   ipcMain.removeHandler('pty:getCwd')
   ipcMain.removeHandler('pty:getSize')
   ipcMain.removeHandler('pty:getAuthoritativeBufferSnapshotCapabilities')
@@ -295,6 +297,7 @@ export function registerPtyHandlers(
   installPtyResizeVisibilityIpc(session)
   installPtyAckCreditIpc(session)
   installPtyInspectIpcHandlers({ getLocalPtyProviderStartupPromise })
+  installPtyClaudeLiveSessionIpcHandler({ getLocalPtyProviderStartupPromise })
   installPtyKillIpcHandler({
     store,
     runtime,

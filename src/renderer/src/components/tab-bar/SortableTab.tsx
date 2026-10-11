@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
+import { toast } from 'sonner'
 import { X, Minimize2, Pin } from 'lucide-react'
 import { stripLeadingAgentTitleDecoration } from '../../../../shared/agent-title-decoration'
 import { useTabAgent } from '@/lib/use-tab-agent'
@@ -25,7 +26,10 @@ import { TAB_CONTAINER_WIDTH_CLASSES, TAB_LABEL_WIDTH_CLASSES } from './tab-widt
 import { useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useTabStripPointerActivation } from './tab-strip-pointer-activation'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
-import { resolveForkableAgentSession, useCanForkAgentSession } from './use-forkable-agent-sessions'
+import {
+  resolveForkableAgentSessionForLaunch,
+  useCanForkAgentSession
+} from './use-forkable-agent-sessions'
 import {
   isTerminalTabActivityLive,
   resolveTerminalTabActivityStatus,
@@ -408,17 +412,21 @@ export default function SortableTab({
         canForkAgentSession={canForkAgentSession}
         onForkAgentSession={() => {
           // Why: resolve at click time so the fork targets the session running now, not a stale render.
-          const session = resolveForkableAgentSession(useAppStore.getState(), tab, tabAgent)
-          if (!session) {
-            return
-          }
-          launchAgentInNewTab({
-            agent: session.agent,
-            worktreeId: tab.worktreeId,
-            groupId,
-            forkSession: session,
-            launchSource: 'terminal_context_menu'
-          })
+          void resolveForkableAgentSessionForLaunch(useAppStore.getState(), tab, tabAgent).then(
+            (session) => {
+              if (!session) {
+                toast.error('Could not find a session to fork in this tab.')
+                return
+              }
+              launchAgentInNewTab({
+                agent: session.agent,
+                worktreeId: tab.worktreeId,
+                groupId,
+                forkSession: session,
+                launchSource: 'terminal_context_menu'
+              })
+            }
+          )
         }}
       />
     </>

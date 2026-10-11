@@ -9,7 +9,11 @@ import type {
   SleepingAgentSessionRecord
 } from '../../../../shared/agent-session-resume'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
-import { resolveForkableAgentSession, useCanForkAgentSession } from './use-forkable-agent-sessions'
+import {
+  resolveForkableAgentSession,
+  resolveForkableAgentSessionForLaunch,
+  useCanForkAgentSession
+} from './use-forkable-agent-sessions'
 
 const LEAF_1 = '11111111-1111-4111-8111-111111111111'
 const LEAF_2 = '22222222-2222-4222-8222-222222222222'
@@ -182,5 +186,60 @@ describe('useCanForkAgentSession', () => {
     runtimeOwner.environmentId = 'env-1'
 
     expect(renderHook(() => useCanForkAgentSession(tab, 'claude')).result.current).toBe(false)
+  })
+
+  it('enables a live Claude tab that never reported a session, but not other agents', () => {
+    storeMock.state.agentStatusByPaneKey = {}
+
+    expect(renderHook(() => useCanForkAgentSession(tab, 'claude')).result.current).toBe(true)
+    expect(renderHook(() => useCanForkAgentSession(tab, 'codex')).result.current).toBe(false)
+    expect(
+      renderHook(() => useCanForkAgentSession({ ...tab, ptyId: null }, 'claude')).result.current
+    ).toBe(false)
+  })
+})
+
+describe('resolveForkableAgentSessionForLaunch', () => {
+  const resolveClaudeSessionId = vi.fn<(id: string) => Promise<string | null>>()
+  const resolveForLaunch = (tabAgent: Parameters<typeof resolveForkableAgentSession>[2]) =>
+    resolveForkableAgentSessionForLaunch(
+      storeMock.state as unknown as Parameters<typeof resolveForkableAgentSession>[0],
+      tab,
+      tabAgent
+    )
+
+  beforeEach(() => {
+    storeMock.state.agentStatusByPaneKey = {}
+    storeMock.state.sleepingAgentSessionsByPaneKey = {}
+    storeMock.state.terminalLayoutsByTabId = {}
+    resolveClaudeSessionId.mockReset()
+    vi.stubGlobal('api', { pty: { resolveClaudeSessionId } })
+  })
+
+  it('asks the live Claude process for its session when no hook reported one', async () => {
+    resolveClaudeSessionId.mockResolvedValue('live-claude-session')
+
+    await expect(resolveForLaunch('claude')).resolves.toEqual({
+      agent: 'claude',
+      providerSession: { key: 'session_id', id: 'live-claude-session' }
+    })
+    expect(resolveClaudeSessionId).toHaveBeenCalledWith('pty-1')
+  })
+
+  it('prefers a reported session and never probes for other agents', async () => {
+    storeMock.state.agentStatusByPaneKey = { [`tab-1:${LEAF_1}`]: status('claude') }
+
+    await expect(resolveForLaunch('claude')).resolves.toMatchObject({
+      providerSession: { id: 'claude-session' }
+    })
+    storeMock.state.agentStatusByPaneKey = {}
+    await expect(resolveForLaunch('codex')).resolves.toBeNull()
+    expect(resolveClaudeSessionId).not.toHaveBeenCalled()
+  })
+
+  it('resolves nothing when the live process has no session', async () => {
+    resolveClaudeSessionId.mockResolvedValue(null)
+
+    await expect(resolveForLaunch('claude')).resolves.toBeNull()
   })
 })

@@ -38,6 +38,7 @@ export function createPtyApi(): NonNullable<Partial<PreloadApi>['pty']> {
     inspectProcess: () => Promise.reject(new Error('terminal_liveness_unavailable')),
     // Why: paired web panes cannot provide a local post-boundary process scan.
     confirmForegroundProcess: () => Promise.resolve(null),
+    resolveClaudeSessionId: () => Promise.resolve(null),
     getCwd: () => Promise.resolve('~'),
     getSize: () => Promise.resolve(null),
     listSessions: () => Promise.resolve([]),
