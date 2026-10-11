@@ -3,6 +3,7 @@ import { buildAgentResumeLaunchCommand } from '../../../../shared/agent-resume-l
 import { resolveStartupShell } from '../../../../shared/tui-agent-startup-shell'
 import { useAppStore } from '../../store'
 import { getRendererAppPlatform } from '@/lib/renderer-app-platform'
+import { TUI_AGENT_CONFIG, getTuiAgentLaunchCommand } from '../../../../shared/tui-agent-config'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 
 export type ForkableAgentSession = { agent: ResumableTuiAgent; launchCommand: string }
@@ -22,18 +23,21 @@ export function useForkableAgentSession(tab: TerminalTab): ForkableAgentSession 
       }
       const resumableAgent = agentType as ResumableTuiAgent
       const resumeArgv = getAgentResumeArgv(resumableAgent, status.providerSession)
-      const launchConfig = s.getAgentLaunchConfigForStatusEntry(status)
-      if (!resumeArgv || !launchConfig?.agentCommand) {
+      if (!resumeArgv) {
         continue
       }
+      const launchConfig = s.getAgentLaunchConfigForStatusEntry(status)
+      const baseCommand =
+        launchConfig?.agentCommand ??
+        getTuiAgentLaunchCommand(TUI_AGENT_CONFIG[resumableAgent], getRendererAppPlatform())
       const forkArgv =
         resumableAgent === 'pi'
           ? ['pi', '--fork', status.providerSession.transcriptPath!]
           : resumableAgent === 'codex'
             ? ['codex', 'fork', status.providerSession.id]
             : ['claude', '--resume', status.providerSession.id, '--fork-session']
-      const originalCommand = [launchConfig.agentCommand, launchConfig.agentArgs]
-        .filter((value) => value.trim())
+      const originalCommand = [baseCommand, launchConfig?.agentArgs]
+        .filter((value) => value?.trim())
         .join(' ')
       sessions.push({
         agent: resumableAgent,
