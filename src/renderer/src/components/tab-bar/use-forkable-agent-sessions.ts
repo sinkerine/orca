@@ -5,9 +5,9 @@ import { useAppStore } from '../../store'
 import { getRendererAppPlatform } from '@/lib/renderer-app-platform'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 
-type ForkableAgentSession = { agent: ResumableTuiAgent; launchCommand: string }
+export type ForkableAgentSession = { agent: ResumableTuiAgent; launchCommand: string }
 
-export function useForkableAgentSessions(tab: TerminalTab): ForkableAgentSession[] {
+export function useForkableAgentSession(tab: TerminalTab): ForkableAgentSession | null {
   // Why: a selector returning a fresh array re-renders forever; select a stable string instead.
   const serializedSessions = useAppStore((s) => {
     const sessions: ForkableAgentSession[] = []
@@ -45,7 +45,7 @@ export function useForkableAgentSessions(tab: TerminalTab): ForkableAgentSession
         )
       })
     }
-    return sessions.length > 0 ? JSON.stringify(sessions) : ''
+    return sessions.length > 0 ? JSON.stringify(sessions[0]) : ''
   })
-  return serializedSessions ? (JSON.parse(serializedSessions) as ForkableAgentSession[]) : []
+  return serializedSessions ? (JSON.parse(serializedSessions) as ForkableAgentSession) : null
 }

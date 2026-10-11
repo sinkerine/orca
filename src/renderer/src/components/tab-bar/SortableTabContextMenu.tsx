@@ -23,15 +23,9 @@ import type { ResumableTuiAgent } from '../../../../shared/agent-session-resume'
 import { useAppStore } from '../../store'
 import { formatShortcutLabel, useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
-import { AgentIcon } from '@/lib/agent-catalog'
 import { TerminalTabSplitMenuSection } from './TerminalTabSplitMenuSection'
 import { TabMoveToWorkspaceMenuSection } from './TabMoveToWorkspaceMenuSection'
 import { TAB_CONTEXT_MENU_CONTENT_CLASS } from './tab-context-menu-sizing'
-
-const NO_FORKABLE_AGENT_SESSIONS: readonly {
-  agent: ResumableTuiAgent
-  launchCommand: string
-}[] = []
 
 const TAB_COLORS = [
   {
@@ -126,10 +120,10 @@ type SortableTabContextMenuProps = {
   /** Toggle the tab between terminal and native chat view. */
   onToggleViewMode?: () => void
   canSplitTerminal?: boolean
-  forkableAgentSessions?: readonly {
+  forkableAgentSession?: {
     agent: ResumableTuiAgent
     launchCommand: string
-  }[]
+  } | null
   onForkAgentSession?: (agent: ResumableTuiAgent, launchCommand: string) => void
 }
 
@@ -157,7 +151,7 @@ export function SortableTabContextMenu({
   isChatView = false,
   onToggleViewMode,
   canSplitTerminal = true,
-  forkableAgentSessions = NO_FORKABLE_AGENT_SESSIONS,
+  forkableAgentSession = null,
   onForkAgentSession
 }: SortableTabContextMenuProps): React.JSX.Element {
   const keybindings = useAppStore((state) => state.keybindings)
@@ -190,24 +184,16 @@ export function SortableTabContextMenu({
         />
         <TabMoveToWorkspaceMenuSection unifiedTabId={unifiedTabId} />
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled={forkableAgentSessions.length === 0}>
+        <DropdownMenuItem
+          disabled={!forkableAgentSession || !onForkAgentSession}
+          onSelect={() =>
+            forkableAgentSession &&
+            onForkAgentSession?.(forkableAgentSession.agent, forkableAgentSession.launchCommand)
+          }
+        >
           <GitBranch className="size-3.5 shrink-0" />
-          Fork agent session
+          Fork session in new tab
         </DropdownMenuItem>
-        {(['pi', 'codex', 'claude'] as const).map((agent) => {
-          const session = forkableAgentSessions.find((entry) => entry.agent === agent)
-          return (
-            <DropdownMenuItem
-              key={agent}
-              disabled={!session || !onForkAgentSession}
-              onSelect={() => session && onForkAgentSession?.(agent, session.launchCommand)}
-              className="pl-8"
-            >
-              <AgentIcon agent={agent} size={14} />
-              {agent === 'pi' ? 'Pi' : agent === 'codex' ? 'Codex' : 'Claude'}
-            </DropdownMenuItem>
-          )
-        })}
         {canToggleViewMode && onToggleViewMode ? (
           <>
             <DropdownMenuSeparator />
