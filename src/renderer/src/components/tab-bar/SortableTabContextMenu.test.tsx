@@ -224,19 +224,18 @@ describe('SortableTabContextMenu', () => {
     expect(container.textContent).not.toContain('Switch to chat view')
   })
 
-  it('shows fork providers and disables providers without a session', () => {
+  it('shows one enabled fork action for the detected tab agent', () => {
     const onForkAgentSession = vi.fn()
     const { container } = renderMenu({
-      forkableAgentSessions: [{ agent: 'codex', launchCommand: "codex fork 'session-1'" }],
+      forkableAgentSession: { agent: 'codex', launchCommand: "codex fork 'session-1'" },
       onForkAgentSession
     })
 
-    expect(container.textContent).toContain('Fork agent session')
-    expect(getButton(container, 'Pi').disabled).toBe(true)
-    expect(getButton(container, 'Codex').disabled).toBe(false)
-    expect(getButton(container, 'Claude').disabled).toBe(true)
+    expect(container.textContent).toContain('Fork session in new tab')
+    expect(container.textContent).not.toContain('Fork agent session')
+    expect(getButton(container, 'Fork session in new tab').disabled).toBe(false)
 
-    act(() => getButton(container, 'Codex').click())
+    act(() => getButton(container, 'Fork session in new tab').click())
     expect(onForkAgentSession).toHaveBeenCalledWith('codex', "codex fork 'session-1'")
   })
 
