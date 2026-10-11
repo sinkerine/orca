@@ -117,7 +117,7 @@ export default function SortableTab({
 
   // Why: use hook status + title evidence so the icon reflects the harness running now, not just the launch command.
   const tabAgent = useTabAgent(tab)
-  const forkableAgentSession = useForkableAgentSession(tab)
+  const forkableAgentSession = useForkableAgentSession(tab, tabAgent)
 
   // Why: with a provider icon shown, strip the agent's own leading glyph so the tab doesn't show two icons for one agent.
   const displayTitle =

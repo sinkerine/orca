@@ -134,10 +134,14 @@ function launchAgentInNewTabInternal(
     launchCommandOverride === undefined
       ? (store.settings?.agentCmdOverrides ?? {})
       : { ...store.settings?.agentCmdOverrides, [agent]: launchCommandOverride }
+  // A command override is already a complete command line (fork/resume and saved variants).
+  // Do not append the selected agent's default arguments to it.
   const effectiveAgentArgs =
-    agentArgs !== undefined
-      ? agentArgs
-      : resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
+    launchCommandOverride !== undefined
+      ? null
+      : agentArgs !== undefined
+        ? agentArgs
+        : resolveTuiAgentLaunchArgs(agent, store.settings?.agentDefaultArgs)
   const agentEnv = resolveTuiAgentLaunchEnv(agent, store.settings?.agentDefaultEnv)
   const trimmedPrompt = prompt?.trim() ?? ''
   const hasPrompt = trimmedPrompt.length > 0

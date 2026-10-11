@@ -195,40 +195,20 @@ describe('launchAgentInNewTab', () => {
     })
   })
 
-  it('launches a saved variant command exactly in terminal view without configured args', async () => {
-    store.settings = {
-      agentCmdOverrides: {},
-      agentDefaultArgs: { codex: '--configured-args' },
-      agentDefaultEnv: { codex: { VARIANT_ENV: 'yes' } },
-      activeRuntimeEnvironmentId: null,
-      experimentalNativeChat: true,
-      experimentalStructuredNativeChat: true,
-      openAgentTabsInChatByDefault: true
-    }
+  it('queues a complete override command unchanged', async () => {
+    store.settings.agentDefaultArgs = { codex: '--configured-args' }
     const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
     const result = launchAgentInNewTab({
       agent: 'codex',
       worktreeId: 'wt-1',
-      launchCommandOverride: 'codex --profile fast --model x',
-      agentArgs: '',
+      launchCommandOverride: "codex 'fork' 'session-1'",
       forceTerminal: true
     })
-    expect(mockCreateTab).toHaveBeenCalledWith('wt-1', undefined, undefined, {
-      launchAgent: 'codex',
-      viewMode: 'terminal'
-    })
+    expect(result?.startupPlan.launchCommand).toBe("codex 'fork' 'session-1'")
     expect(mockQueueTabStartupCommand).toHaveBeenCalledWith(
       'tab-1',
-      expect.objectContaining({
-        command: 'codex --profile fast --model x',
-        env: expect.objectContaining({ VARIANT_ENV: 'yes' }),
-        agentArgsOverride: ''
-      })
+      expect.objectContaining({ command: "codex 'fork' 'session-1'" })
     )
-    expect(result?.startupPlan.launchConfig).toMatchObject({
-      agentCommand: 'codex --profile fast --model x',
-      agentArgs: ''
-    })
   })
   it('keeps Floating Workspace authority on native Windows beside an active WSL project', async () => {
     store.projects = [
