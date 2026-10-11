@@ -4,6 +4,7 @@ import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner
 import { getAgentForkArgv, isForkableTuiAgent } from '../../../../shared/agent-session-fork'
 import type { ForkableTuiAgent } from '../../../../shared/agent-session-fork'
 import { isTerminalLeafId, makePaneKey } from '../../../../shared/stable-pane-id'
+import { resolvePrimaryLayoutPtyId } from '@/store/terminals/terminal-pty-identities'
 import type { AgentSessionForkSource } from '@/lib/agent-session-fork-startup-plan'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
 import type { TuiAgent } from '../../../../shared/tui-agent'
@@ -76,11 +77,46 @@ export function resolveForkableAgentSession(
   return null
 }
 
+/**
+ * PTY whose live Claude process can name its own session. Why: Claude reports a session to Orca
+ * only through hooks, which cannot be installed when settings.json is read-only.
+ */
+function resolveClaudeLiveSessionPtyId(
+  state: Pick<AppState, 'terminalLayoutsByTabId'>,
+  tab: Pick<TerminalTab, 'id' | 'ptyId'>,
+  tabAgent: TuiAgent | null
+): string | null {
+  if (tabAgent !== 'claude') {
+    return null
+  }
+  const layout = state.terminalLayoutsByTabId[tab.id]
+  return (layout ? resolvePrimaryLayoutPtyId(layout) : null) ?? tab.ptyId
+}
+
+/** Click-time resolution: the reported session, else the one the live Claude process holds. */
+export async function resolveForkableAgentSessionForLaunch(
+  state: ForkableAgentSessionState,
+  tab: Pick<TerminalTab, 'id' | 'ptyId'>,
+  tabAgent: TuiAgent | null
+): Promise<ForkableAgentSession | null> {
+  const reported = resolveForkableAgentSession(state, tab, tabAgent)
+  if (reported) {
+    return reported
+  }
+  const ptyId = resolveClaudeLiveSessionPtyId(state, tab, tabAgent)
+  if (!ptyId) {
+    return null
+  }
+  const id = await window.api.pty.resolveClaudeSessionId(ptyId).catch(() => null)
+  return id ? { agent: 'claude', providerSession: { key: 'session_id', id } } : null
+}
+
 /** Whether the tab's detected agent has a session the context menu can fork. */
 export function useCanForkAgentSession(tab: TerminalTab, tabAgent: TuiAgent | null): boolean {
   return useAppStore(
     (s) =>
-      resolveForkableAgentSession(s, tab, tabAgent) !== null &&
+      (resolveForkableAgentSession(s, tab, tabAgent) !== null ||
+        resolveClaudeLiveSessionPtyId(s, tab, tabAgent) !== null) &&
       // Why: a paired runtime host rebuilds agent launches from the agent id, which would
       // silently drop the fork argv and start an unrelated fresh session.
       getRuntimeEnvironmentIdForWorktree(s, tab.worktreeId) === null

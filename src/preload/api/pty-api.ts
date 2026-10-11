@@ -130,6 +130,8 @@ export type PtyApi = {
     }
   ) => Promise<TerminalProcessInspection>
   confirmForegroundProcess: (id: string) => Promise<string | null>
+  /** Session id of the interactive Claude running in a local PTY; null when unknown. */
+  resolveClaudeSessionId: (id: string) => Promise<string | null>
   getCwd: (id: string) => Promise<string>
   getSize: (id: string) => Promise<{ cols: number; rows: number } | null>
   listSessions: (scope?: PtySessionListScope) => Promise<PtyListedSession[]>
