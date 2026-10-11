@@ -4,21 +4,35 @@
 import { renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentStatusEntry } from '../../../../shared/agent-status-types'
+import type {
+  SleepingAgentLaunchConfig,
+  SleepingAgentSessionRecord
+} from '../../../../shared/agent-session-resume'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
-import { useForkableAgentSession } from './use-forkable-agent-sessions'
+import { resolveForkableAgentSession, useCanForkAgentSession } from './use-forkable-agent-sessions'
+
+const LEAF_1 = '11111111-1111-4111-8111-111111111111'
+const LEAF_2 = '22222222-2222-4222-8222-222222222222'
+
+const runtimeOwner = vi.hoisted(() => ({ environmentId: null as string | null }))
 
 const storeMock = vi.hoisted(() => ({
   state: {
     agentStatusByPaneKey: {} as Record<string, AgentStatusEntry>,
+    sleepingAgentSessionsByPaneKey: {} as Record<string, SleepingAgentSessionRecord>,
+    terminalLayoutsByTabId: {} as Record<string, { activeLeafId: string | null }>,
     getAgentLaunchConfigForStatusEntry: vi.fn(
-      (): { agentCommand?: string; agentArgs?: string } | undefined => undefined
-    ),
-    sleepingAgentSessionsByPaneKey: {}
+      (_entry: AgentStatusEntry): SleepingAgentLaunchConfig | undefined => undefined
+    )
   }
 }))
 
 vi.mock('../../store', () => ({
   useAppStore: (selector: (state: typeof storeMock.state) => unknown) => selector(storeMock.state)
+}))
+
+vi.mock('@/lib/worktree-runtime-owner', () => ({
+  getRuntimeEnvironmentIdForWorktree: () => runtimeOwner.environmentId
 }))
 
 const tab: TerminalTab = {
@@ -32,10 +46,14 @@ const tab: TerminalTab = {
   createdAt: 1
 }
 
-function status(agentType: 'pi' | 'codex' | 'claude'): AgentStatusEntry {
+function status(
+  agentType: 'pi' | 'codex' | 'claude',
+  paneKey = `tab-1:${LEAF_1}`,
+  id = `${agentType}-session`
+): AgentStatusEntry {
   return {
-    paneKey: 'tab-1:leaf-1',
-    tabId: 'tab-1',
+    paneKey,
+    tabId: paneKey.split(':')[0],
     worktreeId: 'worktree-1',
     agentType,
     state: 'working',
@@ -45,63 +63,74 @@ function status(agentType: 'pi' | 'codex' | 'claude'): AgentStatusEntry {
     stateHistory: [],
     providerSession:
       agentType === 'pi'
-        ? {
-            key: 'session_id',
-            id: 'pi-session',
-            transcriptPath: '/tmp/pi-session.jsonl'
-          }
-        : { key: 'session_id', id: `${agentType}-session` }
+        ? { key: 'session_id', id, transcriptPath: `/tmp/${id}.jsonl` }
+        : { key: 'session_id', id }
   } as AgentStatusEntry
 }
 
-describe('useForkableAgentSession', () => {
+function resolve(tabAgent: Parameters<typeof resolveForkableAgentSession>[2]) {
+  return resolveForkableAgentSession(
+    storeMock.state as unknown as Parameters<typeof resolveForkableAgentSession>[0],
+    tab,
+    tabAgent
+  )
+}
+
+describe('resolveForkableAgentSession', () => {
   beforeEach(() => {
+    runtimeOwner.environmentId = null
     storeMock.state.agentStatusByPaneKey = {}
     storeMock.state.sleepingAgentSessionsByPaneKey = {}
+    storeMock.state.terminalLayoutsByTabId = {}
     storeMock.state.getAgentLaunchConfigForStatusEntry.mockReset()
     storeMock.state.getAgentLaunchConfigForStatusEntry.mockReturnValue(undefined)
   })
 
   it.each(['pi', 'codex', 'claude'] as const)(
-    'recognizes a running %s session without transient launch config',
+    'resolves a running %s session from live status alone',
     (agentType) => {
-      storeMock.state.agentStatusByPaneKey = {
-        'tab-1:leaf-1': status(agentType)
-      }
+      storeMock.state.agentStatusByPaneKey = { [`tab-1:${LEAF_1}`]: status(agentType) }
 
-      const { result } = renderHook(() => useForkableAgentSession(tab, agentType))
-
-      expect(result.current?.agent).toBe(agentType)
-      expect(result.current?.launchCommand).toContain(
-        agentType === 'pi'
-          ? "pi '--fork'"
-          : agentType === 'codex'
-            ? "codex 'fork'"
-            : "claude '--resume'"
-      )
+      expect(resolve(agentType)).toEqual({
+        agent: agentType,
+        providerSession: status(agentType).providerSession
+      })
     }
   )
 
-  it('uses live status identity instead of an aliased launch command', () => {
-    storeMock.state.agentStatusByPaneKey = {
-      'tab-1:leaf-1': status('codex')
+  it('identifies the agent from live status, not from an aliased launch command', () => {
+    storeMock.state.agentStatusByPaneKey = { [`tab-1:${LEAF_1}`]: status('codex') }
+    const launchConfig = {
+      agentCommand: 'my-wrapper --profile fast',
+      agentArgs: '--profile fast',
+      agentEnv: {}
     }
-    storeMock.state.getAgentLaunchConfigForStatusEntry.mockReturnValue({
-      agentCommand: 'my-codex-wrapper',
-      agentArgs: '--profile fast'
+    storeMock.state.getAgentLaunchConfigForStatusEntry.mockReturnValue(launchConfig)
+
+    expect(resolve('codex')).toEqual({
+      agent: 'codex',
+      providerSession: { key: 'session_id', id: 'codex-session' },
+      launchConfig
     })
+    // A status row for a different agent than the one detected is not this tab's session.
+    expect(resolve('claude')).toBeNull()
+  })
 
-    const { result } = renderHook(() => useForkableAgentSession(tab, 'codex'))
+  it('prefers the focused pane of a split tab', () => {
+    storeMock.state.agentStatusByPaneKey = {
+      [`tab-1:${LEAF_1}`]: status('claude', `tab-1:${LEAF_1}`, 'background'),
+      [`tab-1:${LEAF_2}`]: status('claude', `tab-1:${LEAF_2}`, 'focused')
+    }
+    storeMock.state.terminalLayoutsByTabId = { 'tab-1': { activeLeafId: LEAF_2 } }
 
-    expect(result.current?.agent).toBe('codex')
-    expect(result.current?.launchCommand).toContain('my-codex-wrapper')
-    expect(result.current?.launchCommand).toContain("'fork'")
+    expect(resolve('claude')?.providerSession.id).toBe('focused')
   })
 
   it('uses restored provider identity after restart before live hook status arrives', () => {
+    const launchConfig = { agentCommand: 'claude-wrapper', agentArgs: '', agentEnv: {} }
     storeMock.state.sleepingAgentSessionsByPaneKey = {
-      'tab-1:leaf-1': {
-        paneKey: 'tab-1:leaf-1',
+      [`tab-1:${LEAF_1}`]: {
+        paneKey: `tab-1:${LEAF_1}`,
         tabId: 'tab-1',
         worktreeId: 'worktree-1',
         agent: 'claude',
@@ -110,23 +139,48 @@ describe('useForkableAgentSession', () => {
         state: 'working',
         capturedAt: 1,
         updatedAt: 1,
-        launchConfig: { agentCommand: 'claude-wrapper', agentArgs: '' }
+        launchConfig
       }
     }
 
-    const { result } = renderHook(() => useForkableAgentSession(tab, 'claude'))
-
-    expect(result.current?.agent).toBe('claude')
-    expect(result.current?.launchCommand).toContain('claude-wrapper')
+    expect(resolve('claude')).toEqual({
+      agent: 'claude',
+      providerSession: { key: 'session_id', id: 'claude-session' },
+      launchConfig
+    })
   })
 
-  it('does not use a provider session from another tab', () => {
+  it('ignores sessions from other tabs, unforkable agents, and Pi without a transcript', () => {
     storeMock.state.agentStatusByPaneKey = {
-      'tab-2:leaf-1': status('codex')
+      [`tab-2:${LEAF_1}`]: status('codex', `tab-2:${LEAF_1}`)
     }
+    expect(resolve('codex')).toBeNull()
 
-    const { result } = renderHook(() => useForkableAgentSession(tab, 'codex'))
+    const pi = status('pi')
+    storeMock.state.agentStatusByPaneKey = {
+      [`tab-1:${LEAF_1}`]: { ...pi, providerSession: { key: 'session_id', id: 'pi-session' } }
+    }
+    expect(resolve('pi')).toBeNull()
+    expect(resolve('gemini')).toBeNull()
+    expect(resolve(null)).toBeNull()
+  })
+})
 
-    expect(result.current).toBeNull()
+describe('useCanForkAgentSession', () => {
+  beforeEach(() => {
+    runtimeOwner.environmentId = null
+    storeMock.state.agentStatusByPaneKey = { [`tab-1:${LEAF_1}`]: status('claude') }
+    storeMock.state.sleepingAgentSessionsByPaneKey = {}
+  })
+
+  it('enables forking for the detected agent', () => {
+    expect(renderHook(() => useCanForkAgentSession(tab, 'claude')).result.current).toBe(true)
+    expect(renderHook(() => useCanForkAgentSession(tab, null)).result.current).toBe(false)
+  })
+
+  it('stays disabled on a paired runtime host, which would drop the fork argv', () => {
+    runtimeOwner.environmentId = 'env-1'
+
+    expect(renderHook(() => useCanForkAgentSession(tab, 'claude')).result.current).toBe(false)
   })
 })

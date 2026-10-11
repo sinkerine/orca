@@ -19,7 +19,6 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
-import type { ResumableTuiAgent } from '../../../../shared/agent-session-resume'
 import { useAppStore } from '../../store'
 import { formatShortcutLabel, useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
@@ -120,11 +119,8 @@ type SortableTabContextMenuProps = {
   /** Toggle the tab between terminal and native chat view. */
   onToggleViewMode?: () => void
   canSplitTerminal?: boolean
-  forkableAgentSession?: {
-    agent: ResumableTuiAgent
-    launchCommand: string
-  } | null
-  onForkAgentSession?: (agent: ResumableTuiAgent, launchCommand: string) => void
+  canForkAgentSession?: boolean
+  onForkAgentSession?: () => void
 }
 
 export function SortableTabContextMenu({
@@ -151,7 +147,7 @@ export function SortableTabContextMenu({
   isChatView = false,
   onToggleViewMode,
   canSplitTerminal = true,
-  forkableAgentSession = null,
+  canForkAgentSession = false,
   onForkAgentSession
 }: SortableTabContextMenuProps): React.JSX.Element {
   const keybindings = useAppStore((state) => state.keybindings)
@@ -185,11 +181,8 @@ export function SortableTabContextMenu({
         <TabMoveToWorkspaceMenuSection unifiedTabId={unifiedTabId} />
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          disabled={!forkableAgentSession || !onForkAgentSession}
-          onSelect={() =>
-            forkableAgentSession &&
-            onForkAgentSession?.(forkableAgentSession.agent, forkableAgentSession.launchCommand)
-          }
+          disabled={!canForkAgentSession || !onForkAgentSession}
+          onSelect={() => onForkAgentSession?.()}
         >
           <GitBranch className="size-3.5 shrink-0" />
           Fork session in new tab

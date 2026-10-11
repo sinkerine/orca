@@ -96,9 +96,17 @@ vi.mock('../../store', () => ({
   useAppStore: (
     selector: (state: {
       agentStatusByPaneKey: Record<string, unknown>
+      sleepingAgentSessionsByPaneKey: Record<string, unknown>
+      terminalLayoutsByTabId: Record<string, unknown>
       unreadTerminalTabs: Record<string, boolean>
     }) => unknown
-  ) => selector({ agentStatusByPaneKey: {}, unreadTerminalTabs: {} })
+  ) =>
+    selector({
+      agentStatusByPaneKey: {},
+      sleepingAgentSessionsByPaneKey: {},
+      terminalLayoutsByTabId: {},
+      unreadTerminalTabs: {}
+    })
 }))
 
 vi.mock('@/store', () => ({

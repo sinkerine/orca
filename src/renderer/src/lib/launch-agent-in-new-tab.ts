@@ -1,6 +1,10 @@
 import { useAppStore } from '@/store'
 import type { AgentStartupPlan } from '@/lib/tui-agent-startup'
 import { planLaunchAgentStartupPrompt } from '@/lib/launch-agent-startup-prompt-plan'
+import {
+  buildAgentSessionForkStartupPlan,
+  type AgentSessionForkSource
+} from '@/lib/agent-session-fork-startup-plan'
 import { CLIENT_PLATFORM } from '@/lib/new-workspace'
 import { getAgentLaunchPlatformForRepo } from '@/lib/agent-launch-platform'
 import { persistAgentLaunchTabOrder } from '@/lib/launch-agent-tab-order'
@@ -44,6 +48,8 @@ export type LaunchAgentInNewTabArgs = {
   agentArgs?: string | null
   /** Full command supplied by a saved launch variant. */
   launchCommandOverride?: string
+  /** Branch this provider session into the new tab instead of starting a fresh one. */
+  forkSession?: AgentSessionForkSource
   forceTerminal?: boolean
   initialCwd?: string | null
   /** How to deliver the prompt: `draft` leaves it editable, `submit-after-ready` sends it once the TUI is ready. */
@@ -97,6 +103,7 @@ function launchAgentInNewTabInternal(
     prompt,
     agentArgs,
     launchCommandOverride,
+    forkSession,
     forceTerminal = false,
     initialCwd,
     promptDelivery = 'auto-submit',
@@ -134,8 +141,7 @@ function launchAgentInNewTabInternal(
     launchCommandOverride === undefined
       ? (store.settings?.agentCmdOverrides ?? {})
       : { ...store.settings?.agentCmdOverrides, [agent]: launchCommandOverride }
-  // A command override is already a complete command line (fork/resume and saved variants).
-  // Do not append the selected agent's default arguments to it.
+  // A command override is already a complete command line; never append default arguments to it.
   const effectiveAgentArgs =
     launchCommandOverride !== undefined
       ? null
@@ -170,12 +176,17 @@ function launchAgentInNewTabInternal(
         ? resolveInitialNativeChatSessionOptions(store.settings, initialViewModeOptions)
         : undefined
   }
-  const { startupPlan, pasteDraftAfterLaunch, submitPastedPrompt } = planLaunchAgentStartupPrompt({
-    base: startupPlanBase,
-    prompt: trimmedPrompt,
-    promptDelivery,
-    isFollowupPath
-  })
+  const forkStartupPlan = forkSession
+    ? buildAgentSessionForkStartupPlan({ ...startupPlanBase, source: forkSession })
+    : null
+  const { startupPlan, pasteDraftAfterLaunch, submitPastedPrompt } = forkSession
+    ? { startupPlan: forkStartupPlan, pasteDraftAfterLaunch: null, submitPastedPrompt: false }
+    : planLaunchAgentStartupPrompt({
+        base: startupPlanBase,
+        prompt: trimmedPrompt,
+        promptDelivery,
+        isFollowupPath
+      })
   let promptDeliveryResult: Promise<{ delivered: boolean; failureNotified: boolean }> | undefined
 
   if (!startupPlan) {
@@ -213,7 +224,7 @@ function launchAgentInNewTabInternal(
 
   // Why: the legacy re-entry is the plan's own fallback; deciding a route again would loop.
   const plan =
-    forceLegacy || forceTerminal || launchCommandOverride !== undefined
+    forceLegacy || forceTerminal || launchCommandOverride !== undefined || forkSession
       ? null
       : planAgentSessionLaunch(store, {
           agent,
@@ -259,7 +270,11 @@ function launchAgentInNewTabInternal(
     ...(startupPlan.env ? { env: startupPlan.env } : {}),
     launchConfig: startupPlan.launchConfig,
     launchAgent: agent,
-    ...(agentArgs !== undefined ? { agentArgsOverride: agentArgs } : {}),
+    ...(forkSession?.launchConfig
+      ? { agentArgsOverride: forkSession.launchConfig.agentArgs }
+      : agentArgs !== undefined
+        ? { agentArgsOverride: agentArgs }
+        : {}),
     ...(startupPlan.sessionOptions ? { sessionOptions: startupPlan.sessionOptions } : {}),
     ...(startupPlan.startupCommandDelivery
       ? { startupCommandDelivery: startupPlan.startupCommandDelivery }

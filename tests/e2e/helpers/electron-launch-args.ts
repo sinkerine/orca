@@ -31,7 +31,14 @@ export function getOrcaElectronLaunchArgs(mainPath: string, headful: boolean): s
   // activation) must match or Chromium aborts with SIGTRAP before handshake.
   // GPU flags keep headless under Xvfb on a software path when the GPU
   // subprocess cannot initialize.
+  // Why: a hidden window on a Wayland desktop never paints, so freshly created terminal
+  // tabs never spawn a PTY. Opt-in offscreen ozone renders without Xvfb or a visible window.
+  const offscreenArgs =
+    process.env.ORCA_E2E_OFFSCREEN_OZONE === '1'
+      ? ['--ozone-platform=headless', '--ozone-override-screen-size=1600,1000']
+      : []
   return [
+    ...offscreenArgs,
     '--no-sandbox',
     '--disable-gpu',
     '--disable-gpu-compositing',
