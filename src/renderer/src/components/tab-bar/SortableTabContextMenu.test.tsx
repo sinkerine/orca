@@ -58,6 +58,7 @@ vi.mock('lucide-react', () => ({
   ArrowUp: () => null,
   Columns2: () => null,
   Copy: () => null,
+  GitBranch: () => null,
   ListX: () => null,
   MessageSquare: () => null,
   PanelBottomClose: () => null,
@@ -219,6 +220,22 @@ describe('SortableTabContextMenu', () => {
 
     expect(container.textContent).not.toContain('Switch to terminal view')
     expect(container.textContent).not.toContain('Switch to chat view')
+  })
+
+  it('shows fork providers and disables providers without a session', () => {
+    const onForkAgentSession = vi.fn()
+    const { container } = renderMenu({
+      forkableAgentSessions: [{ agent: 'codex', launchCommand: "codex fork 'session-1'" }],
+      onForkAgentSession
+    })
+
+    expect(container.textContent).toContain('Fork agent session')
+    expect(getButton(container, 'Pi').disabled).toBe(true)
+    expect(getButton(container, 'Codex').disabled).toBe(false)
+    expect(getButton(container, 'Claude').disabled).toBe(true)
+
+    act(() => getButton(container, 'Codex').click())
+    expect(onForkAgentSession).toHaveBeenCalledWith('codex', "codex fork 'session-1'")
   })
 
   it('dispatches split requests and activates inactive terminal tabs first', () => {
