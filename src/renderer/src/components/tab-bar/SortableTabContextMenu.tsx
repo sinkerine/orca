@@ -7,7 +7,8 @@ import {
   Pencil,
   SquareTerminal,
   X,
-  ListX
+  ListX,
+  GitBranch
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -18,12 +19,18 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import type { TerminalTab } from '../../../../shared/terminal-tab-types'
+import type { ResumableTuiAgent } from '../../../../shared/agent-session-resume'
 import { useAppStore } from '../../store'
 import { formatShortcutLabel, useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
 import { TerminalTabSplitMenuSection } from './TerminalTabSplitMenuSection'
 import { TabMoveToWorkspaceMenuSection } from './TabMoveToWorkspaceMenuSection'
 import { TAB_CONTEXT_MENU_CONTENT_CLASS } from './tab-context-menu-sizing'
+
+const NO_FORKABLE_AGENT_SESSIONS: readonly {
+  agent: ResumableTuiAgent
+  launchCommand: string
+}[] = []
 
 const TAB_COLORS = [
   {
@@ -118,6 +125,11 @@ type SortableTabContextMenuProps = {
   /** Toggle the tab between terminal and native chat view. */
   onToggleViewMode?: () => void
   canSplitTerminal?: boolean
+  forkableAgentSessions?: readonly {
+    agent: ResumableTuiAgent
+    launchCommand: string
+  }[]
+  onForkAgentSession?: (agent: ResumableTuiAgent, launchCommand: string) => void
 }
 
 export function SortableTabContextMenu({
@@ -143,7 +155,9 @@ export function SortableTabContextMenu({
   canToggleViewMode = false,
   isChatView = false,
   onToggleViewMode,
-  canSplitTerminal = true
+  canSplitTerminal = true,
+  forkableAgentSessions = NO_FORKABLE_AGENT_SESSIONS,
+  onForkAgentSession
 }: SortableTabContextMenuProps): React.JSX.Element {
   const keybindings = useAppStore((state) => state.keybindings)
   const splitRightShortcut = formatShortcutLabel('terminal.splitRight', keybindings)
@@ -174,6 +188,24 @@ export function SortableTabContextMenu({
           showTerminalSplit={canSplitTerminal}
         />
         <TabMoveToWorkspaceMenuSection unifiedTabId={unifiedTabId} />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={forkableAgentSessions.length === 0}>
+          <GitBranch className="size-3.5 shrink-0" />
+          Fork agent session
+        </DropdownMenuItem>
+        {(['pi', 'codex', 'claude'] as const).map((agent) => {
+          const session = forkableAgentSessions.find((entry) => entry.agent === agent)
+          return (
+            <DropdownMenuItem
+              key={agent}
+              disabled={!session || !onForkAgentSession}
+              onSelect={() => session && onForkAgentSession?.(agent, session.launchCommand)}
+              className="pl-8"
+            >
+              {agent === 'pi' ? 'Pi' : agent === 'codex' ? 'Codex' : 'Claude'}
+            </DropdownMenuItem>
+          )
+        })}
         {canToggleViewMode && onToggleViewMode ? (
           <>
             <DropdownMenuSeparator />
