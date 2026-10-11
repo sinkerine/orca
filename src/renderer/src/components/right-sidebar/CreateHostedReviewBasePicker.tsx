@@ -8,6 +8,7 @@ import type { LocalizedHostedReviewCopy } from '@/i18n/hosted-review-localized-c
 import { COMPOSER_FIELD_CLASS } from './create-hosted-review-composer-field-class'
 import { CreateHostedReviewComposerMessage } from './CreateHostedReviewComposerMessage'
 import { stripBaseRef } from './create-pull-request-base-ref-normalization'
+import type { GitHubRepositoryIdentity } from '../../../../shared/github/pull-request-types'
 
 type CreateHostedReviewBasePickerProps = {
   copy: LocalizedHostedReviewCopy
@@ -15,6 +16,8 @@ type CreateHostedReviewBasePickerProps = {
   setBase: (value: string) => void
   /** The repo's default branch, where an emptied field lands. Null until resolved. */
   repoDefaultBase: string | null
+  baseRepository?: GitHubRepositoryIdentity | null
+  headRepository?: GitHubRepositoryIdentity | null
   editing: boolean
   setEditing: (value: boolean) => void
   baseQuery: string
@@ -37,6 +40,8 @@ export function CreateHostedReviewBasePicker({
   base,
   setBase,
   repoDefaultBase,
+  baseRepository,
+  headRepository,
   editing,
   setEditing,
   baseQuery,
@@ -157,17 +162,28 @@ export function CreateHostedReviewBasePicker({
         >
           {translate(
             'auto.components.right.sidebar.CreateHostedReviewBasePicker.205ef284fa',
-            'Base branch'
+            'Base repository and branch'
           )}
         </Label>
         <span className="min-w-0 truncate text-[11px] text-muted-foreground" title={strippedBranch}>
-          {translate(
-            'auto.components.right.sidebar.CreateHostedReviewBasePicker.bb4b41d563',
-            'from {{value0}}',
-            { value0: strippedBranch }
-          )}
+          {headRepository
+            ? `${headRepository.owner}/${headRepository.repo}:${strippedBranch}`
+            : translate(
+                'auto.components.right.sidebar.CreateHostedReviewBasePicker.bb4b41d563',
+                'from {{value0}}',
+                { value0: strippedBranch }
+              )}
         </span>
       </div>
+
+      {baseRepository ? (
+        <p
+          className="truncate text-[11px] text-muted-foreground"
+          title={`${baseRepository.owner}/${baseRepository.repo}`}
+        >
+          {baseRepository.owner}/{baseRepository.repo}
+        </p>
+      ) : null}
 
       <div className="relative">
         <Input

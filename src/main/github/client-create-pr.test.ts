@@ -184,6 +184,37 @@ describe('createGitHubPullRequest', () => {
     expect(args[args.indexOf('--head') + 1]).toBe('my-branch')
   })
 
+  it('creates a fork PR against the selected upstream repository', async () => {
+    getOwnerRepoForRemoteMock.mockImplementation(async (_repoPath: string, remoteName: string) =>
+      remoteName === 'origin'
+        ? { owner: '15cm', repo: 'magpie', host: 'github.com' }
+        : { owner: 'yetone', repo: 'magpie', host: 'github.com' }
+    )
+    ghExecFileAsyncMock.mockResolvedValueOnce({
+      stdout: JSON.stringify({ number: 6, url: 'https://github.com/yetone/magpie/pull/6' })
+    })
+
+    await expect(
+      createGitHubPullRequest(
+        '/repo-root',
+        {
+          provider: 'github',
+          base: 'main',
+          head: 'custom',
+          baseRepository: { owner: 'yetone', repo: 'magpie', host: 'github.com' },
+          headRepository: { owner: '15cm', repo: 'magpie', host: 'github.com' },
+          title: 'Fork PR'
+        },
+        'local'
+      )
+    ).resolves.toMatchObject({ ok: true, url: 'https://github.com/yetone/magpie/pull/6' })
+
+    const [args] = ghExecFileAsyncMock.mock.calls[0]
+    expect(args[args.indexOf('--repo') + 1]).toBe('yetone/magpie')
+    expect(args[args.indexOf('--base') + 1]).toBe('main')
+    expect(args[args.indexOf('--head') + 1]).toBe('15cm:custom')
+  })
+
   it('routes --repo to the Enterprise server via options.host for a GHES remote (#8312)', async () => {
     // github.com-only slug parsing misses GHES, so creation comes from the
     // enterprise resolver, which carries the host.

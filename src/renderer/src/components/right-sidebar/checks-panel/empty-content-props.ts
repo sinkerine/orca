@@ -61,6 +61,8 @@ export type ChecksPanelEmptyContentModel = Pick<
     | 'handlePrTitleChange'
     | 'prAiGenerationEnabled'
     | 'prBase'
+    | 'prBaseRepository'
+    | 'prHeadRepository'
     | 'prBaseQuery'
     | 'prBaseResults'
     | 'prBaseSearchError'

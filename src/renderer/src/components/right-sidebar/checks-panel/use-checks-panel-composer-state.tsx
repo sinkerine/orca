@@ -254,6 +254,8 @@ export function useChecksPanelComposerState(model: ChecksPanelComposerStateInput
   return {
     prAiGenerationEnabled,
     prBase,
+    prBaseRepository: hostedReviewCreation?.baseRepository ?? null,
+    prHeadRepository: hostedReviewCreation?.headRepository ?? null,
     setPrBase,
     prTitle,
     setPrTitle,
