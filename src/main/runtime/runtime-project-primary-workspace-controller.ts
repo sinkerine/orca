@@ -75,9 +75,7 @@ export class RuntimeProjectPrimaryWorkspaceController {
       ? `runtime:${requesterEnvironmentId}`
       : undefined
     const requestedOwnerHostId =
-      requesterEnvironmentId && (!args.hostId || args.hostId === 'local')
-        ? 'local'
-        : args.hostId
+      requesterEnvironmentId && (!args.hostId || args.hostId === 'local') ? 'local' : args.hostId
     const candidates = matchWorktreeSelectorCandidates(args.worktree, await listWorktrees()).filter(
       (entry) => {
         if (requesterEnvironmentId) {
@@ -174,11 +172,15 @@ export class RuntimeProjectPrimaryWorkspaceController {
       const currentWorktree = (await listWorktrees()).find(
         (entry) =>
           entry.id === worktree.id &&
-            entry.hostId === worktree.hostId &&
+          entry.hostId === worktree.hostId &&
           (entry.ownerHostId ?? entry.hostId) === primary.hostId &&
           entry.instanceId === primary.instanceId &&
-            entry.repoId === worktree.repoId &&
-            entry.peerFingerprint === worktree.peerFingerprint
+          entry.repoId === worktree.repoId &&
+          (entry.peerFingerprint ??
+            (!entry.runtimeOwnerEnvironmentId &&
+            (primary.hostId === 'local' || primary.hostId.startsWith('ssh:'))
+              ? authorityFingerprint
+              : null)) === primary.peerFingerprint
       )
       if (
         !currentSetup ||
