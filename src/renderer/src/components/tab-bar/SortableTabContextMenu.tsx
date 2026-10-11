@@ -23,6 +23,7 @@ import type { ResumableTuiAgent } from '../../../../shared/agent-session-resume'
 import { useAppStore } from '../../store'
 import { formatShortcutLabel, useOptionalShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
+import { AgentIcon } from '@/lib/agent-catalog'
 import { TerminalTabSplitMenuSection } from './TerminalTabSplitMenuSection'
 import { TabMoveToWorkspaceMenuSection } from './TabMoveToWorkspaceMenuSection'
 import { TAB_CONTEXT_MENU_CONTENT_CLASS } from './tab-context-menu-sizing'
@@ -202,6 +203,7 @@ export function SortableTabContextMenu({
               onSelect={() => session && onForkAgentSession?.(agent, session.launchCommand)}
               className="pl-8"
             >
+              <AgentIcon agent={agent} size={14} />
               {agent === 'pi' ? 'Pi' : agent === 'codex' ? 'Codex' : 'Claude'}
             </DropdownMenuItem>
           )

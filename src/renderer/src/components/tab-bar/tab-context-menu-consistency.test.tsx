@@ -57,8 +57,11 @@ describe('tab context menu consistency', () => {
     expect(bodies.length).toBeGreaterThan(0)
 
     for (const body of bodies) {
-      // Icons render as a self-closing lucide element or an icon-returning helper.
-      const hasIcon = /<[A-Z][A-Za-z0-9]*\s+className="size-3\.5/.test(body) || /Icon\(/.test(body)
+      // Icons render as a self-closing lucide element, an agent icon, or an icon-returning helper.
+      const hasIcon =
+        /<[A-Z][A-Za-z0-9]*\s+className="size-3\.5/.test(body) ||
+        /<AgentIcon\b/.test(body) ||
+        /Icon\(/.test(body)
       expect(hasIcon, `menu item without an icon in ${fileName}:\n${body}`).toBe(true)
     }
   })
