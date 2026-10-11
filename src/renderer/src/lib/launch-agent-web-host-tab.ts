@@ -39,6 +39,8 @@ export function launchAgentInWebHostTab(args: {
   groupId?: string
   cwd?: string | null
   startupPlan: AgentStartupPlan
+  /** Send the built command even without a prompt; the host's agent-id launch would drop a fork's argv. */
+  sendLaunchCommand?: boolean
   prompt: string
   promptDelivery: 'auto-submit' | 'draft' | 'submit-after-ready'
   pastePromptAfterReady: string | null
@@ -54,6 +56,7 @@ export function launchAgentInWebHostTab(args: {
     groupId,
     cwd,
     startupPlan,
+    sendLaunchCommand = false,
     prompt,
     promptDelivery,
     pastePromptAfterReady,
@@ -75,7 +78,7 @@ export function launchAgentInWebHostTab(args: {
     ...(cwd?.trim() ? { cwd } : {}),
     ...(viewMode ? { viewMode } : {}),
     agentSessionKind: 'fresh',
-    ...(hasPrompt
+    ...(hasPrompt || sendLaunchCommand
       ? {
           launchAgent: agent,
           command: startupPlan.launchCommand,
