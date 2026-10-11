@@ -9,6 +9,10 @@ import type {
 import { supportsHostedReviewCreation } from '../../shared/hosted-review-creation-providers'
 import { normalizeHostedReviewBaseRef } from '../../shared/hosted-review-refs'
 import { getRepoSlug } from '../github/client'
+import {
+  getGitHubApiRepositoryForRemote,
+  getOriginGitHubApiRepository
+} from '../github/github-api-repository'
 import { isDefaultGitHubHost } from '../../shared/github/repository-identity-key'
 import { detectHostedReviewProvider, getForgeProviderForRepository } from './forge-provider'
 import { invalidateHostedReviewBranchCache } from './hosted-review-branch-cache'
@@ -158,11 +162,29 @@ export async function getHostedReviewCreationEligibility(
           args
         ).catch(() => null)
       : null
+  const githubRepositoryPair =
+    provider === 'github'
+      ? await Promise.all([
+          getGitHubApiRepositoryForRemote(
+            args.repoPath,
+            'upstream',
+            hostedReviewSshConnectionId(args.executionHostId),
+            getHostedReviewLocalGitOptions(args)
+          ),
+          getOriginGitHubApiRepository(
+            args.repoPath,
+            hostedReviewSshConnectionId(args.executionHostId),
+            getHostedReviewLocalGitOptions(args)
+          )
+        ]).catch(() => [null, null] as const)
+      : ([null, null] as const)
   const baseResult = {
     provider,
     review: review ? { number: review.number, url: review.url } : null,
     reviewLookupOutcome,
     defaultBaseRef,
+    ...(githubRepositoryPair[0] ? { baseRepository: githubRepositoryPair[0] } : {}),
+    ...(githubRepositoryPair[1] ? { headRepository: githubRepositoryPair[1] } : {}),
     head: branch || null,
     ...(githubRepository && isDefaultGitHubHost(githubRepository.host)
       ? { stackedCreationSupported: true }

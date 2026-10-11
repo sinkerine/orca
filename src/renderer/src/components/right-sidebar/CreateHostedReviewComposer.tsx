@@ -26,6 +26,7 @@ import {
   hostedReviewProviderSupportsDraft,
   type HostedReviewProvider
 } from '../../../../shared/hosted-review'
+import type { GitHubRepositoryIdentity } from '../../../../shared/github/pull-request-types'
 import { stripBaseRef } from './create-pull-request-base-ref-normalization'
 import type { HostedReviewStackParent } from './useHostedReviewStackParent'
 import type { DropdownActionKind, DropdownEntry } from './source-control-dropdown-item-types'
@@ -51,6 +52,8 @@ export type CreateHostedReviewComposerProps = {
   base: string
   setBase: (value: string) => void
   repoDefaultBase: string | null
+  baseRepository?: GitHubRepositoryIdentity | null
+  headRepository?: GitHubRepositoryIdentity | null
   title: string
   setTitle: (value: string) => void
   body: string
@@ -88,6 +91,8 @@ export function CreateHostedReviewComposer({
   base,
   setBase,
   repoDefaultBase,
+  baseRepository,
+  headRepository,
   title,
   setTitle,
   body,
@@ -256,6 +261,8 @@ export function CreateHostedReviewComposer({
           base={base}
           setBase={setBase}
           repoDefaultBase={repoDefaultBase}
+          baseRepository={baseRepository}
+          headRepository={headRepository}
           title={title}
           setTitle={setTitle}
           body={body}

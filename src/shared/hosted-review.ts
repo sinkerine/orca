@@ -83,6 +83,8 @@ export type HostedReviewSummary = {
 export type CreateHostedReviewInput = {
   provider: HostedReviewProvider
   base: string
+  baseRepository?: GitHubRepositoryIdentity | null
+  headRepository?: GitHubRepositoryIdentity | null
   head?: string
   title: string
   body?: string
@@ -181,6 +183,9 @@ export type HostedReviewCreationEligibility = {
   nextAction: HostedReviewCreationNextAction
   reviewLookupOutcome: HostedReviewLookupOutcome
   defaultBaseRef?: string | null
+  /** Repository pair used when creating a GitHub review from a fork checkout. */
+  baseRepository?: GitHubRepositoryIdentity | null
+  headRepository?: GitHubRepositoryIdentity | null
   head?: string | null
   title?: string | null
   body?: string | null
@@ -195,6 +200,8 @@ export type HostedReviewCreationEligibilityArgs = {
   connectionId?: string | null
   branch: string
   base?: string | null
+  baseRepository?: GitHubRepositoryIdentity | null
+  headRepository?: GitHubRepositoryIdentity | null
   hasUncommittedChanges?: boolean
   hasUpstream?: boolean
   ahead?: number

@@ -48,15 +48,18 @@ export async function createGitHubPullRequest(
     connectionId,
     getHostedReviewLocalGitOptions(options)
   )
-  if (!ownerRepo) {
+  const baseRepository = input.baseRepository ?? ownerRepo
+  const headRepository = input.headRepository ?? ownerRepo
+  if (!baseRepository || !headRepository) {
     return {
       ok: false,
       code: 'unsupported_provider',
       error: 'Creating pull requests requires a GitHub remote.'
     }
   }
-  // The runner host-qualifies --repo from options.host for GHES (#8312).
-  const repoArg = `${ownerRepo.owner}/${ownerRepo.repo}`
+  // The base repository owns the PR. On fork checkouts this is upstream while
+  // the origin repository remains the head repository.
+  const repoArg = `${baseRepository.owner}/${baseRepository.repo}`
 
   const base = normalizeHostedReviewBaseRef(input.base)
   const head = input.head ? normalizeHostedReviewHeadRef(input.head) || undefined : undefined
@@ -68,7 +71,12 @@ export async function createGitHubPullRequest(
       error: 'Create PR failed: base branch and title are required.'
     }
   }
-  if (head && head.toLowerCase() === base.toLowerCase()) {
+  if (
+    head &&
+    headRepository.owner.toLowerCase() === baseRepository.owner.toLowerCase() &&
+    headRepository.repo.toLowerCase() === baseRepository.repo.toLowerCase() &&
+    head.toLowerCase() === base.toLowerCase()
+  ) {
     return {
       ok: false,
       code: 'validation',
@@ -98,7 +106,11 @@ export async function createGitHubPullRequest(
       bodyPath
     ]
     if (head) {
-      createArgs.push('--head', head)
+      const headArg =
+        headRepository.owner === baseRepository.owner && headRepository.repo === baseRepository.repo
+          ? head
+          : `${headRepository.owner}:${head}`
+      createArgs.push('--head', headArg)
     }
     if (input.draft) {
       createArgs.push('--draft')
@@ -108,7 +120,7 @@ export async function createGitHubPullRequest(
       const { stdout } = await ghExecFileAsync(createArgs, {
         ...ghRepoExecOptions(context),
         ...(connectionId ? {} : getHostedReviewLocalGitOptions(options)),
-        ...githubHostExecOptions(ownerRepo),
+        ...githubHostExecOptions(baseRepository),
         timeout: 60_000,
         idempotent: false
       })
@@ -119,8 +131,11 @@ export async function createGitHubPullRequest(
       const found = head
         ? await findOpenPRByHeadBase({
             repoPath,
-            repo: ownerRepo,
-            head,
+            repo: baseRepository,
+            head:
+              headRepository.owner === baseRepository.owner
+                ? head
+                : `${headRepository.owner}:${head}`,
             base,
             connectionId,
             options
@@ -143,8 +158,11 @@ export async function createGitHubPullRequest(
       ) {
         const existing = await findOpenPRByHeadBase({
           repoPath,
-          repo: ownerRepo,
-          head,
+          repo: baseRepository,
+          head:
+            headRepository.owner === baseRepository.owner
+              ? head
+              : `${headRepository.owner}:${head}`,
           base,
           connectionId,
           options
