@@ -202,11 +202,12 @@ function launchAgentInNewTabInternal(
       groupId,
       cwd: initialCwd,
       startupPlan,
+      sendLaunchCommand: Boolean(forkSession),
       prompt: trimmedPrompt,
       promptDelivery,
       pastePromptAfterReady: pasteDraftAfterLaunch,
       submitPastedPrompt,
-      agentArgs,
+      agentArgs: forkSession?.launchConfig ? forkSession.launchConfig.agentArgs : agentArgs,
       // Why: omission means terminal locally, but would let a paired host apply
       // its own default; send the client's resolved terminal choice explicitly.
       viewMode: forceTerminal ? 'terminal' : (initialViewModeProps.viewMode ?? 'terminal'),

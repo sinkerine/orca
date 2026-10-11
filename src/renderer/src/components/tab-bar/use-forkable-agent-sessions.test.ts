@@ -18,8 +18,6 @@ import {
 const LEAF_1 = '11111111-1111-4111-8111-111111111111'
 const LEAF_2 = '22222222-2222-4222-8222-222222222222'
 
-const runtimeOwner = vi.hoisted(() => ({ environmentId: null as string | null }))
-
 const storeMock = vi.hoisted(() => ({
   state: {
     agentStatusByPaneKey: {} as Record<string, AgentStatusEntry>,
@@ -33,10 +31,6 @@ const storeMock = vi.hoisted(() => ({
 
 vi.mock('../../store', () => ({
   useAppStore: (selector: (state: typeof storeMock.state) => unknown) => selector(storeMock.state)
-}))
-
-vi.mock('@/lib/worktree-runtime-owner', () => ({
-  getRuntimeEnvironmentIdForWorktree: () => runtimeOwner.environmentId
 }))
 
 const tab: TerminalTab = {
@@ -82,7 +76,6 @@ function resolve(tabAgent: Parameters<typeof resolveForkableAgentSession>[2]) {
 
 describe('resolveForkableAgentSession', () => {
   beforeEach(() => {
-    runtimeOwner.environmentId = null
     storeMock.state.agentStatusByPaneKey = {}
     storeMock.state.sleepingAgentSessionsByPaneKey = {}
     storeMock.state.terminalLayoutsByTabId = {}
@@ -172,7 +165,6 @@ describe('resolveForkableAgentSession', () => {
 
 describe('useCanForkAgentSession', () => {
   beforeEach(() => {
-    runtimeOwner.environmentId = null
     storeMock.state.agentStatusByPaneKey = { [`tab-1:${LEAF_1}`]: status('claude') }
     storeMock.state.sleepingAgentSessionsByPaneKey = {}
   })
@@ -182,20 +174,16 @@ describe('useCanForkAgentSession', () => {
     expect(renderHook(() => useCanForkAgentSession(tab, null)).result.current).toBe(false)
   })
 
-  it('stays disabled on a paired runtime host, which would drop the fork argv', () => {
-    runtimeOwner.environmentId = 'env-1'
-
-    expect(renderHook(() => useCanForkAgentSession(tab, 'claude')).result.current).toBe(false)
-  })
-
   it('enables a live Claude tab that never reported a session, but not other agents', () => {
     storeMock.state.agentStatusByPaneKey = {}
 
     expect(renderHook(() => useCanForkAgentSession(tab, 'claude')).result.current).toBe(true)
     expect(renderHook(() => useCanForkAgentSession(tab, 'codex')).result.current).toBe(false)
-    expect(
-      renderHook(() => useCanForkAgentSession({ ...tab, ptyId: null }, 'claude')).result.current
-    ).toBe(false)
+    for (const ptyId of [null, 'remote:env-1@@term_1']) {
+      expect(
+        renderHook(() => useCanForkAgentSession({ ...tab, ptyId }, 'claude')).result.current
+      ).toBe(false)
+    }
   })
 })
 

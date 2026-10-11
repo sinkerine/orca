@@ -135,4 +135,34 @@ describe('launchAgentInNewTab initial cwd', () => {
       failureNotified: false
     })
   })
+
+  it('sends the fork command to a paired host, which would otherwise start a fresh session', async () => {
+    mockIsWebRuntimeSessionActive.mockReturnValue(true)
+    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
+
+    launchAgentInNewTab({
+      agent: 'codex',
+      worktreeId: 'wt-1',
+      forkSession: {
+        providerSession: { key: 'session_id', id: 'codex-session' },
+        launchConfig: {
+          agentCommand: 'codex-wrapper --profile fast',
+          agentArgs: '--profile fast',
+          agentEnv: {}
+        }
+      }
+    })
+
+    expect(mockLaunchAgentInWebHostTab).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agent: 'codex',
+        sendLaunchCommand: true,
+        agentArgs: '--profile fast',
+        startupPlan: expect.objectContaining({
+          launchCommand: "codex-wrapper --profile fast 'fork' 'codex-session'"
+        })
+      })
+    )
+    expect(store.createTab).not.toHaveBeenCalled()
+  })
 })

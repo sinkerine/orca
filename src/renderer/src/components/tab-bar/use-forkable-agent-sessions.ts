@@ -1,6 +1,5 @@
 import { useAppStore } from '../../store'
 import type { AppState } from '../../store/types'
-import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { getAgentForkArgv, isForkableTuiAgent } from '../../../../shared/agent-session-fork'
 import type { ForkableTuiAgent } from '../../../../shared/agent-session-fork'
 import { isTerminalLeafId, makePaneKey } from '../../../../shared/stable-pane-id'
@@ -90,7 +89,9 @@ function resolveClaudeLiveSessionPtyId(
     return null
   }
   const layout = state.terminalLayoutsByTabId[tab.id]
-  return (layout ? resolvePrimaryLayoutPtyId(layout) : null) ?? tab.ptyId
+  const ptyId = (layout ? resolvePrimaryLayoutPtyId(layout) : null) ?? tab.ptyId
+  // Why: a paired host's processes and Claude session files are not readable from this client.
+  return ptyId && !ptyId.startsWith('remote:') ? ptyId : null
 }
 
 /** Click-time resolution: the reported session, else the one the live Claude process holds. */
@@ -115,10 +116,7 @@ export async function resolveForkableAgentSessionForLaunch(
 export function useCanForkAgentSession(tab: TerminalTab, tabAgent: TuiAgent | null): boolean {
   return useAppStore(
     (s) =>
-      (resolveForkableAgentSession(s, tab, tabAgent) !== null ||
-        resolveClaudeLiveSessionPtyId(s, tab, tabAgent) !== null) &&
-      // Why: a paired runtime host rebuilds agent launches from the agent id, which would
-      // silently drop the fork argv and start an unrelated fresh session.
-      getRuntimeEnvironmentIdForWorktree(s, tab.worktreeId) === null
+      resolveForkableAgentSession(s, tab, tabAgent) !== null ||
+      resolveClaudeLiveSessionPtyId(s, tab, tabAgent) !== null
   )
 }
