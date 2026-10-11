@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { getAgentCatalog } from './agent-catalog'
 
@@ -9,5 +11,14 @@ describe('agent catalog documentation links', () => {
     expect(entries.get('claude-agent-teams')?.homepageUrl).toBe(
       'https://code.claude.com/docs/en/agent-teams'
     )
+  })
+
+  it('does not reference Node process globals from renderer catalog code', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/renderer/src/lib/agent-catalog.tsx'),
+      'utf8'
+    )
+
+    expect(source).not.toMatch(/\bprocess\b/)
   })
 })
