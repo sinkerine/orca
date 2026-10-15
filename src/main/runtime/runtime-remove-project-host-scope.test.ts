@@ -64,6 +64,17 @@ function createRuntime() {
 }
 
 describe('repo.rm with the same repo id on two execution hosts', () => {
+  it('runs the project removal guard used by desktop IPC', async () => {
+    const { runtime } = createRuntime()
+    const remove = vi.fn().mockResolvedValue(undefined)
+
+    await expect(
+      runtime.guardPrimaryProjectRemoval('dup', undefined, remove)
+    ).resolves.toBeUndefined()
+
+    expect(remove).toHaveBeenCalledOnce()
+  })
+
   it('removes only the resolved row when a path selector picks the SSH host copy', async () => {
     const { runtime, repos } = createRuntime()
 
