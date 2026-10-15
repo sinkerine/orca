@@ -39,6 +39,7 @@ package-lock.json
 .env.local
 .env.*.local
 /.direnv/
+/.envrc.local
 
 # IDE
 .vscode/

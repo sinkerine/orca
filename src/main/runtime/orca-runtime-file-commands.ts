@@ -1,5 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithPreservedBranchCleanup } from './orca-runtime-preserved-branch-cleanup'
+import { OrcaRuntimeWithProjectCommands } from './orca-runtime-project-commands'
 import { RuntimeFileCommands } from './orca-runtime-files'
 import { nativeChatTranscriptIncludesPath } from '../native-chat/native-chat-file-provenance'
 import { createRuntimeFileWatcherRemoval } from './runtime-file-watcher-removal'
@@ -23,7 +23,7 @@ import { getRuntimeBrowserPageRegistry } from './runtime-browser-page-registry'
 import { getBrowserHostLeaseRegistry } from './browser-host-lease-registry-instance'
 import type { RuntimeLeafRecord } from './runtime-terminal-state-records'
 
-export class OrcaRuntimeWithFileCommands extends OrcaRuntimeWithPreservedBranchCleanup {
+export class OrcaRuntimeWithFileCommands extends OrcaRuntimeWithProjectCommands {
   protected readonly fileCommands = new RuntimeFileCommands({
     getRuntimeId: () => this.runtimeId,
     requireStore: () => this.requireStore(),
