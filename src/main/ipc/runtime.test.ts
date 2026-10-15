@@ -136,6 +136,42 @@ describe('registerRuntimeHandlers', () => {
     })
   })
 
+  it('allows desktop callers to read and set the project primary workspace', async () => {
+    const project = {
+      id: 'project-1',
+      primaryWorkspaceRevision: 2,
+      primaryWorkspace: { worktreeId: 'repo-1::/feature' }
+    }
+    const runtime = {
+      getRuntimeId: vi.fn().mockReturnValue('runtime-1'),
+      listProjects: vi.fn().mockReturnValue([project]),
+      setPrimaryWorkspace: vi.fn().mockResolvedValue(project)
+    }
+    registerRuntimeHandlers(runtime as never)
+    const handler = handleMock.mock.calls.find(([channel]) => channel === 'runtime:call')![1]
+
+    const event = runtimeCallEvent()
+    const selected = await handler(event, {
+      method: 'project.primary.set',
+      params: { projectId: project.id, worktree: 'id:repo-1::/feature', hostId: 'local' }
+    })
+    expect(selected).toMatchObject({ ok: true, result: { project, revision: 2 } })
+    expect(runtime.setPrimaryWorkspace).toHaveBeenCalledWith({
+      projectId: project.id,
+      worktree: 'id:repo-1::/feature',
+      hostId: 'local'
+    })
+
+    const current = await handler(event, {
+      method: 'project.primary.get',
+      params: { projectId: project.id }
+    })
+    expect(current).toMatchObject({
+      ok: true,
+      result: { primaryWorkspace: project.primaryWorkspace, revision: 2 }
+    })
+  })
+
   it('projects Claude structured tabs to the same-version desktop client', async () => {
     const claudeTab = {
       type: 'agent-session',
