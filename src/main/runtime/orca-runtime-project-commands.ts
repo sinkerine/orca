@@ -1,5 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithPreservedBranchCleanup } from './orca-runtime-preserved-branch-cleanup'
+import { OrcaRuntimeWithProjectPrimaryRemoval } from './orca-runtime-project-primary-removal'
 import { RuntimeProjectGroupController } from './runtime-project-group-controller'
 import { RuntimeNestedRepoImport } from './runtime-nested-repo-import'
 import { RuntimeRepositoryRegistrationController } from './runtime-repository-registration-controller'
@@ -14,7 +14,7 @@ import { RuntimeAiVaultCommands } from './runtime-ai-vault-commands'
 import { ClaudeAgentTeamsService } from './claude-agent-teams-service'
 import { teardownFolderWorkspacePtys } from './folder-workspace-pty-teardown'
 
-export class OrcaRuntimeWithProjectCommands extends OrcaRuntimeWithPreservedBranchCleanup {
+export class OrcaRuntimeWithProjectCommands extends OrcaRuntimeWithProjectPrimaryRemoval {
   protected readonly projectGroups = new RuntimeProjectGroupController({
     getStore: () => this.store,
     resolveRepo: (selector) => this.resolveRepoSelector(selector),
