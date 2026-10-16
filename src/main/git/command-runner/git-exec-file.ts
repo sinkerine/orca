@@ -1,3 +1,4 @@
+import { assertMainMigrationAvailable } from '../main-worktree-migration-state'
 import { execFileSync, type SpawnOptions } from 'node:child_process'
 import { withGitSpan } from '../../observability/instrumentation'
 import { recordSubprocessSpawn } from '../../diagnostics/main-thread-churn-probe'
@@ -166,6 +167,11 @@ export function gitExecFileAsync(
   args: string[],
   options: GitExecOptions
 ): Promise<{ stdout: string; stderr: string }> {
+  try {
+    assertMainMigrationAvailable(options.cwd)
+  } catch (error) {
+    return Promise.reject(error)
+  }
   const command = resolveGitFetchHeadCommand(args, options.cwd)
   return command.needsLock
     ? runWithGitFetchHeadLock(
@@ -301,6 +307,7 @@ export function gitExecFileSync(
     timeout?: number
   }
 ): string {
+  assertMainMigrationAvailable(options.cwd)
   const resolved = resolveCommand('git', args, options.cwd)
   const spawnStartedAt = performance.now()
   try {

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useAppStore } from '@/store'
-import { getWorktreeOnHostFromState } from '@/store/selectors'
+import { canDeleteFormerMainWorktree } from './former-main-worktree-deletion'
+import { getAllWorktreesFromState, getWorktreeOnHostFromState } from '@/store/selectors'
 import {
   readWorktreeDeleteIdentities,
   resolveWorktreeBatchDeleteTargets,
@@ -28,8 +29,12 @@ export function useConfirmedWorktreeDeleteTargets({
   const resolveConfirmedTargets = useCallback(
     (identities: readonly WorktreeDeleteIdentity[], expectedCount: number) => {
       const state = useAppStore.getState()
-      const targets = resolveWorktreeBatchDeleteTargets(identities, (worktreeId, hostId) =>
-        getWorktreeOnHostFromState(state, worktreeId, hostId)
+      const targets = resolveWorktreeBatchDeleteTargets(
+        identities,
+        (worktreeId, hostId) => getWorktreeOnHostFromState(state, worktreeId, hostId),
+        (worktree) =>
+          expectedCount === 1 &&
+          canDeleteFormerMainWorktree(worktree, state.projects, getAllWorktreesFromState(state))
       )
       if (!targets || targets.length !== expectedCount) {
         showWorkspaceListChangedToast()

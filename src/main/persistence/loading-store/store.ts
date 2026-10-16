@@ -1,4 +1,15 @@
-import { dirname } from 'node:path'
+import { basename, dirname, isAbsolute, resolve } from 'node:path'
+import { getRepoExecutionHostId } from '../../../shared/execution-host'
+import {
+  applyMigrationJournal,
+  finishMigrationJournal,
+  readMainMigrationJournals
+} from '../../git/main-worktree-migration-journal'
+import {
+  markMainMigrationUnavailable,
+  clearMainMigrationUnavailable
+} from '../../git/main-worktree-migration-state'
+import { verifyMainWorktreeMigration } from '../../git/main-worktree-migration'
 import {
   setMigrationUnsupportedPty,
   setMigrationUnsupportedPtyPersistenceListener
@@ -75,6 +86,7 @@ export class Store {
       this.runtime.dataFile,
       this.state.ui?.activeView
     )
+    this.recoverMainWorktreeMigrations()
     const adaptedProjectGroups = this.domains.adaptation.adaptFlatFolderScanProjectGroups()
     this.domains.adaptation.hydrateFolderWorkspaceDiffComments()
     // Load is the only place an orphaned repo id can be swept: every removal path needs the repo to
@@ -101,6 +113,65 @@ export class Store {
       sweptRepoIds.length > 0
     ) {
       scheduleSave(this.domains.scheduling)
+    }
+  }
+
+  rebindLocalRepositoryAnchor(repoId: string, oldPath: string, newPath: string): void {
+    const repo = this.state.repos.find(
+      (entry) => entry.id === repoId && getRepoExecutionHostId(entry) === 'local'
+    )
+    if (!repo || (repo.path !== oldPath && repo.path !== newPath)) {
+      throw new Error('Repository anchor changed during Git checkout migration')
+    }
+    if (repo.worktreeBasePath && !isAbsolute(repo.worktreeBasePath)) {
+      repo.worktreeBasePath = resolve(oldPath, repo.worktreeBasePath)
+    }
+    repo.path = newPath
+    for (const setup of this.state.projectHostSetups) {
+      if (setup.repoId === repoId && setup.hostId === 'local') {
+        setup.path = newPath
+        if (repo.worktreeBasePath) {
+          setup.worktreeBasePath = repo.worktreeBasePath
+        }
+      }
+    }
+    scheduleSave(this.domains.scheduling)
+    this.flushOrThrow()
+  }
+
+  private recoverMainWorktreeMigrations(): void {
+    for (const { path, journal } of readMainMigrationJournals(dirname(this.runtime.dataFile))) {
+      const repo = this.state.repos.find(
+        (entry) => entry.id === journal.repoId && getRepoExecutionHostId(entry) === 'local'
+      )
+      try {
+        if (!repo || (repo.path !== journal.oldPath && repo.path !== journal.newPath)) {
+          throw new Error(`Git migration recovery requires the original repository anchor: ${path}`)
+        }
+        applyMigrationJournal(path, journal)
+        verifyMainWorktreeMigration(journal)
+        this.rebindLocalRepositoryAnchor(journal.repoId, journal.oldPath, journal.newPath)
+        finishMigrationJournal(path, journal)
+        clearMainMigrationUnavailable([journal.oldPath, journal.newPath])
+      } catch (error) {
+        markMainMigrationUnavailable(
+          [
+            journal.oldPath,
+            journal.newPath,
+            ...journal.operations.flatMap((operation) =>
+              operation.kind === 'write' && basename(operation.path) === '.git'
+                ? [dirname(operation.path)]
+                : []
+            )
+          ],
+          `${path}: ${String(error)}`
+        )
+        console.error(
+          '[git-migration] Repository needs recovery; other projects remain available:',
+          path,
+          error
+        )
+      }
     }
   }
 
@@ -149,7 +220,8 @@ export class Store {
         throw new Error('runtime_environment_changed')
       }
       const { isCurrent, ...registration } = input
-      const project = this.domains.projects.registerRemoteProjectAuthorityCompatibility(registration)
+      const project =
+        this.domains.projects.registerRemoteProjectAuthorityCompatibility(registration)
       await this.flushPendingOrThrowAsync()
       if (isCurrent && !isCurrent()) {
         throw new Error('runtime_environment_changed')

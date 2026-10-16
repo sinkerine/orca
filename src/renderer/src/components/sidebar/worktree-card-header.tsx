@@ -227,7 +227,7 @@ export function WorktreeCardHeader({
             <TooltipContent side="right" sideOffset={8}>
               {translate(
                 'auto.components.sidebar.WorktreeCard.0777de5970',
-                'Primary worktree (original clone directory)'
+                'Selected primary workspace'
               )}
             </TooltipContent>
           </Tooltip>
@@ -282,7 +282,7 @@ export function WorktreeCardHeader({
               <TooltipContent side="right" sideOffset={8}>
                 {translate(
                   'auto.components.sidebar.WorktreeCard.0777de5970',
-                  'Primary worktree (original clone directory)'
+                  'Selected primary workspace'
                 )}
               </TooltipContent>
             </Tooltip>

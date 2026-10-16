@@ -149,14 +149,21 @@ export class RuntimeProjectPrimaryRemovalController {
     const hostId = `runtime:${environmentId}`
     const preflight = async (): Promise<void> => {
       if (resourceKey.startsWith(setupPrefix)) {
-        await this.assertSetupRemovalAllowed(projectId, resourceKey.slice(setupPrefix.length), hostId)
+        await this.assertSetupRemovalAllowed(
+          projectId,
+          resourceKey.slice(setupPrefix.length),
+          hostId
+        )
         return
       }
       if (resourceKey.startsWith(repoPrefix)) {
         const repoId = resourceKey.slice(repoPrefix.length)
-        const belongs = this.requireStore().getProjectHostSetups?.().some(
-          (entry) => entry.projectId === projectId && entry.repoId === repoId && entry.hostId === hostId
-        )
+        const belongs = this.requireStore()
+          .getProjectHostSetups?.()
+          .some(
+            (entry) =>
+              entry.projectId === projectId && entry.repoId === repoId && entry.hostId === hostId
+          )
         if (!belongs) {
           throw new Error('primary_workspace_wrong_project')
         }
@@ -195,9 +202,9 @@ export class RuntimeProjectPrimaryRemovalController {
     setupId: string,
     expectedHostId?: string
   ): Promise<void> {
-    const setup = this.requireStore().getProjectHostSetups?.().find(
-      (entry) => entry.id === setupId && entry.projectId === projectId
-    )
+    const setup = this.requireStore()
+      .getProjectHostSetups?.()
+      .find((entry) => entry.id === setupId && entry.projectId === projectId)
     if (!setup || (expectedHostId && setup.hostId !== expectedHostId)) {
       throw new Error('primary_workspace_wrong_project')
     }
@@ -209,7 +216,9 @@ export class RuntimeProjectPrimaryRemovalController {
     repoId: string,
     hostId?: string
   ): Promise<void> {
-    const project = this.requireStore().getProjects?.().find((entry) => entry.id === projectId)
+    const project = this.requireStore()
+      .getProjects?.()
+      .find((entry) => entry.id === projectId)
     if (!project) {
       throw new Error('primary_workspace_wrong_project')
     }
@@ -220,40 +229,44 @@ export class RuntimeProjectPrimaryRemovalController {
       }
       return
     }
-    const setup = this.requireStore().getProjectHostSetups?.().find(
-      (entry) => entry.projectId === projectId && entry.repoId === repoId &&
-        (!hostId || entry.hostId === hostId)
-    )
+    const setup = this.requireStore()
+      .getProjectHostSetups?.()
+      .find(
+        (entry) =>
+          entry.projectId === projectId &&
+          entry.repoId === repoId &&
+          (!hostId || entry.hostId === hostId)
+      )
     if (!setup || (hostId && setup.hostId !== hostId)) {
       return
     }
     const savedLocatorNamesRepo =
       typeof primary.worktreeId === 'string' && primary.worktreeId.startsWith(`${repoId}::`)
     const parsedSetupHost = parseExecutionHostId(setup.hostId)
-    const expectedOwnerHostId = parsedSetupHost?.kind === 'runtime'
-      ? setup.runtimeOwnerHostId
-      : setup.hostId
-    const expectedOwnerFingerprint = parsedSetupHost?.kind === 'runtime'
-      ? setup.runtimeOwnerFingerprint
-      : this.deps.getOwnPeerFingerprint()
+    const expectedOwnerHostId =
+      parsedSetupHost?.kind === 'runtime' ? setup.runtimeOwnerHostId : setup.hostId
+    const expectedOwnerFingerprint =
+      parsedSetupHost?.kind === 'runtime'
+        ? setup.runtimeOwnerFingerprint
+        : this.deps.getOwnPeerFingerprint()
     const savedOwnerMatches = Boolean(
-      primary.hostId && expectedOwnerHostId && primary.hostId === expectedOwnerHostId &&
-      primary.peerFingerprint && expectedOwnerFingerprint &&
+      primary.hostId &&
+      expectedOwnerHostId &&
+      primary.hostId === expectedOwnerHostId &&
+      primary.peerFingerprint &&
+      expectedOwnerFingerprint &&
       primary.peerFingerprint === expectedOwnerFingerprint
     )
     const savedOwnerContradicts = Boolean(
       (primary.hostId && expectedOwnerHostId && primary.hostId !== expectedOwnerHostId) ||
-      (primary.peerFingerprint && expectedOwnerFingerprint &&
+      (primary.peerFingerprint &&
+        expectedOwnerFingerprint &&
         primary.peerFingerprint !== expectedOwnerFingerprint)
     )
     if (savedLocatorNamesRepo && savedOwnerMatches) {
       throw new Error('primary_selected')
     }
-    if (
-      savedLocatorNamesRepo &&
-      !savedOwnerMatches &&
-      !savedOwnerContradicts
-    ) {
+    if (savedLocatorNamesRepo && !savedOwnerMatches && !savedOwnerContradicts) {
       if (!this.deps.isDesktopAuthority()) {
         this.getGate().assertAuthorityAvailable()
       }
@@ -276,9 +289,16 @@ export class RuntimeProjectPrimaryRemovalController {
       return
     }
     const ownerHostId = owner.ownerHostId ?? owner.hostId
-    const fingerprint = owner.peerFingerprint ??
-      ((ownerHostId === 'local' || ownerHostId?.startsWith('ssh:')) ? this.deps.getOwnPeerFingerprint() : null)
-    if (owner.repoId === repoId && ownerHostId === primary.hostId && fingerprint === primary.peerFingerprint) {
+    const fingerprint =
+      owner.peerFingerprint ??
+      (ownerHostId === 'local' || ownerHostId?.startsWith('ssh:')
+        ? this.deps.getOwnPeerFingerprint()
+        : null)
+    if (
+      owner.repoId === repoId &&
+      ownerHostId === primary.hostId &&
+      fingerprint === primary.peerFingerprint
+    ) {
       throw new Error('primary_selected')
     }
   }
@@ -289,9 +309,10 @@ export class RuntimeProjectPrimaryRemovalController {
     setupHostId: string
   ): Promise<ResolvedWorktree | undefined> {
     const parsedHost = parseExecutionHostId(setupHostId)
-    const rows = parsedHost?.kind === 'runtime'
-      ? await this.requireAuthenticatedRuntimeWorktrees(projectId, parsedHost.environmentId)
-      : await this.deps.listResolvedWorktrees()
+    const rows =
+      parsedHost?.kind === 'runtime'
+        ? await this.requireAuthenticatedRuntimeWorktrees(projectId, parsedHost.environmentId)
+        : await this.deps.listResolvedWorktrees()
     return rows.find((entry) => {
       const ownerHostId = entry.ownerHostId ?? entry.hostId
       const peerFingerprint =
@@ -326,7 +347,9 @@ export class RuntimeProjectPrimaryRemovalController {
     ownerEnvironmentId?: string
   ): Promise<string> {
     if (!this.deps.isDesktopAuthority()) {
-      if (!this.deps.forwardRemovalBegin) {throw new Error('primary_authority_unavailable')}
+      if (!this.deps.forwardRemovalBegin) {
+        throw new Error('primary_authority_unavailable')
+      }
       return this.deps.forwardRemovalBegin(projectId, target).then((token) => {
         this.forwardedProjectByToken.set(token, projectId)
         this.forwardedTargetByToken.set(token, { ...target })
@@ -363,8 +386,39 @@ export class RuntimeProjectPrimaryRemovalController {
       throw new Error('primary_workspace_wrong_project')
     }
     const repo = store.getRepos().find((entry) => entry.id === row.repoId)
-    if (row.git.isMainWorktree || (repo && isFolderRepo(repo))) {
+    if (repo && isFolderRepo(repo)) {
       throw new Error('primary_workspace_not_removable')
+    }
+    if (row.git.isMainWorktree) {
+      const project = store.getProjects?.().find((entry) => entry.id === projectId)
+      const primary = project?.primaryWorkspace
+      if (!primary || sameTarget(primary as PrimaryWorkspaceTarget, target)) {
+        throw new Error('primary_selected')
+      }
+      if (target.hostId !== 'local' || ownerEnvironmentId || process.platform === 'win32') {
+        throw new Error(
+          'Original-checkout deletion requires a native macOS or Linux repository; the repository was kept.'
+        )
+      }
+      const selected = worktrees.find(
+        (entry) =>
+          entry.repoId === row.repoId &&
+          entry.instanceId === primary.instanceId &&
+          entry.path === primary.path &&
+          (entry.ownerHostId ?? entry.hostId) === primary.hostId &&
+          entry.peerFingerprint === primary.peerFingerprint
+      )
+      if (
+        !selected ||
+        selected.git.isMainWorktree ||
+        selected.git.isBare ||
+        selected.git.prunable ||
+        !(await this.verifyRemovalOwner(selected))
+      ) {
+        throw new Error(
+          'The selected primary must be an available linked checkout in the same repository.'
+        )
+      }
     }
     return this.getGate().beginRemoval(projectId, target)
   }
@@ -386,10 +440,7 @@ export class RuntimeProjectPrimaryRemovalController {
     if (!project) {
       return null
     }
-    if (
-      !project.primaryWorkspace &&
-      !Object.hasOwn(project, 'primaryAuthorityFingerprint')
-    ) {
+    if (!project.primaryWorkspace && !Object.hasOwn(project, 'primaryAuthorityFingerprint')) {
       return null
     }
     const parsedHost = parseExecutionHostId(hostId)
@@ -427,6 +478,13 @@ export class RuntimeProjectPrimaryRemovalController {
     }
     const token = await this.beginRemoval(projectId, target, environment)
     return { token, target, projectId }
+  }
+
+  cancelRemoval(token: string, owner: PrimaryWorkspaceTarget): Promise<void> {
+    if (!this.deps.isDesktopAuthority()) {
+      return Promise.resolve()
+    }
+    return this.getGate().cancelRemoval(token, owner)
   }
 
   finishRemoval(token: string, owner: PrimaryWorkspaceTarget): Promise<boolean> {
