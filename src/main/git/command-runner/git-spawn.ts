@@ -1,3 +1,5 @@
+import { assertMainMigrationAvailable } from '../main-worktree-migration-state'
+import { trackGitMigrationChild } from '../main-worktree-migration-activity'
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process'
 import { recordSubprocessSpawn } from '../../diagnostics/main-thread-churn-probe'
 import { startGitSpan } from '../../observability/instrumentation'
@@ -102,6 +104,7 @@ export async function withGitAdmission(
 }
 
 export function gitSpawn(args: string[], options: GitSpawnOptions): ChildProcess {
+  assertMainMigrationAvailable(options.cwd)
   const { wslDistro, admissionTier: _admissionTier, ...spawnOptions } = options
   const resolved = resolveGitCommand(args, {
     cwd: options.cwd,
@@ -115,6 +118,7 @@ export function gitSpawn(args: string[], options: GitSpawnOptions): ChildProcess
     windowsHide: true,
     cwd: resolved.cwd
   })
+  trackGitMigrationChild(child)
   recordSubprocessSpawn(resolved.binary, resolved.args, performance.now() - spawnStartedAt)
   return child
 }

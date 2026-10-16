@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import { prepareRuntimeFormerMainRemoval } from './former-main-removal-preparation'
 import { OrcaRuntimeWithCreateManagedRemoteWorktree } from './orca-runtime-create-managed-remote-worktree'
 import {
   resolveWorktreeRemovalMetadata,
@@ -66,7 +67,7 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
             `Workspace identity is ambiguous across hosts: ${removalTarget.id}. Retry with an explicit host.`
           )
         }
-        const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
+        let repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
         const removalHostId = repo ? (cleanupHostId ?? getRepoExecutionHostId(repo)) : cleanupHostId
         const orphanOrFolderResult = await removeOrphanOrFolderWorktree({
           runtime: this,
@@ -89,12 +90,28 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
         const localWorktreeGitOptions =
           route.kind === 'ssh' ? {} : getLocalProjectWorktreeGitOptions(this.requireStore(), repo)
         const hasLocalWorktreeGitOptions = Object.keys(localWorktreeGitOptions).length > 0
-        const registeredWorktrees =
+        let registeredWorktrees =
           route.kind === 'ssh'
             ? await route.provider.listWorktrees(repo.path)
             : hasLocalWorktreeGitOptions
               ? await listWorktreesStrict(repo.path, localWorktreeGitOptions)
               : await listWorktreesStrict(repo.path)
+        const prepared = await prepareRuntimeFormerMainRemoval({
+          store,
+          repo,
+          worktreePath: removalTarget.path,
+          registeredWorktrees,
+          force,
+          localOptions: localWorktreeGitOptions,
+          beginPrimaryRemoval: () =>
+            this.beginPrimaryRemovalForWorktree(removalTarget.id, cleanupHostId),
+          cancelPrimaryRemoval: (permit) =>
+            permit ? this.cancelPrimaryRemoval(permit.token, permit.target) : Promise.resolve(),
+          notifyReposChanged: () => this.notifyReposChanged()
+        })
+        repo = prepared.repo
+        registeredWorktrees = prepared.registeredWorktrees
+        primaryRemoval = prepared.primaryRemoval
         const removedMeta = resolveWorktreeRemovalMetadata(
           store,
           removalTarget.repoId,
@@ -194,7 +211,10 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
           this.notifyWorktreesChanged(repo.id)
           return removalResult ?? {}
         }
-        primaryRemoval = await this.beginPrimaryRemovalForWorktree(removalTarget.id, cleanupHostId)
+        primaryRemoval ??= await this.beginPrimaryRemovalForWorktree(
+          removalTarget.id,
+          cleanupHostId
+        )
         if (route.kind === 'ssh') {
           return removeRuntimeRegisteredRemoteWorktree({
             repo,
@@ -297,6 +317,11 @@ export class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWithCreateM
         path: removalTarget.path
       })
       return result
+    } catch (error) {
+      if (primaryRemoval) {
+        await this.cancelPrimaryRemoval(primaryRemoval.token, primaryRemoval.target)
+      }
+      throw error
     } finally {
       this.removeManagedWorktreeInFlight.release(cleanupScopeKey, removal)
     }

@@ -1,3 +1,5 @@
+import { assertMainMigrationAvailable } from '../main-worktree-migration-state'
+import { trackGitAdmission } from '../main-worktree-migration-activity'
 import { uncRouteKey } from '../../providers/working-directory-validation'
 import { classifyGitCommand } from '../wsl-direct-git-read-commands'
 import { createAbortError } from './abort-error'
@@ -310,10 +312,17 @@ export class GitAdmissionScheduler {
 let scheduler = new GitAdmissionScheduler()
 
 export function acquireGitAdmission(request: GitAdmissionRequest): Promise<GitAdmissionGrant> {
-  if (process.env.ORCA_GIT_ADMISSION_DISABLED === '1') {
-    return Promise.resolve({ queueWaitMs: 0, release: () => {} })
+  try {
+    assertMainMigrationAvailable(request.cwd)
+  } catch (error) {
+    return Promise.reject(error)
   }
-  return scheduler.acquire(request)
+  if (process.env.ORCA_GIT_ADMISSION_DISABLED === '1') {
+    return Promise.resolve({ queueWaitMs: 0, release: trackGitAdmission(() => {}) })
+  }
+  return scheduler
+    .acquire(request)
+    .then((grant) => ({ ...grant, release: trackGitAdmission(grant.release) }))
 }
 
 export function _resetGitAdmissionForTests(replacement = new GitAdmissionScheduler()): void {

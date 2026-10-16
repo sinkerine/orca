@@ -8,6 +8,7 @@ export type RuntimeStore = {
   getRepo: Store['getRepo']
   addRepo: Store['addRepo']
   updateRepo: Store['updateRepo']
+  rebindLocalRepositoryAnchor?: Store['rebindLocalRepositoryAnchor']
   addRetiredWorktreeName?: Store['addRetiredWorktreeName']
   mergeRetiredWorktreeNames?: Store['mergeRetiredWorktreeNames']
   getRetiredWorktreeNameRegistry?: Store['getRetiredWorktreeNameRegistry']

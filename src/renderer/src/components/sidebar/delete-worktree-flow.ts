@@ -1,3 +1,4 @@
+import { canDeleteFormerMainWorktree } from './former-main-worktree-deletion'
 import { useAppStore } from '@/store'
 import { getAllWorktreesFromState, getWorktreeOnHostFromState } from '@/store/selectors'
 import { toWorktreeRemovalTarget } from '../../../../shared/worktree/removal'
@@ -49,7 +50,12 @@ export function runWorktreeDelete(worktreeId: string, options: WorktreeDeleteOpt
     }
     return
   }
-  if (target.isMainWorktree) {
+  const formerMain = canDeleteFormerMainWorktree(
+    target,
+    state.projects,
+    getAllWorktreesFromState(state)
+  )
+  if (target.isMainWorktree && !formerMain) {
     const repo = findRepoForHost(state.repos, target.repoId, {
       hostId: target.hostId,
       settings: state.settings
@@ -101,7 +107,7 @@ export function runWorktreeDelete(worktreeId: string, options: WorktreeDeleteOpt
   )
   const hasLineageChildren = deleteLineage.descendants.length > 0
   const skipConfirm = state.settings?.skipDeleteWorktreeConfirm ?? false
-  if (skipConfirm && !hasLineageChildren) {
+  if (skipConfirm && !hasLineageChildren && !formerMain) {
     void runWorktreeDeleteWithToast(toWorktreeRemovalTarget(target), target.displayName)
     return
   }
@@ -113,7 +119,7 @@ export function runWorktreeDelete(worktreeId: string, options: WorktreeDeleteOpt
           lineageDeleteIdentities: toWorktreeDeleteIdentities(deleteLineage.deleteAllTargets)
         }
       : {}),
-    ...(hasLineageChildren ? { allowSkipConfirm: false } : {})
+    ...(hasLineageChildren || formerMain ? { allowSkipConfirm: false } : {})
   })
 }
 

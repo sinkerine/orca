@@ -44,9 +44,7 @@ export function useDeleteWorktreeStatusHydration({
     const gitStatusByWorktree = useAppStore.getState().gitStatusByWorktree
     const currentState = useAppStore.getState()
     const targets = orderDeleteWorktreeStatusHydrationTargets({
-      targets: deleteTargets.filter(
-        (target) => !target.isMainWorktree && !isFolderWorkspaceDelete(repoMap, target)
-      ),
+      targets: deleteTargets.filter((target) => !isFolderWorkspaceDelete(repoMap, target)),
       visibleTargets,
       activeWorktreeId: currentState.activeWorktreeId,
       activeExecutionHostId: currentState.activeWorkspaceExecutionHostId

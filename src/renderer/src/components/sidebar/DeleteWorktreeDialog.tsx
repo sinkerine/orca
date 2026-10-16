@@ -7,6 +7,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { useAppStore } from '@/store'
+import { canDeleteFormerMainWorktree } from './former-main-worktree-deletion'
 import { useAllWorktrees } from '@/store/selectors'
 import { runWorktreeDeletesInParallel } from './delete-worktree-flow'
 import {
@@ -45,6 +46,7 @@ const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
   const clearWorktreeDeleteState = useAppStore((s) => s.clearWorktreeDeleteState)
   const allWorktrees = useAllWorktrees()
   const repos = useAppStore((s) => s.repos)
+  const projects = useAppStore((s) => s.projects)
   const worktreeLineageById = useAppStore((s) => s.worktreeLineageById)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
@@ -136,7 +138,11 @@ const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
   // Why: the main worktree is the repo's original clone directory — `git worktree remove`
   // always rejects it. We block the delete button upfront so the user doesn't have to
   // discover this limitation via a confusing force-delete dead-end.
-  const isMainWorktree = !isBatchDelete && (worktree?.isMainWorktree ?? false)
+  const formerMain =
+    !isBatchDelete &&
+    worktree != null &&
+    canDeleteFormerMainWorktree(worktree, projects, allWorktrees)
+  const isMainWorktree = !isBatchDelete && (worktree?.isMainWorktree ?? false) && !formerMain
   const childWorkspaceCount = lineageDelete.descendants.length
   const hasLineageChildren = childWorkspaceCount > 0
   const canDeleteAllLineage =
@@ -392,6 +398,15 @@ const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
           />
         )}
 
+        {formerMain && (
+          <p className="text-xs text-muted-foreground">
+            {translate(
+              'auto.components.sidebar.DeleteWorktreeDialog.migrateOriginalCheckout',
+              'Git data will move to the selected primary checkout before this workspace is deleted. Other checkouts must be clean. Keep other Git operations stopped until deletion finishes.'
+            )}
+          </p>
+        )}
+
         <DeleteWorktreeWarningPanels
           isMainWorktree={isMainWorktree}
           mainWorktreeBlocker={deleteCopy.mainWorktreeBlocker}
@@ -399,7 +414,7 @@ const DeleteWorktreeDialog = React.memo(function DeleteWorktreeDialog() {
         />
 
         <DeleteWorktreeSkipConfirmOption
-          showDontAskAgain={!isMainWorktree && allowSkipConfirm && !canForceDelete}
+          showDontAskAgain={!isMainWorktree && !formerMain && allowSkipConfirm && !canForceDelete}
           dontAskAgain={dontAskAgain}
           onToggleDontAskAgain={() => setDontAskAgain((prev) => !prev)}
         />

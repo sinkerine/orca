@@ -64,6 +64,10 @@ export class OrcaRuntimeWithProjectPrimaryRemoval extends OrcaRuntimeWithPreserv
     return this.primaryRemoval.beginRemovalForWorktree(worktreeId, hostId)
   }
 
+  cancelPrimaryRemoval(token: string, owner: PrimaryWorkspaceTarget): Promise<void> {
+    return this.primaryRemoval.cancelRemoval(token, owner)
+  }
+
   finishPrimaryRemoval(token: string, owner: PrimaryWorkspaceTarget): Promise<boolean> {
     return this.primaryRemoval.finishRemoval(token, owner)
   }

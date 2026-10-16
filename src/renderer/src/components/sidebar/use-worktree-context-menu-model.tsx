@@ -1,3 +1,4 @@
+import { canDeleteFormerMainWorktree } from './former-main-worktree-deletion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { useAllWorktrees, useRepoById, useRepoMap, useWorktreeMap } from '@/store/selectors'
@@ -63,6 +64,7 @@ export function useWorktreeContextMenuModel({
   const createProjectGroup = useAppStore((s) => s.createProjectGroup)
   const moveProjectToGroup = useAppStore((s) => s.moveProjectToGroup)
   const repo = useRepoById(worktree.repoId)
+  const projects = useAppStore((s) => s.projects)
   const deleteState = useAppStore((s) =>
     getDeleteStateForWorktreeHost(worktree, s.deleteStateByWorktreeId)
   )
@@ -179,7 +181,9 @@ export function useWorktreeContextMenuModel({
       }),
     [activeContextWorktrees, repoMap]
   )
-  const removesProject = shouldRemoveProjectFromContextMenu(repo, worktree)
+  const removesProject =
+    shouldRemoveProjectFromContextMenu(repo, worktree) &&
+    !canDeleteFormerMainWorktree(worktree, projects, allWorktrees)
   const sleepLabel =
     isMultiContext && sleepableWorktrees.length > 0
       ? `Sleep ${sleepableWorktrees.length} Workspace${sleepableWorktrees.length === 1 ? '' : 's'}`
