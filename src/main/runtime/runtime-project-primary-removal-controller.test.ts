@@ -43,6 +43,108 @@ describe('RuntimeProjectPrimaryRemovalController', () => {
     expect(operation).toHaveBeenCalledOnce()
   })
 
+  it.each(['local', 'ssh:connection-a'])(
+    'forgets a whole project with a saved primary on %s without inspecting its checkouts',
+    async (hostId) => {
+      const project = {
+        id: 'project-a',
+        primaryAuthorityFingerprint: 'peer-a',
+        primaryWorkspace: {
+          worktreeId: 'repo-a::/repo-a',
+          hostId,
+          instanceId: 'instance-a',
+          peerFingerprint: 'peer-a'
+        }
+      }
+      const setups = [{ id: 'setup-a', projectId: project.id, repoId: 'repo-a', hostId }]
+      const listResolvedWorktrees = vi.fn(async () => {
+        throw new Error('host unavailable')
+      })
+      const controller = new RuntimeProjectPrimaryRemovalController({
+        getStore: () =>
+          ({
+            getProjects: () => [project],
+            getProjectHostSetups: () => setups,
+            getPrimaryRemovalReservations: () => []
+          }) as never,
+        isDesktopAuthority: () => true,
+        listResolvedWorktrees,
+        getOwnPeerFingerprint: () => 'peer-a'
+      })
+      const remove = vi.fn(async () => 'removed')
+
+      await expect(controller.guardProjectRemoval('repo-a', hostId, remove)).resolves.toBe(
+        'removed'
+      )
+      expect(remove).toHaveBeenCalledOnce()
+      expect(listResolvedWorktrees).not.toHaveBeenCalled()
+
+      setups.push({
+        id: 'setup-b',
+        projectId: project.id,
+        repoId: 'repo-a',
+        hostId: 'ssh:other'
+      })
+      await expect(controller.guardProjectRemoval('repo-a', hostId, remove)).rejects.toThrow(
+        'primary_selected'
+      )
+      await expect(controller.guardProjectRemoval('repo-a', undefined, remove)).resolves.toBe(
+        'removed'
+      )
+      setups[1].repoId = 'repo-b'
+      await expect(controller.guardProjectRemoval('repo-a', undefined, remove)).rejects.toThrow(
+        'primary_selected'
+      )
+      expect(remove).toHaveBeenCalledTimes(2)
+    }
+  )
+
+  it('allows a forwarded whole-project catalog permit while protecting setup deletion', async () => {
+    const project = {
+      id: 'project-a',
+      primaryAuthorityFingerprint: 'desktop-peer',
+      primaryWorkspace: {
+        worktreeId: 'repo-a::/repo-a',
+        hostId: 'local',
+        path: '/repo-a',
+        instanceId: 'instance-a',
+        peerFingerprint: 'runtime-peer',
+        authorityFingerprint: 'desktop-peer'
+      }
+    }
+    const setup = {
+      id: 'setup-a',
+      projectId: project.id,
+      repoId: 'repo-a',
+      hostId: 'runtime:peer',
+      runtimeOwnerHostId: 'local',
+      runtimeOwnerFingerprint: 'runtime-peer'
+    }
+    const reservations: PrimaryRemovalReservation[] = []
+    const controller = new RuntimeProjectPrimaryRemovalController({
+      getStore: () =>
+        ({
+          getProjects: () => [project],
+          getProjectHostSetups: () => [setup],
+          getPrimaryRemovalReservations: () => [],
+          savePrimaryRemovalReservation: async (reservation: PrimaryRemovalReservation) => {
+            reservations.push(reservation)
+          }
+        }) as never,
+      isDesktopAuthority: () => true,
+      listResolvedWorktrees: async () => [],
+      getOwnPeerFingerprint: () => 'desktop-peer'
+    })
+
+    await expect(
+      controller.beginProjectRemovalPermit(project.id, 'setup:setup-a', 'peer', 'runtime-peer')
+    ).rejects.toThrow('primary_selected')
+    await expect(
+      controller.beginProjectRemovalPermit(project.id, 'repo:repo-a', 'peer', 'runtime-peer')
+    ).resolves.toEqual(expect.any(String))
+    expect(reservations).toHaveLength(1)
+  })
+
   it('uses catalog repo and occupant identity to protect folder setup deletion', async () => {
     const project = {
       id: 'project-a',
@@ -119,9 +221,7 @@ describe('RuntimeProjectPrimaryRemovalController', () => {
     })
     const remove = vi.fn(async () => 'removed')
 
-    await expect(controller.guardSetupRemoval(setup.id, remove)).rejects.toThrow(
-      'primary_selected'
-    )
+    await expect(controller.guardSetupRemoval(setup.id, remove)).rejects.toThrow('primary_selected')
     expect(remove).not.toHaveBeenCalled()
   })
 
