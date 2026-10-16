@@ -41,14 +41,22 @@ export function registerWorktreeRemovalHandlers(context: WorktreeIpcContext): vo
           args.worktreeId,
           removalHostId
         )
-        const result = await executeWorktreeRemoval(
-          context,
-          args,
-          repo,
-          repoId,
-          worktreePath,
-          removalHostId
-        )
+        let result: RemoveWorktreeResult
+        try {
+          result = await executeWorktreeRemoval(
+            context,
+            args,
+            repo,
+            repoId,
+            worktreePath,
+            removalHostId
+          )
+        } catch (error) {
+          if (primaryRemoval) {
+            await context.runtime.cancelPrimaryRemoval(primaryRemoval.token, primaryRemoval.target)
+          }
+          throw error
+        }
         if (primaryRemoval) {
           await context.runtime.recordPrimaryRemovalCompletion(
             primaryRemoval.token,

@@ -5490,7 +5490,7 @@
         "WorktreeCard": {
           "a88c92d0e3": "{{value0}}/{{value1}} already exists.",
           "6f09f58541": "Delete workspace",
-          "0777de5970": "Primary worktree (original clone directory)",
+          "0777de5970": "Selected primary workspace",
           "0f33af979b": "Partial checkout. Files outside these paths are not on disk.",
           "4f964d5e8c": "sparse",
           "7d517f82e2": "primary",
@@ -5612,7 +5612,7 @@
           "changeParentWorkspace": "Change Parent Worktree...",
           "setParentWorkspace": "Set Parent Worktree...",
           "workspaceSection": "Workspace",
-          "primaryDeleteDisabled": "Primary worktree — can't be deleted. Remove the project instead.",
+          "primaryDeleteDisabled": "Original Git checkout. Select another checkout as primary before deleting it.",
           "deleteWorktree": "Delete Worktree",
           "sleepWithDescendants": "Sleep with Descendants ({{value0}})",
           "sleepWithDescendantsDescription": "Close active panels in this workspace and every nested descendant to free up memory and CPU.",
