@@ -216,11 +216,11 @@ test('promotes primary through context and picker, preserves session, and restor
     await page.evaluate(() => window.__store!.getState().setHideDefaultBranchWorkspace(false))
 
     const featurePrimaryBeforeRemoval = await primaryIdentity(page, projectId!)
-    const originalRemovalWhileFeaturePrimary = await page.evaluate(
-      async (id) => window.__store!.getState().removeWorktree({ id, executionHostId: null }),
-      originalWorktreeId
-    )
-    expect(originalRemovalWhileFeaturePrimary.ok).toBe(false)
+    await page.locator(`[data-worktree-id="${originalWorktreeId}"]`).click({ button: 'right' })
+    if (process.platform !== 'win32') {
+      await expect(page.getByRole('menuitem', { name: /^Delete(?:\s|$)/ })).toBeEnabled()
+    }
+    await page.keyboard.press('Escape')
     expect(existsSync(repoPath)).toBe(true)
     expect(existsSync(featurePath)).toBe(true)
     expect(

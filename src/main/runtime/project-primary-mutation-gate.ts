@@ -194,6 +194,15 @@ export class ProjectPrimaryMutationGate {
     })
   }
 
+  async cancelRemoval(token: string, owner: PrimaryWorkspaceTarget): Promise<void> {
+    await this.assertRemovalOwner(token, owner)
+    const reservation = this.reservations.get(token)!
+    await this.enqueue(reservation.projectId, async () => {
+      await this.options.store.remove(token)
+      this.reservations.delete(token)
+    })
+  }
+
   async finishProjectMutationPermit(
     token: string,
     expected: { projectId: string; resourceKey: string; requesterFingerprint: string },
@@ -324,8 +333,10 @@ function validateReservation(value: PrimaryRemovalReservation): PrimaryRemovalRe
     value.target.instanceId.length === 0 ||
     (value.scope !== undefined && value.scope !== 'owner' && value.scope !== 'project') ||
     (value.scope === 'project' &&
-      (typeof value.resourceKey !== 'string' || value.resourceKey.length === 0 ||
-        typeof value.requesterFingerprint !== 'string' || value.requesterFingerprint.length === 0))
+      (typeof value.resourceKey !== 'string' ||
+        value.resourceKey.length === 0 ||
+        typeof value.requesterFingerprint !== 'string' ||
+        value.requesterFingerprint.length === 0))
   ) {
     throw new Error('invalid_primary_removal_reservation')
   }

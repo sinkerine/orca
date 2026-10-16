@@ -328,7 +328,7 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
               <TooltipContent side="right" sideOffset={8} className="max-w-[200px] text-pretty">
                 {translate(
                   'auto.components.sidebar.WorktreeContextMenu.primaryDeleteDisabled',
-                  "Primary worktree — can't be deleted. Remove the project instead."
+                  'Original Git checkout. Select another checkout as primary before deleting it.'
                 )}
               </TooltipContent>
             </Tooltip>
@@ -342,11 +342,11 @@ export default function WorktreeContextMenuView({ model }: { model: WorktreeCont
             onSelect={handleDelete}
             disabled={
               contextDeletePending ||
-              (!isMultiContext && worktree.isMainWorktree && !removesProject) ||
+              (!isMultiContext && worktree.isMainWorktree && !repo) ||
               (isMultiContext && batchDeleteWorktrees.length === 0)
             }
             title={
-              !isMultiContext && worktree.isMainWorktree && !removesProject
+              !isMultiContext && worktree.isMainWorktree && !repo
                 ? translate(
                     'auto.components.sidebar.WorktreeContextMenu.e091caab15',
                     'The project could not be found'

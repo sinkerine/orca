@@ -44,7 +44,8 @@ export type WorktreeDeleteTargetLookup = (
 
 export function resolveWorktreeBatchDeleteTargets(
   requestedWorktrees: readonly string[] | readonly WorktreeDeleteIdentity[],
-  lookupTarget: WorktreeDeleteTargetLookup
+  lookupTarget: WorktreeDeleteTargetLookup,
+  allowMainWorktree: (worktree: Worktree) => boolean = () => false
 ): Worktree[] | null {
   // Why (STA-4343): dedup on (id, host), not id — two hosts can publish the same
   // `repoId::path`, and collapsing them here would silently drop one confirmed row.
@@ -67,7 +68,7 @@ export function resolveWorktreeBatchDeleteTargets(
     if (typeof request !== 'string' && (!target || target.instanceId !== request.instanceId)) {
       return null
     }
-    if (target && !target.isMainWorktree) {
+    if (target && (!target.isMainWorktree || allowMainWorktree(target))) {
       targets.push(target)
     }
   }

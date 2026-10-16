@@ -1,3 +1,5 @@
+import { notifyReposChanged } from '../../repos/repos-changed-notification'
+import { prepareFormerMainWorktreeDeletion } from '../../../main-worktree-deletion'
 import type { Repo } from '../../../../shared/repo-types'
 import type { ExecutionHostId } from '../../../../shared/execution-host'
 import type { RemoveWorktreeResult } from '../../../../shared/worktree/create-types'
@@ -46,11 +48,24 @@ export async function executeWorktreeRemoval(
     ? {}
     : getLocalProjectWorktreeGitOptions(store, repo)
   const hasLocalWorktreeGitOptions = Object.keys(localWorktreeGitOptions).length > 0
-  const registeredWorktrees = repo.connectionId
+  let registeredWorktrees = repo.connectionId
     ? await provider!.listWorktrees(repo.path)
     : hasLocalWorktreeGitOptions
       ? await listGitWorktreesStrict(repo.path, localWorktreeGitOptions)
       : await listGitWorktreesStrict(repo.path)
+  const preparedRepo = prepareFormerMainWorktreeDeletion({
+    store,
+    repo,
+    worktreePath,
+    registeredWorktrees,
+    force: args.force ?? false,
+    wslDistro: localWorktreeGitOptions.wslDistro
+  })
+  if (preparedRepo !== repo) {
+    repo = preparedRepo
+    notifyReposChanged(mainWindow)
+    registeredWorktrees = await listGitWorktreesStrict(repo.path, localWorktreeGitOptions)
+  }
   const removedMeta = resolveWorktreeRemovalMetadata(store, repoId, args.worktreeId, removalHostId)
   const removedPushTarget = removedMeta?.pushTarget
   const registeredWorktree = findRegisteredDeletableWorktree(
