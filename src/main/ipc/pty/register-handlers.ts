@@ -91,7 +91,10 @@ export function registerPtyHandlers(
   setInvalidatePendingPtyDrainPolicy(() => {})
   // Why: neutralize rebind at the same moment as drain so a daemon replace in this window cannot attach the old accept/exit closures.
   setRebindProviderListeners(() => {})
-  registerRendererLifecycleResetHandlers(mainWindow.webContents)
+  // Headless runtime uses a synthetic window with no Electron renderer lifecycle.
+  if (!options?.headless) {
+    registerRendererLifecycleResetHandlers(mainWindow.webContents)
+  }
 
   const getLocalPtyStartupPromise = (connectionId?: string | null): Promise<void> | undefined => {
     if (connectionId) {

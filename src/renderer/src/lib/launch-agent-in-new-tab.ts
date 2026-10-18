@@ -202,7 +202,7 @@ function launchAgentInNewTabInternal(
       groupId,
       cwd: initialCwd,
       startupPlan,
-      sendLaunchCommand: Boolean(forkSession),
+      sendLaunchCommand: Boolean(forkSession) || launchCommandOverride !== undefined,
       prompt: trimmedPrompt,
       promptDelivery,
       pastePromptAfterReady: pasteDraftAfterLaunch,

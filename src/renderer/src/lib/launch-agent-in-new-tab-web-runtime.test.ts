@@ -101,6 +101,36 @@ describe('launchAgentInNewTab paired web runtime', () => {
     expect(mocks.closeTab).toHaveBeenCalledWith('stale-agent-tab', { reason: 'cleanup' })
   })
 
+  it('preserves a saved variant command instead of asking the host to launch the base agent', async () => {
+    store.settings.agentDefaultArgs = { codex: '--default-arg' }
+    store.settings.agentDefaultEnv = { codex: { CODEX_PROFILE: 'variant' } }
+    const { launchAgentInNewTab } = await import('./launch-agent-in-new-tab')
+    const result = launchAgentInNewTab({
+      agent: 'codex',
+      worktreeId: 'wt-1',
+      launchCommandOverride: 'codex --model variant-model',
+      forceTerminal: true
+    })
+
+    expect(result?.tabId).toBeNull()
+    expect(mocks.createWebRuntimeSessionTerminal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        environmentId: 'web-runtime',
+        worktreeId: 'wt-1',
+        launchAgent: 'codex',
+        preparedAgentCommand: true,
+        command: 'codex --model variant-model',
+        env: { CODEX_PROFILE: 'variant' },
+        viewMode: 'terminal',
+        launchConfig: expect.objectContaining({
+          agentCommand: 'codex --model variant-model'
+        })
+      })
+    )
+    expect(mocks.createWebRuntimeSessionTerminal.mock.calls[0][0]).not.toHaveProperty('agent')
+    expect(mocks.createTab).not.toHaveBeenCalled()
+  })
+
   it('forwards prompt launch env and captured config to the host runtime', async () => {
     store.settings.agentDefaultArgs = { codex: '--model gpt-5 --reasoning-effort high' }
     store.settings.agentDefaultEnv = { codex: { CODEX_PROFILE: 'captured' } }
