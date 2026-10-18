@@ -81,6 +81,7 @@ export function launchAgentInWebHostTab(args: {
     ...(hasPrompt || sendLaunchCommand
       ? {
           launchAgent: agent,
+          ...(sendLaunchCommand ? { preparedAgentCommand: true } : {}),
           command: startupPlan.launchCommand,
           ...(startupPlan.env ? { env: startupPlan.env } : {}),
           launchConfig: startupPlan.launchConfig,

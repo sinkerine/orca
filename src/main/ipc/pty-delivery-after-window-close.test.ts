@@ -160,6 +160,10 @@ describe('pty delivery after the registering window closes', () => {
         undefined,
         { headless: true }
       )
+      expect(headlessWindow.webContents.on).not.toHaveBeenCalledWith(
+        'did-start-navigation',
+        expect.any(Function)
+      )
       await handlers.get('pty:spawn')!(null, { cols: 80, rows: 24, cwd: '/tmp' })
       mainWindow.webContents.send.mockClear()
 

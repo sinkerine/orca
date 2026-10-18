@@ -56,6 +56,7 @@ describe('launchAgentInWebHostTab', () => {
     const launch = mockCreateWebRuntimeSessionTerminal.mock.calls[0][0]
     expect(launch).toMatchObject({
       launchAgent: 'codex',
+      preparedAgentCommand: true,
       command: "codex 'fork' 'codex-session'",
       launchConfig: startupPlan.launchConfig
     })

@@ -5,7 +5,6 @@ import {
 } from '../../../shared/keybindings'
 import type { TuiAgent } from '../../../shared/tui-agent'
 import { useAppStore } from '../store'
-import { getConnectionId } from '../lib/connection-context'
 import { listBoundAgentTabActions, resolveDefaultAgentForNewTab } from '@/lib/agent-tab-shortcuts'
 import { isTuiAgentEnabled } from '../../../shared/tui-agent-selection'
 import {
@@ -29,16 +28,25 @@ export function resolveTerminalAgentTabShortcut({
   matchShortcut: (actionId: KeybindingActionId) => boolean
 }): TerminalAgentTabShortcut {
   const state = useAppStore.getState()
+  const detectionTarget = parseAgentDetectionTargetKey(
+    getAgentDetectionTargetKeyForWorktree(state, activeWorktreeId)
+  )
+  const detected =
+    detectionTarget?.kind === 'ssh'
+      ? state.remoteDetectedAgentIds[detectionTarget.connectionId]
+      : detectionTarget?.kind === 'runtime'
+        ? state.runtimeDetectedAgentIds[detectionTarget.environmentId]
+        : detectionTarget?.kind === 'local'
+          ? detectionTarget.contextKey
+            ? state.localDetectedAgentIdsByContext[detectionTarget.contextKey]
+            : state.detectedAgentIds
+          : undefined
   if (matchShortcut('tab.newAgent')) {
-    const connectionId = getConnectionId(activeWorktreeId)
     return {
       actionId: 'tab.newAgent',
       agent: resolveDefaultAgentForNewTab({
         defaultTuiAgent: state.settings?.defaultTuiAgent,
-        detectedAgentIds:
-          typeof connectionId === 'string'
-            ? state.remoteDetectedAgentIds[connectionId]
-            : state.detectedAgentIds,
+        detectedAgentIds: detected,
         disabledTuiAgents: state.settings?.disabledTuiAgents
       })
     }
@@ -48,17 +56,6 @@ export function resolveTerminalAgentTabShortcut({
       return { actionId: bound.actionId, agent: bound.agent }
     }
   }
-  const detectionTarget = parseAgentDetectionTargetKey(
-    getAgentDetectionTargetKeyForWorktree(state, activeWorktreeId)
-  )
-  const detected =
-    detectionTarget?.kind === 'ssh'
-      ? state.remoteDetectedAgentIds[detectionTarget.connectionId]
-      : detectionTarget?.kind === 'runtime'
-        ? state.runtimeDetectedAgentIds[detectionTarget.environmentId]
-        : detectionTarget?.kind === 'local' && detectionTarget.contextKey
-          ? state.localDetectedAgentIdsByContext[detectionTarget.contextKey]
-          : state.detectedAgentIds
   for (const variant of state.settings?.agentLaunchVariants ?? []) {
     if (
       !detected?.includes(variant.agent) ||

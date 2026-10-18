@@ -5,23 +5,27 @@ const stateMock = vi.hoisted(() => ({
     agentLaunchVariants: [
       { id: 'fast', name: 'Fast', agent: 'claude' as const, command: 'claude --fast' }
     ],
+    defaultTuiAgent: 'claude' as const,
     disabledTuiAgents: [] as string[]
   },
   detectedAgentIds: ['claude'] as string[] | null,
   remoteDetectedAgentIds: {} as Record<string, string[] | null>,
   runtimeDetectedAgentIds: {} as Record<string, string[] | null>,
-  targetKey: 'local'
+  localDetectedAgentIdsByContext: {} as Record<string, string[] | null>,
+  targetKey: 'local' as string | undefined
 }))
 
 vi.mock('../store', () => ({ useAppStore: { getState: () => stateMock } }))
 vi.mock('@/hooks/useAgentDetectionTarget', () => ({
   getAgentDetectionTargetKeyForWorktree: () => stateMock.targetKey,
   parseAgentDetectionTargetKey: () =>
-    stateMock.targetKey.startsWith('runtime:')
-      ? { kind: 'runtime', environmentId: stateMock.targetKey.slice('runtime:'.length) }
-      : stateMock.targetKey.startsWith('ssh:')
-        ? { kind: 'ssh', connectionId: stateMock.targetKey.slice('ssh:'.length) }
-        : { kind: 'local' }
+    stateMock.targetKey === undefined
+      ? undefined
+      : stateMock.targetKey.startsWith('runtime:')
+        ? { kind: 'runtime', environmentId: stateMock.targetKey.slice('runtime:'.length) }
+        : stateMock.targetKey.startsWith('ssh:')
+          ? { kind: 'ssh', connectionId: stateMock.targetKey.slice('ssh:'.length) }
+          : { kind: 'local', contextKey: stateMock.targetKey === 'local:host' ? 'host' : undefined }
 }))
 
 import { agentVariantActionId } from '../../../shared/keybindings'
@@ -34,6 +38,45 @@ describe('resolveTerminalAgentTabShortcut variants', () => {
     stateMock.remoteDetectedAgentIds = {}
     stateMock.runtimeDetectedAgentIds = {}
     stateMock.targetKey = 'local'
+    stateMock.localDetectedAgentIdsByContext = {}
+  })
+
+  it.each(['runtime:host-a', 'ssh:host-a', 'local', 'local:host', undefined])(
+    'uses only the owning detection target for the default shortcut: %s',
+    (targetKey) => {
+      stateMock.targetKey = targetKey
+      stateMock.runtimeDetectedAgentIds['host-a'] = ['codex']
+      stateMock.remoteDetectedAgentIds['host-a'] = ['pi']
+      stateMock.localDetectedAgentIdsByContext.host = ['opencode']
+      const expected =
+        targetKey === 'runtime:host-a'
+          ? 'codex'
+          : targetKey === 'ssh:host-a'
+            ? 'pi'
+            : targetKey === 'local:host'
+              ? 'opencode'
+              : targetKey === 'local'
+                ? 'claude'
+                : null
+      expect(
+        resolveTerminalAgentTabShortcut({
+          activeWorktreeId: 'wt-1',
+          keybindings: {},
+          matchShortcut: (candidate) => candidate === 'tab.newAgent'
+        })
+      ).toEqual({ actionId: 'tab.newAgent', agent: expected })
+    }
+  )
+
+  it('does not select local agents while remote detection is pending', () => {
+    stateMock.targetKey = 'runtime:host-a'
+    expect(
+      resolveTerminalAgentTabShortcut({
+        activeWorktreeId: 'folder:remote',
+        keybindings: {},
+        matchShortcut: (candidate) => candidate === 'tab.newAgent'
+      })
+    ).toEqual({ actionId: 'tab.newAgent', agent: null })
   })
 
   it('resolves a bound variant only while its base agent is enabled and detected', () => {
