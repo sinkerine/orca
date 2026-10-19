@@ -101,6 +101,12 @@ Each published release ships three Linux packages — an **AppImage**, a **`.deb
 
 The AppImage has a stable download link per architecture — [`orca-linux.AppImage`](https://github.com/stablyai/orca/releases/latest/download/orca-linux.AppImage) for x64 and [`orca-linux-arm64.AppImage`](https://github.com/stablyai/orca/releases/latest/download/orca-linux-arm64.AppImage) for arm64 — and needs `chmod +x` before its first run, because GitHub release assets carry no permission bits. The `.deb` and `.rpm` filenames carry the version and architecture, and the two formats spell architecture differently (`orca-ide_<version>_amd64.deb` or `_arm64.deb`; `orca-ide-<version>.x86_64.rpm` or `.aarch64.rpm`), so take those from the [Releases page](https://github.com/stablyai/orca/releases) rather than a fixed URL.
 
+#### Wayland clipboard
+
+Terminal Copy uses the local `wl-copy` command to publish text to the Wayland compositor. The `.deb` and `.rpm` packages install its `wl-clipboard` dependency. For AppImage or distro-managed installations, install `wl-clipboard` with your distribution's package manager and ensure `wl-copy` is on Orca's PATH. The Nix development shell includes it.
+
+If the helper is missing or fails, terminal Copy reports an error and keeps the selection for retry. Copying from a remote terminal still writes to the desktop client's clipboard.
+
 #### How updating works
 
 **The AppImage self-updates.** Choose it if you want automatic updates. Orca checks for a new release, you click **Update**, and it replaces the AppImage in place — the same flow as macOS and Windows.

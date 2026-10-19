@@ -1,23 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
 import { runTerminalCopy, runTerminalIdentityCopy } from './terminal-copy-rejection-guards'
 
-// Why this file exists: web-preload-api's writeClipboardText used to resolve
-// unconditionally, so the terminal copy surfaces call it without a rejection
-// handler. Now that an insecure-context copy with no live user gesture rejects,
-// an unguarded call becomes an unhandled rejection recorded as a renderer crash
-// breadcrumb, and Copy Pane ID would still show a success toast for a copy that
-// never happened. These tests pin both behaviors.
+vi.mock('./terminal-copy-failure', () => ({ showTerminalCopyFailure: vi.fn() }))
 
 const REJECTION = new Error('Clipboard write is unavailable in this browser context')
 
 describe('runTerminalCopy', () => {
-  it('resolves and still refocuses the pane when the clipboard write rejects', async () => {
+  it('propagates the original error and still refocuses when the clipboard write rejects', async () => {
     const focus = vi.fn()
     const writeClipboardText = vi.fn().mockRejectedValue(REJECTION)
 
     await expect(
       runTerminalCopy({ selection: 'terminal text', writeClipboardText, focus })
-    ).resolves.toBeUndefined()
+    ).rejects.toBe(REJECTION)
     expect(writeClipboardText).toHaveBeenCalledWith('terminal text')
     expect(focus).toHaveBeenCalledTimes(1)
   })

@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { copyTerminalSelection } from './terminal-selection-copy'
 
+vi.mock('./terminal-copy-failure', () => ({ showTerminalCopyFailure: vi.fn() }))
+import { showTerminalCopyFailure } from './terminal-copy-failure'
+
 function makeTerminal(selection: string) {
   return {
     getSelection: vi.fn(() => selection),
@@ -31,13 +34,13 @@ describe('copyTerminalSelection', () => {
 
   it('clears xterm selection only after the clipboard write succeeds', async () => {
     const terminal = makeTerminal('copilot answer')
-    const writeClipboardText = vi
-      .fn<(text: string) => Promise<void>>()
-      .mockRejectedValue(new Error('clipboard unchanged'))
+    const error = new Error('clipboard unchanged')
+    const writeClipboardText = vi.fn<(text: string) => Promise<void>>().mockRejectedValue(error)
 
     await expect(
       copyTerminalSelection({ terminal, writeClipboardText, clearSelectionOnSuccess: true })
-    ).rejects.toThrow('clipboard unchanged')
+    ).rejects.toBe(error)
+    expect(showTerminalCopyFailure).toHaveBeenCalled()
 
     expect(terminal.clearSelection).not.toHaveBeenCalled()
   })

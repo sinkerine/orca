@@ -46,6 +46,7 @@
             nss
             pango
             wayland
+            wl-clipboard
             niri
             grim
             wtype

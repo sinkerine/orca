@@ -606,6 +606,7 @@ module.exports = {
       'grim',
       'wtype',
       'ydotool',
+      'wl-clipboard',
       'xvfb'
     ],
     // Why: symlink the bundled CLI onto PATH at install time so `orca-ide serve`
@@ -627,6 +628,7 @@ module.exports = {
       'grim',
       'wtype',
       'ydotool',
+      'wl-clipboard',
       'xorg-x11-server-Xvfb'
     ],
     // Why: same headless CLI-on-PATH registration as deb; rpm runs these via fpm.
