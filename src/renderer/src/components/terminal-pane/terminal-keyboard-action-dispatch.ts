@@ -89,7 +89,7 @@ export function dispatchTerminalShortcutAction(
     void copyTerminalSelection({
       terminal: pane.terminal,
       writeClipboardText: window.api.ui.writeTerminalClipboardText
-    }).catch(() => {})
+    })
     return
   }
   if (action.type === 'toggleSearch') {

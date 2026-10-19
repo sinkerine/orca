@@ -1,4 +1,5 @@
 import { app } from 'electron'
+import { isLinuxWaylandSession } from '../linux-wayland-session'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -76,23 +77,6 @@ export function configureElectronNetworkCompatibility(
 
 export function disableUnsupportedChromiumFeatures(): void {
   appendDisabledChromiumFeatures([...DISABLED_CHROMIUM_FEATURES])
-}
-
-function isLinuxWaylandSession(): boolean {
-  if (process.platform !== 'linux') {
-    return false
-  }
-  const ozonePlatform = (app.commandLine.getSwitchValue('ozone-platform') ?? '').toLowerCase()
-  const ozonePlatformHint = (process.env.ELECTRON_OZONE_PLATFORM_HINT ?? '').toLowerCase()
-  const isLinuxX11Override =
-    ozonePlatform === 'x11' || (ozonePlatform === '' && ozonePlatformHint === 'x11')
-  return (
-    !isLinuxX11Override &&
-    (Boolean(process.env.WAYLAND_DISPLAY) ||
-      process.env.XDG_SESSION_TYPE === 'wayland' ||
-      ozonePlatformHint === 'wayland' ||
-      ozonePlatform === 'wayland')
-  )
 }
 
 /** Enables Chromium's native Wayland text-input path before any renderer starts. */

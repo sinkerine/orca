@@ -288,6 +288,7 @@ describe('electron-builder config', () => {
       expect(dependencies).toEqual(
         expect.arrayContaining(FpmTarget.prototype.getDefaultDepends(target))
       )
+      expect(dependencies).toContain('wl-clipboard')
       expect(new Set(dependencies).size).toBe(dependencies.length)
     }
   })

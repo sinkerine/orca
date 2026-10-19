@@ -1,4 +1,5 @@
 import type { Terminal } from '@xterm/xterm'
+import { showTerminalCopyFailure } from './terminal-copy-failure'
 
 type TerminalSelectionCopyOptions = {
   terminal: Pick<Terminal, 'getSelection' | 'clearSelection'>
@@ -16,7 +17,12 @@ export async function copyTerminalSelection({
     return false
   }
 
-  await writeClipboardText(selection)
+  try {
+    await writeClipboardText(selection)
+  } catch (error) {
+    showTerminalCopyFailure()
+    throw error
+  }
   // Keep failed-copy text selected for retry.
   if (clearSelectionOnSuccess) {
     terminal.clearSelection()

@@ -12,6 +12,10 @@ vi.mock('electron', () => ({
   }
 }))
 
+vi.mock('./wayland-clipboard-text', () => ({
+  usesWaylandClipboard: () => false
+}))
+
 import {
   CLIPBOARD_WRITE_VERIFICATION_FAILED_ERROR,
   writeClipboardTextAndVerify

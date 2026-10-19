@@ -223,7 +223,7 @@ export function registerTerminalPanePasteListeners({
       void copyTerminalSelection({
         terminal: pane.terminal,
         writeClipboardText: window.api.ui.writeTerminalClipboardText
-      }).catch(() => undefined)
+      })
       return
     }
     if (action === 'select-all') {
