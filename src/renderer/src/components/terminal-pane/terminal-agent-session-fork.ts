@@ -6,16 +6,19 @@ import {
   buildBoundedSessionTranscript
 } from '@/lib/agent-session-fork-context'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
+import { resolveOwner } from '@/lib/resolve-owner'
+import { toRuntimeExecutionHostId, type ExecutionHostId } from '../../../../shared/execution-host'
 import { useAppStore } from '@/store'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { TUI_AGENT_CONFIG } from '../../../../shared/tui-agent-config'
 import { getForkAgentLaunchPlatform } from './terminal-agent-session-fork-launch-platform'
-import { preflightAgentTrust } from '@/lib/agent-trust-preflight'
 import { slugifyForWorkspaceName } from '../../../../shared/workspace-name'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import { getLocalProjectExecutionRuntimeContext } from '@/lib/local-preflight-context'
 import { translate } from '@/i18n/i18n'
+import { planAgentSessionLaunch } from '@/lib/agent-session-launch-plan'
+import { newAgentLaunchRequestId } from '@/lib/agent-launch-request-id'
 
 type ForkAgentSessionFromPaneArgs = {
   pane: ManagedPane
@@ -172,6 +175,19 @@ export async function copyAgentSessionContextFromPane(pane: ManagedPane): Promis
   }
 }
 
+/** The transport that owns the source: its server, else where this app reaches it (local or SSH). */
+function forkCreationHostId(
+  state: Parameters<typeof resolveOwner>[0],
+  worktreeId: string
+): ExecutionHostId | undefined {
+  const owner = resolveOwner(state, { workspaceId: worktreeId })
+  if (owner.kind !== 'resolved') {
+    return undefined
+  }
+  const { endpoint, at } = owner.owner
+  return endpoint.kind === 'environment' ? toRuntimeExecutionHostId(endpoint.environmentId) : at
+}
+
 export async function startAgentSessionFork(fork: PreparedAgentSessionFork): Promise<boolean> {
   const store = useAppStore.getState()
   const sourceWorktree = store.getKnownWorktreeById(fork.worktreeId)
@@ -210,7 +226,23 @@ export async function startAgentSessionFork(fork: PreparedAgentSessionFork): Pro
       undefined,
       undefined,
       undefined,
-      fork.agent ?? undefined
+      fork.agent ?? undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      // Why: a project two hosts publish refuses a host-less create; the fork belongs on its source's host.
+      { executionHostId: forkCreationHostId(store, fork.worktreeId) }
     )
   } catch (error) {
     toast.error(
@@ -229,10 +261,12 @@ export async function startAgentSessionFork(fork: PreparedAgentSessionFork): Pro
     activateAndRevealWorktree(forkWorktreeId, { sidebarRevealBehavior: 'auto' })
     return copyAgentSessionForkContext(fork)
   }
-  await preflightAgentTrust({
+  const agentSessionLaunchPlan = planAgentSessionLaunch(useAppStore.getState(), {
+    requestId: newAgentLaunchRequestId(),
     agent: fork.agent,
-    workspacePath: created.worktree.path,
-    connectionId: sourceRepo?.connectionId
+    workspace: { kind: 'git-worktree', worktreeId: forkWorktreeId },
+    prompt: fork.prompt,
+    promptDelivery: 'draft'
   })
   const launchPlatform = getForkAgentLaunchPlatform({
     repo: sourceRepo,
@@ -245,34 +279,18 @@ export async function startAgentSessionFork(fork: PreparedAgentSessionFork): Pro
     prompt: fork.prompt,
     promptDelivery: 'draft',
     launchSource: 'terminal_context_menu',
+    agentSessionLaunchPlan,
+    // Why: the launcher opens the fork's surface itself (chat, host terminal or local terminal), so
+    // revealing must not seed a sibling shell beside it.
+    beforeSurfaceOpen: () =>
+      activateAndRevealWorktree(forkWorktreeId, {
+        sidebarRevealBehavior: 'auto',
+        providesInitialSurface: true
+      }) !== false,
     ...(launchPlatform ? { launchPlatform } : {})
   })
-  if (!result?.structuredSettlement) {
+  if (!result) {
     activateAndRevealWorktree(forkWorktreeId, { sidebarRevealBehavior: 'auto' })
-    if (!result) {
-      return copyAgentSessionForkContext(fork)
-    }
-    notifyForkOpened()
-    return true
-  }
-  // Why: the fresh worktree has no tabs yet; without the opt-out activation seeds a shell beside
-  // the structured tab that is still on its way.
-  activateAndRevealWorktree(forkWorktreeId, {
-    sidebarRevealBehavior: 'auto',
-    providesInitialSurface: true
-  })
-  const settlement = await result.structuredSettlement
-  // Why: a refusal whose terminal fallback opened nothing is the structured twin of a null launch.
-  if (settlement.kind === 'refused-then-legacy' && settlement.primaryTabId === null) {
-    return copyAgentSessionForkContext(fork)
-  }
-  // Why: the worktree already exists, so a false return would keep the dialog open and a second
-  // click would create another one. Unknown already shows the launch badge; failed hands the
-  // user the context the way a null launch does.
-  if (settlement.kind === 'visibility-unknown') {
-    return true
-  }
-  if (settlement.kind === 'failed' || settlement.kind === 'cancelled') {
     return copyAgentSessionForkContext(fork)
   }
   notifyForkOpened()

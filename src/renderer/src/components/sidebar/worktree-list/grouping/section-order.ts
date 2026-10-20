@@ -1,17 +1,15 @@
+import type { Project } from '../../../../../../shared/project-types'
 import type { Repo } from '../../../../../../shared/repo-types'
 import type { ProjectOrderBy } from '../../../../../../shared/ui-chrome-types'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
 import type { AppState } from '../../../../store/types'
-import { getRepoDisplayLabelKey, getRepoDisplayLabelsByPath } from '@/lib/repo-display-labels'
-import { ALL_GROUP_KEY } from './group-keys'
-import type {
-  OrderedGroupEntry,
-  ProjectGroupingModel,
-  WorktreeGroupEntry
-} from './project-grouping'
-import type { WorktreeGroupBy } from './row-types'
-import { getGroupKeyForWorktree } from './worktree-group-keys'
-import type { ProjectGroupingIndex } from './project-grouping'
+import { getRepoDisplayLabelKey, getRepoDisplayLabelsByPath } from '../../../../../../shared/repo-display-labels'
+import { ALL_GROUP_KEY } from '../../../../../../shared/sidebar-list/group-keys'
+import type { OrderedGroupEntry, WorktreeGroupEntry } from '../../../../../../shared/sidebar-list/worktree-group-entry'
+import type { ProjectGroupingModel } from '../../../../../../shared/project-section-grouping'
+import type { WorktreeGroupBy } from '../../../../../../shared/sidebar-list/row-types'
+import { getGroupKeyForWorktree } from '../../../../../../shared/sidebar-list/worktree-group-keys'
+import type { ProjectGroupingIndex } from '../../../../../../shared/project-section-grouping'
 import {
   hasSavedPrimaryWorkspace,
   resolveProjectPrimaryWorkspace
@@ -24,7 +22,6 @@ export function getRenderedNaturalAnchorRepoIds({
   prCache,
   collapsedGroups,
   workspaceStatuses,
-  settings,
   projectGrouping
 }: {
   groupBy: WorktreeGroupBy
@@ -56,9 +53,8 @@ export function getRenderedNaturalAnchorRepoIds({
       groupBy,
       worktree,
       repoMap,
-      prCache,
+      prCache as Parameters<typeof getGroupKeyForWorktree>[3],
       workspaceStatuses,
-      settings,
       projectGrouping
     )
     if (groupKey && !collapsedGroups.has(groupKey)) {
@@ -70,7 +66,7 @@ export function getRenderedNaturalAnchorRepoIds({
 
 export function orderMainWorktreeFirst(
   worktrees: Worktree[],
-  projectIndex?: ProjectGroupingIndex | null
+  projectIndex?: Omit<ProjectGroupingIndex, 'projectById'> & { projectById: ReadonlyMap<string, Project> } | null
 ): Worktree[] {
   const primaryWorktrees = new Set<Worktree>()
   const configuredPrimaryProjectIds = new Set<string>()

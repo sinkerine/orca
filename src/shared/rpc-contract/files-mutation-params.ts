@@ -5,7 +5,10 @@ export const RUNTIME_FILE_BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/
 
 export function isValidRuntimeFileBase64(value: unknown): value is string {
   return (
-    typeof value === 'string' && value.length % 4 !== 1 && RUNTIME_FILE_BASE64_PATTERN.test(value)
+    typeof value === 'string' &&
+    value.length % 4 !== 1 &&
+    (!value.includes('=') || value.length % 4 === 0) &&
+    RUNTIME_FILE_BASE64_PATTERN.test(value)
   )
 }
 
@@ -22,6 +25,15 @@ export const FileWrite = FileMutationOpen.extend({
   content: z
     .unknown()
     .refine((v): v is string => typeof v === 'string', { message: 'Missing file content' })
+})
+
+// Why a separate method: a host too old to honor the precondition answers method_not_found
+// instead of silently dropping the field and writing over newer disk content.
+export const FileWriteIfUnchanged = FileWrite.extend({
+  diskPrecondition: z.object({
+    expectedSignature: z.string().min(1).max(64),
+    allowMissing: z.boolean().optional()
+  })
 })
 
 export const FileWriteBase64 = FileMutationOpen.extend({

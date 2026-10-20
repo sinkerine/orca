@@ -7,9 +7,14 @@ import {
   getMainWindowForWebContents,
   getMainWindows
 } from '../window/main-window-registry'
+import { translateMain } from '../i18n/main-i18n'
+import { encodeRepoIconPng } from './electron-repo-icon-png'
+import { fetchRepoIconWithManualRedirects } from './electron-repo-icon-fetch'
+import { ORCA_SIDEBAR_INPUTS_IS_MAIN } from '../../shared/sidebar-inputs-switch'
 
 /** The desktop implementation of the runtime's optional desktop facilities. */
 export const electronRuntimeDesktopSurface: RuntimeDesktopSurface = {
+  translateNotification: translateMain,
   isAwayForMobileNotifications: () => readDesktopAwayState(powerMonitor),
   showNotification: ({ title, body }) => {
     if (!Notification.isSupported()) {
@@ -31,5 +36,9 @@ export const electronRuntimeDesktopSurface: RuntimeDesktopSurface = {
   },
   removeIpcListener: (channel, listener) => {
     ipcMain.removeListener(channel, listener as Parameters<typeof ipcMain.removeListener>[1])
-  }
+  },
+  // Switch point: only the phone's icon source encodes and fetches through these.
+  ...(ORCA_SIDEBAR_INPUTS_IS_MAIN
+    ? { encodeRepoIconPng, fetchRepoIcon: fetchRepoIconWithManualRedirects }
+    : {})
 }

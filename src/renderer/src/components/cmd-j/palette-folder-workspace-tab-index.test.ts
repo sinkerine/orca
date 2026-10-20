@@ -8,7 +8,7 @@ import {
   buildSearchableWorkspaceTabs,
   searchWorkspaceTabs
 } from '@/lib/workspace-tab-palette-search'
-import { sortWorktreesSmart } from '../sidebar/smart-sort'
+import { sortWorktreesSmart } from '../../../../shared/sidebar-list/smart-sort'
 import type { SidebarHostOption } from '../sidebar/sidebar-host-options'
 import {
   collectFolderWorkspaceHostLabels,

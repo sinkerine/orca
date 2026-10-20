@@ -31,7 +31,7 @@ export function createTerminalEphemeralActions(
     markDefaultTerminalTabsApplied: (worktreeId) =>
       set((s) => {
         if (s.defaultTerminalTabsAppliedByWorktreeId[worktreeId]) {
-          return {}
+          return s
         }
         return {
           defaultTerminalTabsAppliedByWorktreeId: {
@@ -74,7 +74,7 @@ export function createTerminalEphemeralActions(
       set((s) => {
         const current = s.nativeChatLaunchPromptByTabId[tabId]
         if (!current || current.failed) {
-          return {}
+          return s
         }
         return {
           nativeChatLaunchPromptByTabId: {
@@ -87,7 +87,7 @@ export function createTerminalEphemeralActions(
     clearNativeChatLaunchPrompt: (tabId) => {
       set((s) => {
         if (!s.nativeChatLaunchPromptByTabId[tabId]) {
-          return {}
+          return s
         }
         const next = { ...s.nativeChatLaunchPromptByTabId }
         delete next[tabId]
@@ -106,7 +106,7 @@ export function createTerminalEphemeralActions(
       set((s) => {
         const current = s.nativeChatLaunchDraftByTabId[tabId]
         if (!current || current.adopted) {
-          return {}
+          return s
         }
         return {
           nativeChatLaunchDraftByTabId: {
@@ -125,7 +125,7 @@ export function createTerminalEphemeralActions(
           current.createdAt !== resolution.createdAt ||
           current.text !== resolution.text
         ) {
-          return {}
+          return s
         }
         return {
           nativeChatLaunchDraftByTabId: {
@@ -138,7 +138,7 @@ export function createTerminalEphemeralActions(
     clearNativeChatLaunchDraft: (tabId) => {
       set((s) => {
         if (!s.nativeChatLaunchDraftByTabId[tabId]) {
-          return {}
+          return s
         }
         const next = { ...s.nativeChatLaunchDraftByTabId }
         delete next[tabId]
@@ -172,7 +172,7 @@ export function createTerminalEphemeralActions(
                 next ??= { ...s.lastTerminalInputAtByPaneKey }
                 next[key] = at
               }
-              return next ? { lastTerminalInputAtByPaneKey: next } : {}
+              return next ? { lastTerminalInputAtByPaneKey: next } : s
             })
         }
       })
@@ -231,7 +231,7 @@ export function createTerminalEphemeralActions(
     removeDeferredSshSessionId: (tabId) =>
       set((s) => {
         if (!s.deferredSshSessionIdsByTabId[tabId]) {
-          return {}
+          return s
         }
         const next = { ...s.deferredSshSessionIdsByTabId }
         delete next[tabId]

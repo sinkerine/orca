@@ -2,29 +2,13 @@ import type { BrowserWindow } from 'electron'
 import { agentHookServer } from '../agent-hooks/server'
 import { setMigrationUnsupportedPtyListener } from '../agent-hooks/migration-unsupported-pty-state'
 import { getDashboardPopoutWindow } from '../window/dashboard-popout-window'
-import { isAskUserQuestionTool } from '../../shared/agent-question-answered-intent'
-import {
-  getSyntheticAgentTitleProfile,
-  shouldDriveSyntheticAgentTitleFromHook
-} from '../../shared/synthetic-agent-title'
-import {
-  driveSyntheticTitleFromHook,
-  shouldSuppressCodexAutoApprovalSyntheticTitleFromHook,
-  stopAllSyntheticTitleSpinners
-} from './synthetic-title-runtime'
+import { stopSyntheticTitleSpinnerTimer } from './synthetic-title-runtime'
 import { mainProcessState as state } from './main-process-state'
 import { getFocusedOrLastActiveMainWindow, sendToWindow } from '../window/main-window-registry'
 import { getPtyIdForPaneKey } from '../ipc/pty/pane/key-state'
 
 export type MainWindowAgentStatusOptions = {
   window: BrowserWindow
-  maybeAutoRenameBranchOnFirstWork: (event: {
-    paneKey: string
-    tabId: string | undefined
-    worktreeId: string | undefined
-    payload: { state: string; prompt?: string; lastAssistantMessage?: string }
-    isReplay: boolean | undefined
-  }) => void
   onRecordAgentState: (agentType: string, status: string) => void
 }
 
@@ -74,6 +58,7 @@ export function installMainWindowAgentStatusListeners(options: MainWindowAgentSt
       receivedAt,
       evidenceObservedAt,
       stateStartedAt,
+      turnStartedAt,
       launchToken,
       providerSession,
       providerSessionOnly,
@@ -81,7 +66,10 @@ export function installMainWindowAgentStatusListeners(options: MainWindowAgentSt
       restoredUnconfirmed,
       observation,
       isReplay,
-      structuredHost
+      authorityRestartId,
+      structuredHost,
+      programStatus,
+      programStatusOnly
     }) => {
       if (liveWindows().length === 0) {
         return
@@ -112,22 +100,11 @@ export function installMainWindowAgentStatusListeners(options: MainWindowAgentSt
         }
         return
       }
-      if (!restoredUnconfirmed) {
-        options.maybeAutoRenameBranchOnFirstWork({ paneKey, tabId, worktreeId, payload, isReplay })
-      }
       const runtime = state.runtime
       const orchestration = runtime?.getAgentStatusOrchestrationContextForPaneKey(paneKey)
       const terminalHandle = runtime?.getAgentStatusTerminalHandleForPaneKey(paneKey)
-      const suppressSyntheticCodexAutoApprovalTitle =
-        payload.agentType === 'codex' &&
-        (payload.state === 'waiting' || payload.state === 'blocked')
-          ? shouldSuppressCodexAutoApprovalSyntheticTitleFromHook({
-              agentType: payload.agentType,
-              state: payload.state,
-              launchConfig: runtime?.getAgentStatusLaunchConfigForPaneKey(paneKey, { launchToken })
-            })
-          : false
       const statusEvent = {
+        ...(authorityRestartId && isReplay !== true ? { authorityRestartId } : {}),
         ...payload,
         paneKey,
         ...(launchToken ? { launchToken } : {}),
@@ -138,26 +115,22 @@ export function installMainWindowAgentStatusListeners(options: MainWindowAgentSt
         receivedAt,
         ...(evidenceObservedAt !== undefined ? { evidenceObservedAt } : {}),
         stateStartedAt,
+        ...(turnStartedAt !== undefined ? { turnStartedAt } : {}),
         ...(providerSession ? { providerSession } : {}),
         ...(promptInteractionKey ? { promptInteractionKey } : {}),
         ...(restoredUnconfirmed ? { restoredUnconfirmed: true } : {}),
         ...(observation ? { observation } : {}),
-        ...(isReplay ? { isReplay: true as const } : {}),
-        ...(orchestration ? { orchestration } : {})
+        ...(orchestration ? { orchestration } : {}),
+        ...(programStatus ? { programStatus } : {}),
+        ...(programStatusOnly === true ? { programStatusOnly: true } : {}),
+        // Why: reconnect replays re-send cached rows; the renderer must not treat them as fresh completions.
+        ...(isReplay === true ? { isReplay: true } : {})
       }
       sendStatusToWindows(statusEvent, paneKey)
-      if (!suppressSyntheticCodexAutoApprovalTitle || isAskUserQuestionTool(payload.toolName)) {
-        getDashboardPopoutWindow()?.webContents.send('agentStatus:set', statusEvent)
-      }
-      listenerOptions?.onRecordAgentState(payload.agentType ?? 'unknown', payload.state)
-      // Why: native OSC titles miss some idle/permission frames, so inject hook-derived ones to keep the renderer title tracker in sync.
-      const profile = getSyntheticAgentTitleProfile(payload.agentType)
-      if (
-        profile &&
-        shouldDriveSyntheticAgentTitleFromHook(payload.agentType, payload.state) &&
-        !suppressSyntheticCodexAutoApprovalTitle
-      ) {
-        driveSyntheticTitleFromHook(paneKey, payload.state, profile)
+      getDashboardPopoutWindow()?.webContents.send('agentStatus:set', statusEvent)
+      // A facet-only republish (progress tick) is not a state the agent entered.
+      if (programStatusOnly !== true) {
+        listenerOptions?.onRecordAgentState(payload.agentType ?? 'unknown', payload.state)
       }
     }
   )
@@ -199,5 +172,7 @@ export function clearMainWindowAgentStatusListeners(window?: BrowserWindow): voi
   agentHookServer.setPaneStatusClearListener(null)
   setMigrationUnsupportedPtyListener(null)
   listenerOptions = null
-  stopAllSyntheticTitleSpinners()
+  // Why timer only: it would fire into destroyed webContents, but the hook subscription has no
+  // replay, so a reopened window resumes the kept working entries on 'show'.
+  stopSyntheticTitleSpinnerTimer()
 }

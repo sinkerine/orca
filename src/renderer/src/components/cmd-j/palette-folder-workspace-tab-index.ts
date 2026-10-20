@@ -48,7 +48,7 @@ export function collectFolderWorkspaceHostLabels(
 ): Map<string, string> {
   const labels = new Map<string, string>()
   for (const folderWorkspace of folderWorkspaces) {
-    const badge = getPaletteHostBadge(folderWorkspace, hostOptions, alwaysShowHostLabel)
+    const badge = getPaletteHostBadge(folderWorkspaceToWorktree(folderWorkspace).hostId, hostOptions, alwaysShowHostLabel)
     if (badge) {
       labels.set(getWorktreeHostIdentity(folderWorkspaceToWorktree(folderWorkspace)), badge.label)
     }

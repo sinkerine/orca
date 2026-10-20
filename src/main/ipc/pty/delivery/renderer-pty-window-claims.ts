@@ -8,7 +8,7 @@
  * only when EVERY window that has an opinion says hidden, and none reports it
  * visible or active.
  */
-import type { BrowserWindow } from 'electron'
+import type { PtyRendererDelivery } from '../session'
 import { activeRendererPtys, visibleRendererPtys } from './visibility-state'
 
 /** Windowless renderers (paired web, pop-out) and main-originated spawn marks share
@@ -26,7 +26,7 @@ type RendererPtyWindowClaims = {
 }
 
 const claimsByWindow = new Map<number, RendererPtyWindowClaims>()
-const cleanupBoundWindows = new WeakSet<BrowserWindow>()
+const cleanupBoundWindows = new WeakSet<PtyRendererDelivery>()
 
 function claimsForWindow(windowId: number): RendererPtyWindowClaims {
   const existing = claimsByWindow.get(windowId)
@@ -196,7 +196,7 @@ export function clearRendererPtyWindowClaims(windowId: number): boolean {
 }
 
 /** Auto-registers teardown the first time a window reports a claim, so no registry hook is needed. */
-export function bindRendererPtyWindowClaimCleanup(window: BrowserWindow | null): void {
+export function bindRendererPtyWindowClaimCleanup(window: PtyRendererDelivery | null): void {
   if (
     !window ||
     window.isDestroyed?.() === true ||
@@ -212,7 +212,7 @@ export function bindRendererPtyWindowClaimCleanup(window: BrowserWindow | null):
   })
 }
 
-export function resolveRendererPtyClaimWindowId(window: BrowserWindow | null): number {
+export function resolveRendererPtyClaimWindowId(window: PtyRendererDelivery | null): number {
   if (!window || typeof window.id !== 'number' || window.isDestroyed?.() === true) {
     return IMPLICIT_RENDERER_WINDOW_ID
   }

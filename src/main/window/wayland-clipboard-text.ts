@@ -1,4 +1,4 @@
-import { runProcess } from '../../shared/child-process/run-process'
+import { runProcess } from '@orca/process-host'
 export { isLinuxWaylandSession as usesWaylandClipboard } from '../linux-wayland-session'
 
 export async function writeWaylandClipboardText(text: string): Promise<void> {

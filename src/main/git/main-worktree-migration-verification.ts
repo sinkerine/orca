@@ -1,7 +1,7 @@
 import { join, resolve } from 'node:path'
 import type { GitWorktreeInfo } from '../../shared/worktree/types'
 import { parseWorktreeList } from '../../shared/git-worktree-porcelain-parser'
-import { runProcessSync } from '../../shared/child-process/run-process'
+import { runProcessSync } from '@orca/process-host'
 import type { MainWorktreeMigrationJournal } from './main-worktree-migration-journal'
 
 export function migrationGit(cwd: string, args: string[]): string {

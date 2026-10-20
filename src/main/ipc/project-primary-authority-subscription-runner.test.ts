@@ -52,11 +52,11 @@ vi.mock('../runtime/peer-fingerprint', () => ({
   fingerprintPeerPublicKey: (key: string) => key
 }))
 
-vi.mock('./runtime-environment-connectivity-handlers', () => ({
+vi.mock('./runtime-environments/runtime-environment-connectivity-handlers', () => ({
   isRuntimeEnvironmentManuallyDisconnected: (id: string) => state.disconnected.has(id)
 }))
 
-vi.mock('./runtime-environment-transport-routing', () => ({
+vi.mock('./runtime-environments/runtime-environment-transport-routing', () => ({
   subscribeRuntimeEnvironment: state.subscribe,
   callRuntimeEnvironment: state.call
 }))

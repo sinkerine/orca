@@ -41,7 +41,7 @@ vi.mock('../../shared/runtime-environments', async (importOriginal) => ({
 vi.mock('../runtime/peer-fingerprint', () => ({
   fingerprintPeerPublicKey: (key: string) => key
 }))
-vi.mock('./runtime-environment-transport-routing', () => ({
+vi.mock('./runtime-environments/runtime-environment-transport-routing', () => ({
   callRuntimeEnvironment: state.call
 }))
 

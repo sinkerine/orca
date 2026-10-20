@@ -8,8 +8,10 @@ import { formatBrowserClientHostIdArgument } from '../../shared/browser-client-h
 import { markSystemSessionEnding } from '../crash-reporting/expected-teardown-state'
 import { recordDurableCrashBreadcrumb } from '../crash-reporting/durable-crash-breadcrumb'
 import { clearTrustedUIRendererWebContentsId, setTrustedUIRendererWebContentsId } from '../ipc/ui'
+import { flushUnsavedCloudSessions } from '../orca-profiles/profile-cloud-session-owner'
 import type { Store } from '../persistence'
 import { closeDashboardPopout } from './dashboard-popout-window'
+import { closeWorkspaceSpaceWindow } from './workspace-space-window'
 import {
   closeWindowAfterConfirmation,
   installMainWindowCloseLifecycle,
@@ -47,6 +49,7 @@ import {
   createWindowId,
   unbindWindowIdFromWebContents
 } from './window-view-state-registry'
+import { recordAgentSessionRuntimeEnd } from '../runtime/agent-session-runtime-end-record'
 
 export { WINDOW_QUIT_RENDERER_ACK_TIMEOUT_MS }
 
@@ -184,6 +187,9 @@ export function createMainWindow(
           ? event.reasons.filter((reason) => typeof reason === 'string').join(',')
           : ''
       })
+      flushUnsavedCloudSessions()
+      // Windows emits no will-quit for an OS shutdown or logoff, so its teardown never records it.
+      recordAgentSessionRuntimeEnd('quit')
     })
   }
 
@@ -233,6 +239,7 @@ export function createMainWindow(
 
   mainWindow.on('closed', () => {
     closeDashboardPopout()
+    closeWorkspaceSpaceWindow()
     state.clearInitialRevealFallbackTimer()
     closeLifecycle.dispose()
     focus.dispose()

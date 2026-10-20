@@ -13,6 +13,8 @@ export type WorkspaceSessionFieldOwnership =
   | 'surfaceTombstoneKeyed'
 
 export const WORKSPACE_SESSION_FIELD_OWNERSHIP = {
+  localOnlyScrollbackByTabId: 'tabKeyed',
+  pairedTerminalTabCloseIntentsByEnvironment: 'global',
   activeRepoId: 'global',
   activeWorktreeId: 'global',
   activeWorkspaceExecutionHostId: 'global',

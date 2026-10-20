@@ -6,7 +6,7 @@ import type { Repo } from '../../../shared/repo-types'
 import type { GlobalSettings } from '../../../shared/global-settings-types'
 import { resolveSetupRunPolicy } from '../../../shared/setup-run-policy'
 import type { HookCheckResult } from '@/runtime/runtime-hooks-client'
-import { isRuntimeScopeForbiddenError } from '@/runtime/runtime-rpc-client'
+import { isRuntimeScopeForbiddenError } from '@/runtime/runtime-rpc-result'
 import { hasEffectiveSetupCommand } from './setup-script-status'
 
 const SETUP_SCRIPT_PROMPT_DISMISSAL_PREFIX = 'generation-v1:'

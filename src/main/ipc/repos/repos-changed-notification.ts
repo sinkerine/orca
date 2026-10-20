@@ -13,11 +13,11 @@ export function setRepoRemoteClientNotifier(notifier: RepoRemoteClientNotifier):
   repoRemoteClientNotifier = notifier
 }
 
-export function notifyReposChanged(mainWindow: BrowserWindow): void {
+export function notifyReposChanged(mainWindow: BrowserWindow | null): void {
   wakeFolderRepoGitUpgradeWatch()
   // Why: the repo catalog is app-wide state, so every open window must refetch it.
   broadcastToMainWindows('repos:changed')
-  if (getMainWindows().length === 0 && !mainWindow.isDestroyed()) {
+  if (getMainWindows().length === 0 && mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('repos:changed')
   }
   // Why: paired clients only refetch a remote catalog on this event; without it a

@@ -1,12 +1,11 @@
-// @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
-import { OrcaRuntimeWithDeliverPendingMessages } from './orca-runtime-deliver-pending-messages'
+import { OrcaRuntimeWithResolveExitWaiters } from './terminal/wait/terminal-wait-settlements'
 import type { TerminalWaiter } from './runtime-terminal-contracts'
-import type { RuntimeTerminalWait } from '../../shared/runtime-types'
+import type { RuntimeTerminalWait } from '../../shared/runtime-terminal-contracts'
 import type { BrowserWindow } from 'electron'
 import { getRuntimeDesktopSurface } from './runtime-desktop-surface'
 import { rehomeTerminalTabWorktreeRecords } from './terminal-tab-worktree-rehome'
 
-export class OrcaRuntimeWithResolveWaiter extends OrcaRuntimeWithDeliverPendingMessages {
+export abstract class OrcaRuntimeWithResolveWaiter extends OrcaRuntimeWithResolveExitWaiters {
   rehomeTerminalTabWorktree(tabId: string, worktreeId: string): { rehomedPtyIds: string[] } {
     const rehomedPtyIds = rehomeTerminalTabWorktreeRecords(
       { tabs: this.tabs, leaves: this.leaves, ptys: this.ptysById },
@@ -38,7 +37,7 @@ export class OrcaRuntimeWithResolveWaiter extends OrcaRuntimeWithDeliverPendingM
     return `${tabId}::${leafId}`
   }
 
-  protected getAuthoritativeWindow(): BrowserWindow {
+  getAuthoritativeWindow(): BrowserWindow {
     const win = this.getAvailableAuthoritativeWindow()
     if (!win || win.isDestroyed()) {
       throw new Error('No renderer window available')

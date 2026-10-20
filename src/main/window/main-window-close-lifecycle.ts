@@ -13,6 +13,7 @@ import {
   setCloseRequest,
   setHideToTrayRequest
 } from './window-control-ipc-handlers'
+import { consumeUserQuitWindowClose } from './user-quit-window-close'
 
 export const WINDOW_QUIT_RENDERER_ACK_TIMEOUT_MS = QUIT_RENDERER_ACK_TIMEOUT_MS
 const confirmedCloseByWindow = new WeakMap<BrowserWindow, () => void>()
@@ -114,8 +115,9 @@ export function installMainWindowCloseLifecycle(args: {
   })
 
   mainWindow.on('close', (e) => {
+    const userQuitClose = consumeUserQuitWindowClose(mainWindow)
     // Why: Alt+F4/programmatic closes hit the native event; apply the same minimize-to-tray guard the renderer-drawn X uses.
-    if (!windowCloseConfirmed && hideToTrayIfEnabled()) {
+    if (!windowCloseConfirmed && !userQuitClose && hideToTrayIfEnabled()) {
       e.preventDefault()
       return
     }
@@ -140,7 +142,7 @@ export function installMainWindowCloseLifecycle(args: {
     const isQuitting = opts?.getIsQuitting?.() ?? false
     closeConfirmationActive = true
     const requestId = ++closeRequestSequence
-    if (isQuitting) {
+    if (isQuitting || userQuitClose) {
       quitConfirmationActive = true
       armQuitRendererAckTimer(requestId)
     }

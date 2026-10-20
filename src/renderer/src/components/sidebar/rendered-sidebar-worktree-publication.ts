@@ -1,6 +1,7 @@
 import type { Worktree } from '../../../../shared/worktree/types'
 
 export type VisibleWorktreeShortcutTarget = {
+  lineageGroupKey?: string
   id: string
   executionHostId?: Worktree['hostId']
 }

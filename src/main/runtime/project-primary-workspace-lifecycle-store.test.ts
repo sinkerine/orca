@@ -1,3 +1,4 @@
+import { hostWorktreeTarget } from '../../shared/worktree/host-qualified-identity'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -60,7 +61,7 @@ describe('project primary workspace lifecycle Store integration', () => {
       workspaceLineageByChildKey: {}
     })
     const store = createStore()
-    store.setWorktreeMetaForHost(`${repo.id}::${repo.path}`, 'local', {
+    store.setWorktreeMeta(hostWorktreeTarget({ id: `${repo.id}::${repo.path}`, hostId: 'local' }), {
       instanceId: 'root-instance'
     })
     const runtime = new OrcaRuntimeService(store as never, undefined, {

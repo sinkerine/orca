@@ -21,7 +21,7 @@ import {
 import { forceTerminalDeliveryHeal } from './terminal-delivery-watchdog'
 import { restoreTerminalFitsToDesktop } from './terminal-fit-restore'
 import type { TerminalFitRestoreSettings } from './terminal-fit-restore'
-import type { PtyTransport } from './pty-transport'
+import type { PtyTransport } from './pty-transport-types'
 
 export type TerminalRecoveryReport = {
   /** Panes whose visibility claim was re-declared to main. */

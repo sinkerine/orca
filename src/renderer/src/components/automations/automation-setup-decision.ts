@@ -47,7 +47,6 @@ export function getAutomationSetupDefaultDecision(
 }
 
 export function getVisibleAutomationSetupDecision(args: {
-  createTarget: 'orca' | 'hermes'
   workspaceMode: AutomationWorkspaceMode
   repoId: string
   repos: readonly Repo[]
@@ -55,7 +54,7 @@ export function getVisibleAutomationSetupDecision(args: {
   yamlHooks?: OrcaHooks | null
   settings?: Pick<GlobalSettings, 'defaultSetupRunPolicy'> | null
 }): Extract<SetupDecision, 'run' | 'skip'> | undefined {
-  if (args.createTarget !== 'orca' || args.workspaceMode !== 'new_per_run') {
+  if (args.workspaceMode !== 'new_per_run') {
     return undefined
   }
   return getAutomationSetupDefaultDecision(
@@ -70,7 +69,6 @@ export function getVisibleAutomationSetupDecision(args: {
 }
 
 export function resolveAutomationSetupDecisionForSave(args: {
-  createTarget: 'orca' | 'hermes'
   workspaceMode: AutomationWorkspaceMode
   repoId: string
   repos: readonly Repo[]
@@ -79,7 +77,7 @@ export function resolveAutomationSetupDecisionForSave(args: {
   settings?: Pick<GlobalSettings, 'defaultSetupRunPolicy'> | null
   draftSetupDecision: Extract<SetupDecision, 'run' | 'skip'> | undefined
 }): Extract<SetupDecision, 'run' | 'skip'> | undefined {
-  if (args.createTarget !== 'orca' || args.workspaceMode !== 'new_per_run') {
+  if (args.workspaceMode !== 'new_per_run') {
     return undefined
   }
 

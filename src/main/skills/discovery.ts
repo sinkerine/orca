@@ -6,7 +6,8 @@ import type { Repo } from '../../shared/repo-types'
 import type {
   DiscoveredSkill,
   SkillDiscoveryResult,
-  SkillDiscoverySource
+  SkillDiscoverySource,
+  SkillSourceKind
 } from '../../shared/skills'
 import {
   buildSkillDiscoverySources,
@@ -17,6 +18,8 @@ import {
   stablePathId,
   type SkillScanRoot
 } from './skill-discovery-sources'
+import { rootMayContainSourceKind } from './skill-discovery-source-filter'
+import { buildRemoteRepoSkillSources } from './skill-remote-repo-sources'
 import { discoverClaudePluginSkillSources } from './claude-plugin-skill-sources'
 import { findSkillFiles } from './skill-root-file-walk'
 import { runSkillCandidateTasks } from './skill-candidate-concurrency'
@@ -264,6 +267,8 @@ export async function discoverSkills(args: {
   includeCwd?: boolean
   providerRootOverrides?: SkillProviderRootOverrides
   refresh?: boolean
+  names?: string[]
+  sourceKinds?: SkillSourceKind[]
 }): Promise<SkillDiscoveryResult> {
   const startedAt = Date.now()
   const homeDir = args.homeDir ?? homedir()
@@ -272,24 +277,43 @@ export async function discoverSkills(args: {
     ...buildSkillDiscoverySources({ ...args, homeDir }),
     // Why: plugin discovery is native-chat data keyed to an explicit workspace.
     // Untargeted scans (Settings) keep their pre-picker inventory and cost.
-    ...(args.cwd && args.includeCwd !== false
+    ...(args.cwd &&
+    args.includeCwd !== false &&
+    (!args.sourceKinds?.length || args.sourceKinds.includes('plugin'))
       ? await discoverClaudePluginSkillSources({ homeDir, cwd: args.cwd })
       : [])
-  ]
+  ].filter((root) => rootMayContainSourceKind(root, args.sourceKinds))
   const scans = await Promise.all(roots.map((root) => scanRootShared(root, refresh)))
-  const sources: SkillDiscoverySource[] = roots.map((root, index) => ({
-    ...root,
-    providers: [...root.providers],
-    exists: scans[index].value.exists,
-    skippedReason: scans[index].value.unavailable
-      ? 'unavailable'
-      : scans[index].value.exists
-        ? undefined
-        : 'missing'
-  }))
+  const sources: SkillDiscoverySource[] = [
+    ...roots.map((root, index): SkillDiscoverySource => ({
+      ...root,
+      providers: [...root.providers],
+      exists: scans[index].value.exists,
+      skippedReason: scans[index].value.unavailable
+        ? 'unavailable'
+        : scans[index].value.exists
+          ? undefined
+          : 'missing'
+    })),
+    ...(!args.sourceKinds?.length || args.sourceKinds.includes('repo')
+      ? buildRemoteRepoSkillSources(args.repos ?? [])
+      : [])
+  ]
+  const normalizedNames = args.names?.map((name) => name.trim().toLowerCase()).filter(Boolean)
+  const expectedNames = normalizedNames?.length ? new Set(normalizedNames) : undefined
   const seen = new Map<string, DiscoveredSkill>()
   for (const { value } of scans) {
     for (const skill of value.skills) {
+      if (args.sourceKinds?.length && !args.sourceKinds.includes(skill.sourceKind)) {
+        continue
+      }
+      if (
+        expectedNames &&
+        !expectedNames.has(skill.name.trim().toLowerCase()) &&
+        !expectedNames.has(basename(skill.directoryPath).trim().toLowerCase())
+      ) {
+        continue
+      }
       mergeScannedSkill(seen, skill)
     }
   }

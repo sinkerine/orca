@@ -14,6 +14,7 @@ import type {
   TerminalRecoveryRemountRequest,
   TerminalRecoveryRemountResult
 } from '../../../terminals/terminal-tab-recovery-ledger'
+import { settleAttentionRemovedBy } from '../../workspace-attention/attention-removal-follow-up'
 
 export function createSetRenamingWorktreeId(
   set: WorktreeSliceSet,
@@ -55,7 +56,7 @@ export function createRemountTerminalTabForRecovery(
           const { admitted: _admitted, ...decline } = admission
           result = { remounted: false, ...decline }
         }
-        return {}
+        return s
       }
       const { worktreeId, index, tab } = location
       const nextTabs = s.tabsByWorktree[worktreeId].slice()
@@ -110,12 +111,12 @@ export function createSettleTerminalTabRecovery(
     set((s) => {
       const location = locateTerminalTab(s.tabsByWorktree, tabId)
       if (!location) {
-        return {}
+        return s
       }
       const { worktreeId, index, tab } = location
       const recovery = settledTerminalRecoveryLedger(tab, generation, outcome)
       if (!recovery) {
-        return {}
+        return s
       }
       const nextTabs = s.tabsByWorktree[worktreeId].slice()
       nextTabs[index] = { ...tab, recovery }
@@ -140,7 +141,7 @@ export function createGetKnownWorktreeById(
 
 export function createPurgeWorktreeTerminalState(
   set: WorktreeSliceSet,
-  _get: WorktreeSliceGet
+  get: WorktreeSliceGet
 ): WorktreeSlice['purgeWorktreeTerminalState'] {
   return (worktreeTargets) => {
     const purgeableWorktreeTargets = worktreeTargets.filter((target) => {
@@ -150,6 +151,8 @@ export function createPurgeWorktreeTerminalState(
     if (purgeableWorktreeTargets.length === 0) {
       return
     }
-    set((s) => buildWorktreePurgeState(s, purgeableWorktreeTargets))
+    settleAttentionRemovedBy(set, get, () =>
+      set((s) => buildWorktreePurgeState(s, purgeableWorktreeTargets))
+    )
   }
 }

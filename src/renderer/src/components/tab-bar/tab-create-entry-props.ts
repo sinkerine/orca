@@ -8,7 +8,9 @@ export type TabBarCreateEntryProps = {
   menuOpen: boolean
   menuOptions?: readonly TabCreateMenuOption[]
   onDidOpenEntry?: () => void
-  onLaunchAgent?: (option: TabAgentLaunchOption) => void
+  /** Legacy agent-only callback for callers that do not project surfaces. */
+  onLaunchAgent?: (agent: TabAgentLaunchOption['agent']) => void
+  onLaunchAgentOption?: (option: TabAgentLaunchOption) => void
   onOpenDefaultTerminal?: () => void
   onOpenEntry?: (args: TabCreateEntryArgs) => Promise<void>
   onQueryChange?: (query: string) => void

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { pruneEmptyProjectGroupHeaders } from './prune-empty-project-group-headers'
-import type { Row } from './row-types'
+import type { Row } from '../../../../../../shared/sidebar-list/row-types'
 
 function groupHeader(key: string, count: number): Row {
   return {

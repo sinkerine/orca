@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, app } from 'electron'
+import { BrowserWindow, Menu, app, webContents } from 'electron'
 import {
   formatKeybindingList,
   getEffectiveKeybindingsForAction,
@@ -7,6 +7,7 @@ import {
 } from '../../shared/keybindings'
 import type { UpdateCheckOptions } from '../../shared/update-status-types'
 import { translateMain } from '../i18n/main-i18n'
+import { isNativeBrowserPopupWindow } from '../browser/native-browser-popup-windows'
 import { createAppMenuSelectionItem } from './app-menu-selection-item'
 import { reloadMenuTarget } from './menu-target-web-contents'
 import {
@@ -15,6 +16,7 @@ import {
   type AppearanceMenuKey,
   type AppearanceMenuState
 } from './register-app-menu-appearance'
+import { createAppMenuQuitItem } from './app-menu-quit-item'
 
 export type { AppearanceMenuKey, AppearanceMenuState }
 export { getNextDefaultOnAppearanceSettingValue }
@@ -41,6 +43,7 @@ type RegisterAppMenuOptions = {
   // Why: the macOS app-menu title. Passed the per-branch dev label since
   // app.name is now pinned to a stable value for Keychain-key stability.
   appMenuLabel?: string
+  onQuit?: () => void
 }
 
 function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
@@ -100,8 +103,16 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
     click: checkForUpdatesClick
   }
 
+  const settingsBindings = getEffectiveKeybindingsForAction(
+    'app.settings',
+    process.platform,
+    getKeybindings?.()
+  )
+  const settingsShortcut = settingsBindings.length
+    ? `\t${formatKeybindingList(settingsBindings, process.platform)}`
+    : ''
   const settingsItem: Electron.MenuItemConstructorOptions = {
-    label: `${translateMain('menu.settings', 'Settings')}\t${shortcutLabel('app.settings')}`,
+    label: `${translateMain('menu.settings', 'Settings')}${settingsShortcut}`,
     click: (_menuItem, window) => onOpenSettings(window)
   }
 
@@ -143,7 +154,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
       { role: 'hideOthers' },
       { role: 'unhide' },
       { type: 'separator' },
-      { role: 'quit' }
+      createAppMenuQuitItem(options.onQuit, options.appMenuLabel ?? app.name)
     ]
   }
 
@@ -164,7 +175,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
             { type: 'separator' },
             settingsItem,
             { type: 'separator' },
-            { role: 'quit', label: translateMain('menu.exit', 'Exit') }
+            createAppMenuQuitItem(options.onQuit)
           ] satisfies Electron.MenuItemConstructorOptions[]))
     ]
   }
@@ -195,6 +206,9 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
           // control, so raw Electron paste cannot know which Orca surface owns it.
           const focusedWindow = BrowserWindow.getFocusedWindow()
           if (focusedWindow) {
+            if (isNativeBrowserPopupWindow(focusedWindow)) {
+              return (webContents.getFocusedWebContents() ?? focusedWindow.webContents).paste()
+            }
             focusedWindow.webContents.send('ui:appMenuPaste')
             return
           }

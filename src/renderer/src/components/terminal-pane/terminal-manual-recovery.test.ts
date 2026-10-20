@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { recoverTerminalManually, terminalRecoveryFoundNothing } from './terminal-manual-recovery'
 import type { PaneManager } from '@/lib/pane-manager/pane-manager'
-import type { PtyTransport } from './pty-transport'
+import type { PtyTransport } from './pty-transport-types'
 
 const recoverWake = vi.fn()
 const focusPane = vi.fn()

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { spawnMock } from './pty-ipc-mock-registry'
 import { setupPtyIpcSuite } from './pty-ipc-test-harness'
-import { registerPtyHandlers } from './pty'
+import { registerPtyHandlers } from './pty/register-handlers'
 import { handleNativeWindowDestruction } from './pty/delivery/lifecycle-reset'
 
 vi.mock('electron', () => import('./pty-ipc-mock-registry').then((m) => m.electronModuleMock()))

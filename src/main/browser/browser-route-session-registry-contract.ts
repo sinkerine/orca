@@ -1,3 +1,4 @@
+import type { BrowserClientProfileMetadata } from '../../shared/browser-client-profile-switch-protocol'
 import type {
   BrowserRoutePartitionIdentity,
   DerivedBrowserRoutePartition
@@ -16,13 +17,14 @@ export type BrowserRoutePartitionBindingStore = {
 
 export type BrowserRouteSessionRegistryDependencies = {
   derivePartition?: (identity: BrowserRoutePartitionIdentity) => DerivedBrowserRoutePartition
-  validateProfile(browserProfileId: string): void
+  validateProfile(browserProfileId: string, metadata?: BrowserClientProfileMetadata): void
   getSession(partition: string): BrowserRouteElectronSession
   setupPolicies(input: {
+    profileMetadata?: BrowserClientProfileMetadata
     partition: string
     browserProfileId: string
     session: BrowserRouteElectronSession
-  }): void
+  }): void | Promise<void>
   clearPolicies(input: { partition: string; session: BrowserRouteElectronSession }): void
   retirePageAuthority(input: BrowserRoutePageAuthorityRetirement): boolean
   bindingStore: BrowserRoutePartitionBindingStore

@@ -32,6 +32,7 @@ function requireAuthorityPeer(context: {
 export const PROJECT_PRIMARY_AUTHORITY_METHODS = [
   defineStreamingMethod({
     name: 'project.primary.authority.attach',
+    permission: 'workspace',
     params: ProjectPrimaryAuthorityAttachParams,
     handler: async (params, context, emit) => {
       const caller = requireAuthorityPeer(context)
@@ -46,6 +47,7 @@ export const PROJECT_PRIMARY_AUTHORITY_METHODS = [
   }),
   defineMethod({
     name: 'project.primary.authority.requestResult',
+    permission: 'workspace',
     params: ProjectPrimaryAuthorityResultOrSnapshotParams,
     handler: async (params, context) => {
       const caller = requireAuthorityPeer(context)

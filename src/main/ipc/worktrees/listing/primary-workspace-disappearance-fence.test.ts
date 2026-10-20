@@ -1,3 +1,4 @@
+import { hostWorktreeTarget } from '../../../../shared/worktree/host-qualified-identity'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -60,7 +61,7 @@ function makeStore() {
     workspaceLineageByChildKey: {}
   })
   const store = createStore()
-  store.setWorktreeMetaForHost(primary.worktreeId, 'ssh:target-a', {
+  store.setWorktreeMeta(hostWorktreeTarget({ id: primary.worktreeId, hostId: 'ssh:target-a' }), {
     instanceId: primary.instanceId
   })
   return store
@@ -172,7 +173,7 @@ describe('primary workspace observed disappearance fence', () => {
       workspaceLineageByChildKey: {}
     })
     const store = createStore()
-    store.setWorktreeMetaForHost(folderProject.primaryWorkspace!.worktreeId, 'local', {
+    store.setWorktreeMeta(hostWorktreeTarget({ id: folderProject.primaryWorkspace!.worktreeId, hostId: 'local' }), {
       instanceId: 'folder-instance'
     })
     await store.flushPendingOrThrowAsync()

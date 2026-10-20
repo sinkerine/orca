@@ -1,4 +1,7 @@
+import { EventEmitter } from 'node:events'
 import { type Mock, vi } from 'vitest'
+import type { WorktreeMeta } from '../../shared/worktree/meta-types'
+import type { HostWorktreeTarget } from '../../shared/worktree/host-qualified-identity'
 
 export type HandlerMap = Record<string, (_event: unknown, args: unknown) => unknown>
 
@@ -7,7 +10,11 @@ type StoreMock = Mock<(...args: unknown[]) => unknown>
 /** Store lookups tests re-implement per id, so the first arg stays narrowed. */
 type KeyedStoreMock = Mock<(id: string, ...rest: unknown[]) => unknown>
 /** Store writers tests re-implement by merging the patch they receive. */
-type KeyedStoreWriteMock = Mock<(id: string, patch: object) => unknown>
+type KeyedStoreWriteMock = Mock<
+  (target: HostWorktreeTarget, patch: Partial<WorktreeMeta>) => unknown
+>
+/** Host-qualified store removals. */
+type TargetStoreMock = Mock<(target: HostWorktreeTarget) => unknown>
 type HostWorktreeStoreWriteMock = Mock<(id: string, hostId: string, patch: object) => unknown>
 
 export type TestMainWindow = {
@@ -29,11 +36,14 @@ export type TestStore = {
   setWorktreeMeta: KeyedStoreWriteMock
   setWorktreeMetaForHost: HostWorktreeStoreWriteMock
   getProjectHostSetups: StoreMock
-  removeWorktreeMeta: KeyedStoreMock
+  removeWorktreeMeta: TargetStoreMock
   pruneSessionlessMissingLocalWorktreeMetadataForRepo: StoreMock
   removeWorkspaceSessionStateForWorktree: KeyedStoreMock
+  /** Read by main's switch-on layout purge after a listing. */
+  getWorkspaceSessionHostIds: StoreMock
+  getWorkspaceSession: StoreMock
   getAllWorktreeLineage: StoreMock
-  removeWorktreeLineage: KeyedStoreMock
+  removeWorktreeLineage: TargetStoreMock
   getAllWorkspaceLineage: StoreMock
   getFolderWorkspaces: StoreMock
   getProjectGroups: StoreMock
@@ -56,7 +66,7 @@ export const mainWindow: TestMainWindow = {
     send: vi.fn()
   }
 }
-export const ipcEvent = { sender: { id: 1 } }
+export const ipcEvent = { sender: Object.assign(new EventEmitter(), { id: 1 }) }
 export const store: TestStore = {
   getProfileStorageDirectory: vi.fn(() => '/profile-a'),
   getRepos: vi.fn(),
@@ -74,6 +84,8 @@ export const store: TestStore = {
   removeWorktreeMeta: vi.fn(),
   pruneSessionlessMissingLocalWorktreeMetadataForRepo: vi.fn(),
   removeWorkspaceSessionStateForWorktree: vi.fn(),
+  getWorkspaceSessionHostIds: vi.fn(),
+  getWorkspaceSession: vi.fn(),
   getAllWorktreeLineage: vi.fn(),
   removeWorktreeLineage: vi.fn(),
   getAllWorkspaceLineage: vi.fn(),

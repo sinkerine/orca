@@ -1,12 +1,11 @@
+import { hostWorktreeTarget } from '../../shared/worktree/host-qualified-identity'
 import { randomUUID } from 'node:crypto'
 import { getRepoExecutionHostId } from '../../shared/execution-host'
 import type { Repo } from '../../shared/repo-types'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree/id'
-import type { GitWorktreeInfo } from '../../shared/worktree/types'
 import type { Store } from '../persistence/loading-store/store'
 import {
-  readWorktreeMetaForRepo,
-  writeWorktreeMetaForHost
+  readWorktreeMetaForRepo
 } from '../persistence/host-qualified-worktree-meta'
 import { runtimePathsEqual } from './runtime-worktree-path-identity'
 
@@ -14,9 +13,7 @@ import { runtimePathsEqual } from './runtime-worktree-path-identity'
 export function fenceObservedMissingPrimaryWorktree(
   store: Store,
   repo: Repo,
-  liveWorktrees: readonly (Pick<GitWorktreeInfo, 'path' | 'isBare' | 'prunable'> & {
-    git?: Pick<GitWorktreeInfo, 'isBare' | 'prunable'>
-  })[],
+  liveWorktrees: readonly { path: string; isBare?: boolean; prunable?: unknown; git?: { isBare?: boolean; prunable?: unknown } }[],
   ownPeerFingerprint: string | null
 ): void {
   if (!ownPeerFingerprint) {
@@ -72,6 +69,6 @@ export function fenceObservedMissingPrimaryWorktree(
     if (occupantMoved) {
       continue
     }
-    writeWorktreeMetaForHost(store, primary.worktreeId, hostId, { instanceId: randomUUID() })
+    store.setWorktreeMeta(hostWorktreeTarget({ id: primary.worktreeId, hostId }), { instanceId: randomUUID() })
   }
 }

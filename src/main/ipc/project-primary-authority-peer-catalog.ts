@@ -4,7 +4,7 @@ import { normalizeExecutionHostId } from '../../shared/execution-host'
 import type { ResolvedWorktree } from '../runtime/runtime-worktree-path-identity'
 import type { Store } from '../persistence'
 import { fingerprintPeerPublicKey } from '../runtime/peer-fingerprint'
-import { callRuntimeEnvironment } from './runtime-environment-transport-routing'
+import { callRuntimeEnvironment } from './runtime-environments/runtime-environment-transport-routing'
 
 type Row = Record<string, unknown>
 

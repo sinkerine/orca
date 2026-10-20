@@ -1,5 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { stubHeadlessReact, stubShallowSelector } from './tab-bar-windows-shell-launch-render-stubs'
+import { expandNode } from './tab-bar-dropdown-menu-item-probe'
+import {
+  stubHeadlessReact,
+  stubShallowSelector,
+  stubTooltip
+} from './tab-bar-windows-shell-launch-render-stubs'
+import { layoutApplyTestTransport } from '@/runtime/layout-apply-test-transport.test-fixture'
+
+// Main's answer to the window's layout commands, as a switch-on build sends them.
+vi.mock('@/runtime/runtime-rpc-client', async (importOriginal) =>
+  (
+    await import('@/runtime/layout-apply-test-transport.test-fixture')
+  ).runtimeRpcClientWithLayoutApply(await importOriginal())
+)
 
 const appStoreSnapshot: {
   activeTabId: string | null
@@ -52,6 +65,11 @@ const useAppStoreMock = vi.fn(
 
 vi.mock('react', async () => await stubHeadlessReact())
 vi.mock('zustand/react/shallow', () => stubShallowSelector())
+// The headless React stub has no dispatcher for the hook each tab row subscribes to language changes with.
+vi.mock('react-i18next', async () => ({
+  ...(await vi.importActual<Record<string, unknown>>('react-i18next')),
+  useTranslation: () => ({})
+}))
 
 vi.mock('lucide-react', async () => (await import('./lucide-icon-stub-fixture')).stubEveryIcon())
 
@@ -110,6 +128,12 @@ vi.mock('./SortableTab', () => ({
   }
 }))
 
+vi.mock('./TerminalSortableTab', () => ({
+  default: function SortableTab(props: Record<string, unknown>) {
+    return { type: 'SortableTab', props }
+  }
+}))
+
 vi.mock('./EditorFileTab', () => ({
   default: function EditorFileTab(props: Record<string, unknown>) {
     return { type: 'EditorFileTab', props }
@@ -126,7 +150,11 @@ vi.mock('./BrowserTab', () => ({
 vi.mock('./QuickLaunchButton', () => ({
   QuickLaunchAgentMenuItems: function QuickLaunchAgentMenuItems() {
     return null
-  }
+  },
+  ProjectedAgentMenuItems: function ProjectedAgentMenuItems() {
+    return null
+  },
+  useTabAgentMenuLaunch: () => () => undefined
 }))
 
 vi.mock('./shell-icons', () => ({
@@ -175,6 +203,8 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
   }
 }))
 
+vi.mock('@/components/ui/tooltip', () => stubTooltip())
+
 type ReactElementLike = {
   type: unknown
   props: Record<string, unknown>
@@ -201,6 +231,11 @@ function findChildrenByType(node: unknown, typeName: string): ReactElementLike[]
     const matchedName = typeof type === 'string' ? type : type?.name
     if (matchedName === typeName) {
       results.push(el)
+    }
+    if (matchedName === 'TabBarStaticCreateMenu' && typeof el.type === 'function') {
+      // Expand the deferred pure menu component in this shallow renderer.
+      visit(el.type(el.props))
+      return
     }
     if (el.props && 'children' in el.props) {
       visit(el.props.children)
@@ -230,22 +265,24 @@ async function renderTabBar(props: Record<string, unknown>): Promise<unknown> {
     | ((props: Record<string, unknown>) => unknown)
     | { type: (props: Record<string, unknown>) => unknown }
   const TabBar = typeof candidate === 'function' ? candidate : candidate.type
-  return TabBar({
-    activeTabId: null,
-    worktreeId: 'wt-1',
-    expandedPaneByTabId: {},
-    onActivate: () => {},
-    onClose: () => {},
-    onCloseOthers: () => {},
-    onCloseToRight: () => {},
-    onCloseToLeft: () => {},
-    onNewTerminalTab: () => {},
-    onNewBrowserTab: () => {},
-    onSetCustomTitle: () => {},
-    onSetTabColor: () => {},
-    onTogglePaneExpand: () => {},
-    ...props
-  })
+  return expandNode(
+    TabBar({
+      activeTabId: null,
+      worktreeId: 'wt-1',
+      expandedPaneByTabId: {},
+      onActivate: () => {},
+      onClose: () => {},
+      onCloseOthers: () => {},
+      onCloseToRight: () => {},
+      onCloseToLeft: () => {},
+      onNewTerminalTab: () => {},
+      onNewBrowserTab: () => {},
+      onSetCustomTitle: () => {},
+      onSetTabColor: () => {},
+      onTogglePaneExpand: () => {},
+      ...props
+    })
+  )
 }
 
 const TERMINAL_TAB = {
@@ -423,6 +460,7 @@ describe('TabBar context menu wiring', () => {
     expect(sortable[0].props.isPinned).toBe(true)
 
     ;(sortable[0].props.onTogglePin as () => void)()
+    await layoutApplyTestTransport.settle()
 
     expect(unpinTabMock).toHaveBeenCalledWith('unified-term-1')
     expect(pinTabMock).not.toHaveBeenCalled()

@@ -13,6 +13,8 @@ type EmptyWindowSessionFieldPolicy = 'carry' | 'drop'
  * a new session field to be classified instead of leaking into an empty window by default.
  */
 export const EMPTY_WINDOW_SESSION_FIELD_POLICY = {
+  localOnlyScrollbackByTabId: 'drop',
+  pairedTerminalTabCloseIntentsByEnvironment: 'carry',
   activeRepoId: 'drop',
   activeWorkspaceKey: 'drop',
   activeWorkspaceExecutionHostId: 'drop',

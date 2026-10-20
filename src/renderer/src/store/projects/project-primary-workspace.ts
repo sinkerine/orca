@@ -4,7 +4,7 @@ import type { RepoSlice, ProjectPrimaryWorkspaceResult } from '../repos/repo-sta
 import { callRuntimeRpc } from '../../runtime/runtime-rpc-client'
 import type { Project } from '../../../../shared/project-types'
 import { normalizeProjectRow } from '../../../../shared/project-catalog-row-normalization'
-import { mergeProjectCompatibilityProject } from './project-compatibility-core'
+import { mergeProjectCompatibilityProject } from '../../../../shared/project-compatibility-merge'
 import {
   hasSavedPrimaryWorkspace,
   resolveProjectPrimaryWorkspace

@@ -30,11 +30,22 @@ export type HiddenPtyDeliveryGateSettings = Pick<
 >
 
 // Why: reveal must restore from the model only when bytes were actually
-// dropped. Doubles as the one-shot marker latch: the first gated drop emits a
-// restore marker, and the latch is consumed only when the PTY stops being
-// droppable (or by full teardown) — never by re-marking hidden, so drop memory
-// survives hidden remounts, renderer reloads and a sibling window's unmark.
-const droppedSinceHiddenPtys = new Set<string>()
+// dropped. Doubles as the marker latch: the first gated drop emits a restore
+// marker and every unhide re-emits one. It retires only when the renderer acks
+// the restore painted, or on PTY teardown — a retiring hidden pane unhides after
+// unregistering its marker handler, so spending it on unhide loses the gap.
+// 'awaiting-paint' = an unhide re-emitted the marker; a drop after that starts a
+// new episode the in-flight restore's snapshot may predate, so its ack must not
+// retire it.
+const droppedSinceHiddenPtys = new Map<
+  string,
+  { state: 'unrevealed' | 'awaiting-paint'; episode: number }
+>()
+let nextHiddenDropEpisode = 1
+// Why: a runtime background spawn has no renderer party to re-mark it after a
+// reload/crash, so its hidden mark must outlive renderer-scoped resets until a
+// renderer unmarks it (visible mount) or the PTY is torn down.
+const runtimeOwnedHiddenRendererPtys = new Set<string>()
 
 let droppedHiddenDeliveryChars = 0
 let droppedHiddenDeliveryChunks = 0
@@ -50,27 +61,53 @@ export function isHiddenPtyDeliveryGateEnabled(
   )
 }
 
-/** One window's "no visible view needs bytes" bit. Never clears drop memory: a
- *  hidden remount or renderer reload re-marks an already-dropped PTY, and
- *  erasing the latch there would make the eventual reveal skip the restore. */
+/** Renderer-reported "no visible view needs bytes" bit. Never clears drop
+ *  memory: a hidden remount or renderer reload re-marks an already-dropped
+ *  PTY, and erasing the latch there would make the eventual reveal skip the
+ *  restore. */
 export function markHiddenRendererPty(id: string, windowId = IMPLICIT_RENDERER_WINDOW_ID): void {
   recordHiddenRendererPtyWindowClaim(windowId, id, true)
 }
 
-/** Clears this window's hidden bit. The drop latch is NOT consumed here: with several
- *  windows only the drop-policy transition knows whether bytes still get dropped, so
- *  `consumeHiddenRendererPtyDropLatch` owns the restore marker. */
-export function unmarkHiddenRendererPty(id: string, windowId = IMPLICIT_RENDERER_WINDOW_ID): void {
+/** Clears the hidden bit. Returns whether bytes were dropped while hidden so
+ *  the caller can emit a restore marker. Reads the latch without spending it:
+ *  the marker may reach no handler (see droppedSinceHiddenPtys). */
+export function unmarkHiddenRendererPty(id: string, windowId = IMPLICIT_RENDERER_WINDOW_ID): {
+  droppedWhileHidden: boolean
+  hiddenDropEpisode?: number
+} {
   recordHiddenRendererPtyWindowClaim(windowId, id, false)
+  runtimeOwnedHiddenRendererPtys.delete(id)
+  const latch = droppedSinceHiddenPtys.get(id)
+  if (!latch) {
+    return { droppedWhileHidden: false }
+  }
+  latch.state = 'awaiting-paint'
+  return { droppedWhileHidden: true, hiddenDropEpisode: latch.episode }
 }
 
-/** One-shot: true once per hidden episode in which bytes were actually dropped. */
-export function consumeHiddenRendererPtyDropLatch(id: string): boolean {
-  return droppedSinceHiddenPtys.delete(id)
+/** Retires drop memory once the renderer reports painting a restore requested
+ *  for this episode. An older restore's ack must not retire a newer episode,
+ *  and an ack naming no episode retires nothing (fails toward recovery). */
+export function consumeHiddenRendererPtyDropMemory(id: string, hiddenDropEpisode?: number): void {
+  const latch = droppedSinceHiddenPtys.get(id)
+  if (latch?.state === 'awaiting-paint' && latch.episode === hiddenDropEpisode) {
+    droppedSinceHiddenPtys.delete(id)
+  }
 }
 
 export function isHiddenRendererPty(id: string): boolean {
   return isHiddenRendererPtyInAnyWindow(id)
+}
+
+/** Marks a PTY hidden on behalf of the runtime (no renderer view exists). */
+export function markRuntimeOwnedHiddenRendererPty(id: string): void {
+  recordHiddenRendererPtyWindowClaim(IMPLICIT_RENDERER_WINDOW_ID, id, true)
+  runtimeOwnedHiddenRendererPtys.add(id)
+}
+
+export function isRuntimeOwnedHiddenRendererPty(id: string): boolean {
+  return runtimeOwnedHiddenRendererPtys.has(id)
 }
 
 /** For freeze diagnostics only: hidden ptys must appear in the per-pty report
@@ -102,38 +139,45 @@ export function shouldDropHiddenRendererPtyData(
 }
 
 /** Record one gated drop. Returns whether the caller should emit the one-shot
- *  empty restore-marker chunk (first drop since this PTY went hidden). */
+ *  empty restore-marker chunk (first drop since the latch was retired or last revealed). */
 export function recordHiddenRendererPtyDataDrop(
   id: string,
   chars: number
-): { shouldEmitRestoreMarker: boolean } {
+): { shouldEmitRestoreMarker: boolean; hiddenDropEpisode: number } {
   droppedHiddenDeliveryChars += chars
   droppedHiddenDeliveryChunks += 1
-  if (droppedSinceHiddenPtys.has(id)) {
-    return { shouldEmitRestoreMarker: false }
+  const latch = droppedSinceHiddenPtys.get(id)
+  if (latch?.state === 'unrevealed') {
+    return { shouldEmitRestoreMarker: false, hiddenDropEpisode: latch.episode }
   }
-  droppedSinceHiddenPtys.add(id)
-  return { shouldEmitRestoreMarker: true }
+  const episode = nextHiddenDropEpisode++
+  droppedSinceHiddenPtys.set(id, { state: 'unrevealed', episode })
+  return { shouldEmitRestoreMarker: true, hiddenDropEpisode: episode }
 }
 
 /** Renderer process replaced (reload / crash): its ref-counted interest
  *  holds and hidden marks died with it, so keeping them would gate (or
- *  force-feed) PTYs no live renderer party asked about. Drop memory is
+ *  force-feed) PTYs no live renderer party asked about. Runtime-owned marks
+ *  survive: no renderer party exists to re-mark them. Drop memory is
  *  preserved — surviving daemon/SSH PTYs may have dropped bytes the old
  *  renderer never restored; the new renderer's first hidden/visible sync
  *  re-marks or unmarks and the unmark path re-emits the restore marker. */
 export function resetRendererScopedHiddenPtyDeliveryState(windowId?: number): void {
   if (windowId === undefined) {
     resetAllRendererPtyWindowClaims()
-    return
+  } else {
+    clearRendererPtyWindowClaims(windowId)
   }
-  clearRendererPtyWindowClaims(windowId)
+  for (const id of runtimeOwnedHiddenRendererPtys) {
+    recordHiddenRendererPtyWindowClaim(IMPLICIT_RENDERER_WINDOW_ID, id, true)
+  }
 }
 
 /** Full per-PTY teardown — wired into clearProviderPtyState so every exit
  *  path (local, daemon, SSH, connection teardown) releases gate state. */
 export function clearHiddenRendererPtyDeliveryState(id: string): { activeChanged: boolean } {
   const cleared = clearRendererPtyWindowClaimsForPty(id)
+  runtimeOwnedHiddenRendererPtys.delete(id)
   droppedSinceHiddenPtys.delete(id)
   return { activeChanged: cleared.activeChanged }
 }
@@ -162,6 +206,7 @@ export function resetHiddenRendererPtyDeliveryDebugCounters(): void {
 /** Test seam: reset all module state between tests. */
 export function _resetHiddenRendererPtyDeliveryGateForTest(): void {
   resetAllRendererPtyWindowClaims()
+  runtimeOwnedHiddenRendererPtys.clear()
   droppedSinceHiddenPtys.clear()
   resetHiddenRendererPtyDeliveryDebugCounters()
 }

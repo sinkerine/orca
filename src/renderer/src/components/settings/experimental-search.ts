@@ -9,6 +9,7 @@ import {
   getMultiWindowSearchEntry,
   MULTI_WINDOW_SEARCH_TITLE_KEY
 } from './multi-window-search-entry'
+import { getWslHostsExperimentalSearchEntry } from './wsl-hosts-experimental-search'
 
 export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
   (): SettingsSearchEntry[] => [
@@ -185,7 +186,11 @@ export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
     },
     getNewWorktreeCardStyleSearchEntry(),
     getEphemeralVmsSearchEntry(),
-    getMultiWindowSearchEntry()
+    getMultiWindowSearchEntry(),
+    // Why: only a Windows desktop shows this toggle, so only there may search find it.
+    ...(typeof window !== 'undefined' && window.api?.runtimeEnvironments?.wslHosts
+      ? [getWslHostsExperimentalSearchEntry()]
+      : [])
   ]
 )
 

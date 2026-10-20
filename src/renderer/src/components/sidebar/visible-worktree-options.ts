@@ -17,7 +17,7 @@ import { getWorktreeIdsWithLiveAgent } from '@/lib/worktree-activity-state'
 import {
   EMPTY_PAIRED_DEVICE_IDS_BY_ENVIRONMENT,
   getPairedDeviceIdsByEnvironment
-} from './workspace-creator-visibility'
+} from '../../../../shared/workspace-creator-visibility'
 import { selectEffectiveFilterRepoIds } from './project-filter-resolution'
 
 export type VisibleWorktreeOptions = {
