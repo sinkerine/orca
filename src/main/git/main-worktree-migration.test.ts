@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, realpathSync, writeFileSync, existsS
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { runProcessSync } from '../../shared/child-process/run-process'
+import { runProcessSync } from '@orca/process-host'
 import { migrateMainWorktree, verifyMainWorktreeMigration } from './main-worktree-migration'
 import { applyMigrationJournal, readMainMigrationJournals } from './main-worktree-migration-journal'
 

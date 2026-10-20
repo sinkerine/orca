@@ -1,5 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Store } from '../persistence'
+import { cancelHistoryGc } from '../terminal-history-gc'
+import type { registerSshHandlers } from '../ipc/ssh/ssh'
+import type { registerDaemonManagementHandlers } from '../ipc/pty-management'
+import type { registerWorkspaceCleanupHandlers } from '../ipc/workspace-cleanup'
+import type { startFolderRepoGitUpgradeWatch } from '../ipc/folder-repo-git-upgrade'
+import {
+  createMainWindowServiceStub,
+  createRuntime,
+  deferred,
+  type MainWindowStub
+} from './main-window-service-stubs.test-fixture'
 
 const {
   onMock,
@@ -16,6 +27,10 @@ const {
   setWorktreeCatalogRemoteClientNotifierMock,
   registerWorktreeHandlersMock,
   registerPtyHandlersMock,
+  registerSshHandlersMock,
+  registerDaemonManagementHandlersMock,
+  registerWorkspaceCleanupHandlersMock,
+  startFolderRepoGitUpgradeWatchMock,
   hydrateLocalPtyRegistryAtBootMock,
   setWorktreeBaseDirectoryWatcherSyncContextMock,
   scheduleWorktreeBaseDirectoryWatcherSyncMock,
@@ -41,6 +56,10 @@ const {
   setWorktreeCatalogRemoteClientNotifierMock: vi.fn(),
   registerWorktreeHandlersMock: vi.fn(),
   registerPtyHandlersMock: vi.fn(),
+  registerSshHandlersMock: vi.fn<(...args: Parameters<typeof registerSshHandlers>) => void>(),
+  registerDaemonManagementHandlersMock: vi.fn<typeof registerDaemonManagementHandlers>(),
+  registerWorkspaceCleanupHandlersMock: vi.fn<typeof registerWorkspaceCleanupHandlers>(),
+  startFolderRepoGitUpgradeWatchMock: vi.fn<typeof startFolderRepoGitUpgradeWatch>(),
   hydrateLocalPtyRegistryAtBootMock: vi.fn(),
   setWorktreeBaseDirectoryWatcherSyncContextMock: vi.fn(),
   scheduleWorktreeBaseDirectoryWatcherSyncMock: vi.fn(),
@@ -93,9 +112,18 @@ vi.mock('../ipc/worktree-change-invalidators', () => ({
   runWorktreeChangeInvalidators: runWorktreeChangeInvalidatorsMock
 }))
 
-vi.mock('../ipc/pty', () => ({
-  getLocalPtyProvider: vi.fn(),
-  registerPtyHandlers: registerPtyHandlersMock
+vi.mock('../ipc/pty/provider/registry', () => ({ getLocalPtyProvider: vi.fn() }))
+vi.mock('../ipc/pty/register-handlers', () => ({ registerPtyHandlers: registerPtyHandlersMock }))
+
+vi.mock('../ipc/ssh/ssh', () => ({ registerSshHandlers: registerSshHandlersMock }))
+vi.mock('../ipc/pty-management', () => ({
+  registerDaemonManagementHandlers: registerDaemonManagementHandlersMock
+}))
+vi.mock('../ipc/workspace-cleanup', () => ({
+  registerWorkspaceCleanupHandlers: registerWorkspaceCleanupHandlersMock
+}))
+vi.mock('../ipc/folder-repo-git-upgrade', () => ({
+  startFolderRepoGitUpgradeWatch: startFolderRepoGitUpgradeWatchMock
 }))
 
 vi.mock('../memory/hydrate-local-pty-registry', () => ({
@@ -128,91 +156,28 @@ vi.mock('../macos-tcc-prompt-notice', () => ({
   releasePendingTccPromptNotice: releasePendingTccPromptNoticeMock
 }))
 
-import { attachMainWindowServices } from './attach-main-window-services'
-import { _resetMainWindowRegistryForTests, registerMainWindow } from './main-window-registry'
+import { attachMainWindowServices, registerUpdaterHandlers } from './attach-main-window-services'
+import { registerUpdaterHandlers as registerWindowUpdaterHandlers } from './main-window-updater'
 
 type MockFn = ReturnType<typeof vi.fn>
 
-type MainWindowStub = {
-  id: number
-  isDestroyed?: MockFn
-  on: MockFn
-  once: MockFn
-  webContents: {
-    id?: number
-    getURL: MockFn
-    isDestroyed?: MockFn
-    isLoadingMainFrame: MockFn
-    on: MockFn
-    send?: MockFn
-    reload?: MockFn
-    session: {
-      setPermissionRequestHandler: MockFn
-      setPermissionCheckHandler: MockFn
-    }
-  }
-}
-
-type RuntimeStub = {
-  attachWindow: MockFn
-  setNotifier: MockFn
-  markRendererReloading: MockFn
-  markRendererReloadCancelled: MockFn
-  markGraphReloadFailed: MockFn
-  markGraphUnavailable: MockFn
-  resolveOwnerWindowIdForPtyId: MockFn
-  registerPtyOwnerWindow: MockFn
-}
-
 function createMainWindow(
-  extraWebContents: { isLoadingMainFrame?: MockFn; on?: MockFn; send?: MockFn } = {},
-  id = 1
+  extraWebContents: { isLoadingMainFrame?: MockFn; on?: MockFn; send?: MockFn } = {}
 ): MainWindowStub {
-  return {
-    id,
-    isDestroyed: vi.fn(() => false),
-    on: vi.fn(),
-    once: vi.fn(),
-    webContents: {
-      id: 1,
-      getURL: vi.fn(() => 'file:///opt/orca/renderer/index.html'),
-      isDestroyed: vi.fn(() => false),
-      isLoadingMainFrame: vi.fn(() => true),
-      on: vi.fn(),
-      reload: vi.fn(),
-      session: {
-        setPermissionRequestHandler: setPermissionRequestHandlerMock,
-        setPermissionCheckHandler: setPermissionCheckHandlerMock
-      },
-      ...extraWebContents
-    }
-  }
+  return createMainWindowServiceStub(
+    {
+      setPermissionRequestHandler: setPermissionRequestHandlerMock,
+      setPermissionCheckHandler: setPermissionCheckHandlerMock
+    },
+    extraWebContents
+  )
 }
+
 function createStore(): Store & { flushPendingAsync: MockFn } {
   return {
     getProfileStorageDirectory: vi.fn(() => '/profile-a'),
     flushPendingAsync: vi.fn(() => Promise.resolve())
   } as unknown as Store & { flushPendingAsync: MockFn }
-}
-function createRuntime(): RuntimeStub {
-  return {
-    attachWindow: vi.fn(),
-    setNotifier: vi.fn(),
-    markRendererReloading: vi.fn(),
-    markRendererReloadCancelled: vi.fn(),
-    markGraphReloadFailed: vi.fn(),
-    markGraphUnavailable: vi.fn(),
-    resolveOwnerWindowIdForPtyId: vi.fn(() => null),
-    registerPtyOwnerWindow: vi.fn()
-  }
-}
-
-function deferred(): { promise: Promise<void>; resolve: () => void } {
-  let resolve!: () => void
-  const promise = new Promise<void>((next) => {
-    resolve = next
-  })
-  return { promise, resolve }
 }
 
 function getClosedHandlers(mainWindowOnMock: MockFn): (() => void)[] {
@@ -234,20 +199,40 @@ async function fireReadyToShow(mainWindow: MainWindowStub): Promise<void> {
 }
 
 describe('attachMainWindowServices', () => {
+  it('exports the updater handlers exercised by the recovery tests', () => {
+    expect(registerUpdaterHandlers).toBe(registerWindowUpdaterHandlers)
+  })
+
+  afterEach(() => {
+    cancelHistoryGc()
+  })
+
   beforeEach(() => {
     vi.resetAllMocks()
-    _resetMainWindowRegistryForTests()
     systemPreferencesAskForMediaAccessMock.mockResolvedValue(true)
     systemPreferencesGetMediaAccessStatusMock.mockReturnValue('granted')
   })
 
   it('gives host-local catalog notifiers the runtime', () => {
     const runtime = createRuntime()
+    const mainWindow = createMainWindow()
+    const store = createStore()
 
-    attachMainWindowServices(createMainWindow() as never, createStore(), runtime as never)
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: Stubs provide the window/runtime methods exercised by attachment.
+    attachMainWindowServices(mainWindow as never, store, runtime as never)
 
     expect(setRepoRemoteClientNotifierMock).toHaveBeenCalledWith(runtime)
     expect(setWorktreeCatalogRemoteClientNotifierMock).toHaveBeenCalledWith(runtime)
+    expect(registerSshHandlersMock).toHaveBeenCalledExactlyOnceWith(
+      store,
+      expect.any(Function),
+      runtime
+    )
+    expect(registerSshHandlersMock.mock.calls[0]?.[1]()).toBe(mainWindow)
+    expect(registerDaemonManagementHandlersMock).toHaveBeenCalledExactlyOnceWith()
+    expect(registerDaemonManagementHandlersMock).toHaveBeenCalledAfter(registerPtyHandlersMock)
+    expect(registerWorkspaceCleanupHandlersMock).toHaveBeenCalledExactlyOnceWith(store)
+    expect(startFolderRepoGitUpgradeWatchMock).toHaveBeenCalledExactlyOnceWith(store, mainWindow)
   })
 
   it('reloads the app renderer through main and marks expected renderer teardown', async () => {
@@ -295,8 +280,7 @@ describe('attachMainWindowServices', () => {
     await providerStartup.promise
     await Promise.resolve()
 
-    expect(hydrateLocalPtyRegistryAtBootMock).toHaveBeenCalledOnce()
-    expect(hydrateLocalPtyRegistryAtBootMock).toHaveBeenCalledWith(store)
+    expect(hydrateLocalPtyRegistryAtBootMock).toHaveBeenCalledExactlyOnceWith(store)
   })
 
   it('passes injected update quit cleanup to the auto-updater', async () => {
@@ -310,17 +294,23 @@ describe('attachMainWindowServices', () => {
       createRuntime() as never,
       undefined,
       undefined,
-      { onBeforeUpdateQuit, updateInstallMode: 'supervised-headless-serve' }
+      {
+        onBeforeUpdateQuit,
+        onBeforeUpdateQuitFailure: 'abort',
+        updateInstallMode: 'supervised-headless-serve'
+      }
     )
 
     // Deferred to first paint — must not be configured at attach time.
     expect(setupAutoUpdaterMock).not.toHaveBeenCalled()
     await fireReadyToShow(mainWindow)
     expect(setupAutoUpdaterMock).toHaveBeenCalledTimes(1)
-    expect(setupAutoUpdaterMock).toHaveBeenCalledWith(
-      mainWindow,
-      expect.objectContaining({ installMode: 'supervised-headless-serve' })
-    )
+    const [updaterWindow, updaterOptions] = setupAutoUpdaterMock.mock.calls[0]
+    expect(updaterWindow).toBe(mainWindow)
+    expect(updaterOptions).toMatchObject({
+      installMode: 'supervised-headless-serve',
+      onBeforeQuitFailure: 'abort'
+    })
     await setupAutoUpdaterMock.mock.calls[0][1].onBeforeQuit()
 
     expect(onBeforeUpdateQuit).toHaveBeenCalledTimes(1)
@@ -559,16 +549,14 @@ describe('attachMainWindowServices', () => {
 
   it('keeps a newer app reload handler when an older window closes late', () => {
     const oldWindowOnMock = vi.fn()
-    const oldWindow = createMainWindow({}, 1)
+    const oldWindow = createMainWindow()
     oldWindow.on = oldWindowOnMock
-    registerMainWindow(oldWindow as never)
     attachMainWindowServices(oldWindow as never, createStore(), createRuntime() as never)
     const oldClosedHandlers = getClosedHandlers(oldWindowOnMock)
 
     const newWindowOnMock = vi.fn()
-    const newWindow = createMainWindow({}, 2)
+    const newWindow = createMainWindow()
     newWindow.on = newWindowOnMock
-    registerMainWindow(newWindow as never)
     attachMainWindowServices(newWindow as never, createStore(), createRuntime() as never)
 
     removeHandlerMock.mockClear()
@@ -629,86 +617,236 @@ describe('attachMainWindowServices', () => {
 
     attachMainWindowServices(mainWindow as never, createStore(), createRuntime() as never)
 
-    Object.assign(mainWindow, { webContents: undefined })
     const closedHandler = getClosedHandlers(mainWindowOnMock).at(-1)
     expect(closedHandler).toBeTypeOf('function')
     closedHandler?.()
     expect(browserManagerUnregisterAllMock).toHaveBeenCalledTimes(1)
   })
 
-  it('removes the native file-drop relay when the main window closes', () => {
+  it('clears the runtime notifier when the owning window closes', () => {
     const mainWindowOnMock = vi.fn()
-    const mainWindow = createMainWindow({ send: vi.fn() })
+    const mainWindow = createMainWindow()
     mainWindow.on = mainWindowOnMock
+    const runtime = createRuntime()
 
-    attachMainWindowServices(mainWindow as never, createStore(), createRuntime() as never)
+    attachMainWindowServices(mainWindow as never, createStore(), runtime as never)
 
-    const channel = 'terminal:file-dropped-from-preload'
-    const relayHandler = onMock.mock.calls.find(([event]) => event === channel)?.[1]
-    expect(relayHandler).toBeTypeOf('function')
-    expect(removeAllListenersMock).toHaveBeenCalledWith(channel)
-
-    const closedHandlers = getClosedHandlers(mainWindowOnMock)
-    for (const handler of closedHandlers) {
+    runtime.setNotifier.mockClear()
+    for (const handler of getClosedHandlers(mainWindowOnMock)) {
       handler()
     }
 
-    expect(removeListenerMock).toHaveBeenCalledWith(channel, relayHandler)
+    expect(runtime.markGraphUnavailable).toHaveBeenCalledWith(1)
+    expect(runtime.setNotifier).toHaveBeenCalledWith(null)
   })
 
-  it('relays native file drops only from the owning renderer webContents', () => {
-    const sendMock = vi.fn()
-    const mainWindow = createMainWindow({ send: sendMock })
+  it('keeps a newer runtime notifier when an older window closes late', () => {
+    const runtime = createRuntime()
+    const oldWindowOnMock = vi.fn()
+    const oldWindow = createMainWindow()
+    oldWindow.on = oldWindowOnMock
+    attachMainWindowServices(oldWindow as never, createStore(), runtime as never)
+    const oldClosedHandlers = getClosedHandlers(oldWindowOnMock)
 
-    attachMainWindowServices(mainWindow as never, createStore(), createRuntime() as never)
+    const newWindowOnMock = vi.fn()
+    const newWindow = createMainWindow()
+    newWindow.on = newWindowOnMock
+    attachMainWindowServices(newWindow as never, createStore(), runtime as never)
 
-    const channel = 'terminal:file-dropped-from-preload'
-    const relayHandler = onMock.mock.calls.find(([event]) => event === channel)?.[1]
-    const payload = { paths: ['/tmp/a'], target: 'editor' }
+    runtime.setNotifier.mockClear()
+    for (const handler of oldClosedHandlers) {
+      handler()
+    }
 
-    relayHandler?.({ sender: { id: 999 } }, payload)
+    expect(runtime.setNotifier).not.toHaveBeenCalledWith(null)
 
-    expect(sendMock).not.toHaveBeenCalled()
-
-    relayHandler?.({ sender: mainWindow.webContents }, payload)
-
-    expect(sendMock).toHaveBeenCalledWith('terminal:file-drop', payload)
+    for (const handler of getClosedHandlers(newWindowOnMock)) {
+      handler()
+    }
+    expect(runtime.setNotifier).toHaveBeenCalledWith(null)
   })
 
-  it('ignores malformed native file-drop payloads from the owning renderer', () => {
+  it('forwards runtime notifier events to the renderer', () => {
     const sendMock = vi.fn()
-    const mainWindow = createMainWindow({ send: sendMock })
+    const webContentsOnMock = vi.fn()
+    const mainWindowOnMock = vi.fn()
+    const mainWindow = createMainWindow({ on: webContentsOnMock, send: sendMock })
+    mainWindow.isDestroyed = vi.fn(() => false)
+    mainWindow.on = mainWindowOnMock
+    const runtime = createRuntime()
 
-    attachMainWindowServices(mainWindow as never, createStore(), createRuntime() as never)
+    attachMainWindowServices(mainWindow as never, createStore(), runtime as never)
 
-    const channel = 'terminal:file-dropped-from-preload'
-    const relayHandler = onMock.mock.calls.find(([event]) => event === channel)?.[1]
+    expect(runtime.setNotifier).toHaveBeenCalledTimes(1)
+    const notifier = runtime.setNotifier.mock.calls[0][0]
+    if (!notifier) {
+      throw new Error('Missing runtime notifier')
+    }
 
-    relayHandler?.(
-      { sender: mainWindow.webContents },
-      { paths: ['C:\\Users\\alice\\secret.txt'], target: 'browser' }
+    notifier.worktreesChanged('repo-1')
+    notifier.reposChanged()
+    notifier.activateWorktree('repo-1', 'wt-1', {
+      runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
+      envVars: {
+        ORCA_ROOT_PATH: '/tmp/repo',
+        ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
+      }
+    })
+
+    expect(sendMock.mock.calls).toEqual([
+      ['worktrees:changed', { repoId: 'repo-1' }],
+      ['repos:changed'],
+      [
+        'ui:activateWorktree',
+        {
+          repoId: 'repo-1',
+          worktreeId: 'wt-1',
+          setup: {
+            runnerScriptPath: '/tmp/repo/.git/orca/setup-runner.sh',
+            envVars: {
+              ORCA_ROOT_PATH: '/tmp/repo',
+              ORCA_WORKTREE_PATH: '/tmp/worktrees/wt-1'
+            }
+          }
+        }
+      ]
+    ])
+    expect(runWorktreeChangeInvalidatorsMock).toHaveBeenCalledWith('repo-1')
+    expect(runWorktreeChangeInvalidatorsMock.mock.invocationCallOrder[0]).toBeLessThan(
+      sendMock.mock.invocationCallOrder[0]
     )
-    relayHandler?.(
-      { sender: mainWindow.webContents },
-      { paths: ['/tmp/a'], target: 'file-explorer' }
-    )
-
-    expect(sendMock).not.toHaveBeenCalled()
   })
 
-  it('ignores native file drops after the owning webContents is destroyed', () => {
+  it('marks renderer process loss as a graph reload failure', () => {
+    const mainWindow = createMainWindow()
+    const runtime = createRuntime()
+    attachMainWindowServices(mainWindow as never, createStore(), runtime as never)
+
+    const handlers = mainWindow.webContents.on.mock.calls
+      .filter(([event]) => event === 'render-process-gone')
+      .map(([, handler]) => handler as () => void)
+    for (const handler of handlers) {
+      handler()
+    }
+
+    expect(runtime.markGraphReloadFailed).toHaveBeenCalledWith(1, 'renderer-process-gone')
+  })
+
+  it('accepts terminal reveal replies only from the main window renderer', async () => {
     const sendMock = vi.fn()
     const mainWindow = createMainWindow({ send: sendMock })
+    const runtime = createRuntime()
 
-    attachMainWindowServices(mainWindow as never, createStore(), createRuntime() as never)
+    attachMainWindowServices(mainWindow as never, createStore(), runtime as never)
 
-    const channel = 'terminal:file-dropped-from-preload'
-    const relayHandler = onMock.mock.calls.find(([event]) => event === channel)?.[1]
-    mainWindow.webContents.isDestroyed?.mockReturnValue(true)
+    const notifier = runtime.setNotifier.mock.calls[0][0] as {
+      revealTerminalSession: (
+        worktreeId: string,
+        opts: {
+          ptyId: string
+          title?: string
+          cwd?: string
+          viewMode?: 'terminal' | 'chat'
+          activate?: boolean
+        }
+      ) => Promise<{ tabId: string; title?: string }>
+    }
+    const revealPromise = notifier.revealTerminalSession('wt-1', {
+      ptyId: 'pty-1',
+      title: 'SSH tmux',
+      cwd: '/repo/packages/web',
+      viewMode: 'chat'
+    })
+    const sentPayload = sendMock.mock.calls.find(
+      ([channel]) => channel === 'ui:createTerminal'
+    )?.[1]
+    const handler = onMock.mock.calls.find(
+      ([channel]) => channel === 'terminal:tabCreateReply'
+    )?.[1]
+    expect(sentPayload).toMatchObject({ cwd: '/repo/packages/web', viewMode: 'chat' })
 
-    relayHandler?.({ sender: mainWindow.webContents }, { paths: ['/tmp/a'], target: 'editor' })
+    handler?.(
+      { sender: { send: vi.fn() } },
+      { requestId: sentPayload.requestId, error: 'spoofed renderer reply' }
+    )
+    expect(removeListenerMock).not.toHaveBeenCalledWith('terminal:tabCreateReply', handler)
 
-    expect(sendMock).not.toHaveBeenCalled()
+    handler?.(
+      { sender: mainWindow.webContents },
+      { requestId: sentPayload.requestId, tabId: 'tab-1', title: 'SSH tmux' }
+    )
+
+    await expect(revealPromise).resolves.toEqual({ tabId: 'tab-1', title: 'SSH tmux' })
+    expect(removeListenerMock).toHaveBeenCalledWith('terminal:tabCreateReply', handler)
+  })
+
+  it('requires an exact renderer identity receipt for recovered worker reveals', async () => {
+    const sendMock = vi.fn()
+    const mainWindow = createMainWindow({ send: sendMock })
+    const runtime = createRuntime()
+
+    attachMainWindowServices(mainWindow as never, createStore(), runtime as never)
+
+    const notifier = runtime.setNotifier.mock.calls[0][0] as {
+      revealTerminalSession: (
+        worktreeId: string,
+        opts: {
+          ptyId: string
+          tabId: string
+          leafId: string
+          expectedProcessIdentity: { terminalHandle: string; incarnationId: string }
+        }
+      ) => Promise<unknown>
+    }
+    const opts = {
+      ptyId: 'pty-worker',
+      tabId: 'tab-worker',
+      leafId: 'leaf-worker',
+      expectedProcessIdentity: {
+        terminalHandle: 'term_worker',
+        incarnationId: 'inc-worker'
+      }
+    }
+    const mismatch = notifier.revealTerminalSession('worktree-1', opts)
+    const mismatchPayload = sendMock.mock.calls.at(-1)?.[1]
+    const mismatchHandler = onMock.mock.calls.findLast(
+      ([channel]) => channel === 'terminal:tabCreateReply'
+    )?.[1]
+    mismatchHandler?.(
+      { sender: mainWindow.webContents },
+      {
+        requestId: mismatchPayload.requestId,
+        tabId: 'tab-worker',
+        identity: {
+          worktreeId: 'worktree-1',
+          tabId: 'tab-worker',
+          leafId: 'leaf-worker',
+          ptyId: 'pty-replacement'
+        }
+      }
+    )
+    await expect(mismatch).rejects.toThrow('terminal_reveal_identity_mismatch')
+
+    const exact = notifier.revealTerminalSession('worktree-1', opts)
+    const exactPayload = sendMock.mock.calls.at(-1)?.[1]
+    const exactHandler = onMock.mock.calls.findLast(
+      ([channel]) => channel === 'terminal:tabCreateReply'
+    )?.[1]
+    const identity = {
+      worktreeId: 'worktree-1',
+      tabId: 'tab-worker',
+      leafId: 'leaf-worker',
+      ptyId: 'pty-worker'
+    }
+    exactHandler?.(
+      { sender: mainWindow.webContents },
+      { requestId: exactPayload.requestId, tabId: 'tab-worker', identity }
+    )
+    await expect(exact).resolves.toEqual({
+      tabId: 'tab-worker',
+      title: undefined,
+      identity
+    })
   })
 
   it('keeps deferred worktree watcher setup inside the service boundary', async () => {

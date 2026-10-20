@@ -1,4 +1,4 @@
-import type { Row } from './row-types'
+import type { Row } from '../../../../../../shared/sidebar-list/row-types'
 
 /**
  * Drops project-group headers the active filter emptied.

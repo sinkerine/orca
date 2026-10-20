@@ -1,5 +1,5 @@
 import type { ResolvedWorktree } from './runtime-worktree-path-identity'
-import { worktreeIdComparisonKey } from '../../shared/worktree/id'
+import { worktreeIdentityKey } from '../../shared/worktree/id'
 import { branchSelectorMatches, runtimePathsEqual } from './runtime-worktree-path-identity'
 
 type SelectorOptions = { getHostId?: (worktree: ResolvedWorktree) => string }
@@ -21,8 +21,8 @@ export function matchWorktreeSelectorCandidates(
     if (exact.length) {
       return exact
     }
-    const key = worktreeIdComparisonKey(id)
-    return key ? worktrees.filter((w) => worktreeIdComparisonKey(w.id) === key) : []
+    const key = worktreeIdentityKey(id)
+    return key ? worktrees.filter((w) => worktreeIdentityKey(w.id) === key) : []
   }
   if (selector.startsWith('path:')) {
     const candidates = worktrees.filter((w) => runtimePathsEqual(w.path, selector.slice(5)))

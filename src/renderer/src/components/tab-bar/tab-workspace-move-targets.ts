@@ -1,3 +1,4 @@
+import type { WorktreeRuntimeOwnerState } from '@/lib/worktree-runtime-owner-state'
 import type { AppState } from '../../store/types'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
@@ -8,10 +9,9 @@ import { getWorktreeOnHostFromState } from '../../store/selectors'
 import { getUnifiedTabPaletteExecutionHostId } from '@/lib/unified-tab-host-ownership'
 import { isExecutionHostAliasForWorktree } from '@/lib/worktree-execution-host-alias'
 import {
-  getRuntimeEnvironmentIdForWorktree,
-  type WorktreeRuntimeOwnerState
+  runtimeEnvironmentIdWithLegacyFallbackUnlessTwin,
 } from '@/lib/worktree-runtime-owner'
-import { isWebRuntimeSessionActive } from '../../runtime/web-runtime-session'
+import { isWebRuntimeSessionActive } from '../../runtime/web-runtime-session-environment'
 import {
   getPublishedVisibleWorktreeShortcutTargets,
   type VisibleWorktreeShortcutTarget
@@ -29,7 +29,7 @@ type MoveTargetState = WorktreeRuntimeOwnerState &
  *  and no `session.tabs.*` RPC can rehome a tab across workspaces yet, so a local
  *  move would be overwritten by the host's next snapshot. */
 function isHostOwnedTabModel(state: MoveTargetState, worktreeId: string): boolean {
-  return isWebRuntimeSessionActive(getRuntimeEnvironmentIdForWorktree(state, worktreeId))
+  return isWebRuntimeSessionActive(runtimeEnvironmentIdWithLegacyFallbackUnlessTwin(state, worktreeId))
 }
 
 function resolveWorktreeRow(

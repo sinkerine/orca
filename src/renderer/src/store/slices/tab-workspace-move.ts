@@ -1,8 +1,8 @@
+import { dedupeTabOrder } from '../../../../shared/workspace-layout/tab-order'
 import type { AppState } from '../types'
 import type { Tab, TabGroup, TabGroupLayoutNode } from '../../../../shared/tab-types'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import {
-  dedupeTabOrder,
   findGroupForTab,
   findTabAndWorktree,
   pickNextActiveTab,

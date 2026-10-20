@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeProjectCompatibilityProject } from './project-compatibility-core'
+import { mergeProjectCompatibilityProject } from '../../../../shared/project-compatibility-merge'
 import type { Project, ProjectPrimaryWorkspace } from '../../../../shared/project-types'
 
 const project = (overrides: Partial<Project> = {}): Project => ({

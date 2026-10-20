@@ -415,7 +415,6 @@ describe('RuntimeProjectPrimaryRemovalController', () => {
       getStore: () => store as never,
       listRepos: () => [repo],
       addRepo: vi.fn(),
-      addRemoteRepo: vi.fn(),
       cloneRepo: vi.fn(),
       invalidateResolvedWorktrees: vi.fn(),
       invalidateWorktreeScan: vi.fn(),

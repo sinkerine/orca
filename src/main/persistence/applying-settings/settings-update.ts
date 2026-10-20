@@ -1,5 +1,8 @@
+import { normalizeAgentNativeChatPermissionModes } from '../../../shared/agent-chat-permission-mode'
+import { normalizeNativeChatAppearanceSettings } from '../../../shared/native-chat-appearance-settings'
 import type { GlobalSettings } from '../../../shared/global-settings-types'
 import { normalizeDisabledTuiAgents } from '../../../shared/tui-agent-selection'
+import { normalizeNativeChatProviderChoices } from '../../../shared/native-chat-providers'
 import { resolveNestedWorkerMaxDepth } from '../../../shared/nested-worker-depth'
 import {
   normalizeTuiAgentArgsRecord,
@@ -7,7 +10,9 @@ import {
 } from '../../../shared/tui-agent-launch-defaults'
 import { normalizeTerminalQuickCommands } from '../../../shared/terminal-quick-commands'
 import { normalizeAgentLaunchVariants } from '../../../shared/agent-launch-variants'
+import { assertTerminalQuickCommandsStorable } from '../../../shared/terminal-quick-command-prompt-limit'
 import { normalizeTerminalCustomThemes } from '../../../shared/terminal-custom-themes'
+import { normalizeTerminalDefaultShell } from '../../../shared/terminal-default-shell'
 import { normalizeTerminalCursorStyleDefault } from '../../../shared/terminal-cursor-style-settings'
 import { normalizeDesktopTerminalScrollbackRows } from '../../../shared/terminal-scrollback-policy'
 import { normalizeTerminalMinimumContrastRatio } from '../../../shared/terminal-minimum-contrast-settings'
@@ -20,6 +25,7 @@ import { normalizeUiLanguage } from '../../../shared/ui-language'
 import { normalizeWorktreeVisibilityDefaults } from '../../../shared/external-worktree-visibility'
 import { normalizePRBotAuthorOverrides } from '../../../shared/pr-bot-author-overrides'
 import { normalizeSetupRunPolicy } from '../../../shared/setup-run-policy'
+import { normalizeMachineName } from '../../../shared/machine-name'
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import {
   addMobilePairingCustomAddress,
@@ -67,6 +73,11 @@ export function updateSettings(
   if ('httpProxyUrl' in updates && !updates.httpProxyUrl) {
     operations.removeRetainedBlob(PROTECTED_SECRET_SLOT.httpProxyUrl)
   }
+  const linkBehavior = updates.terminalLinkClickBehavior
+  if (linkBehavior === 'actions' || linkBehavior === 'open' || linkBehavior === 'none') {
+    // Loaded defaults are ambiguous; synchronize the legacy switch only on an explicit write.
+    sanitizedUpdates.terminalLinkActionPopoverEnabled = linkBehavior === 'actions'
+  }
   // Why: coerce to boolean here (not the IPC edge) so every write path is covered and a truthy non-bool can't persist as "tray-minimize on".
   if ('minimizeToTrayOnClose' in updates) {
     sanitizedUpdates.minimizeToTrayOnClose = updates.minimizeToTrayOnClose === true
@@ -86,8 +97,23 @@ export function updateSettings(
       nestedWorkerMaxDepth: updates.nestedWorkerMaxDepth
     })
   }
+  if ('nativeChatPermissionMode' in updates || 'agentNativeChatPermissionModes' in updates) {
+    sanitizedUpdates.agentNativeChatPermissionModes = normalizeAgentNativeChatPermissionModes(
+      updates.agentNativeChatPermissionModes
+    )
+  }
+  if ('nativeChatAppearance' in updates) {
+    sanitizedUpdates.nativeChatAppearance = normalizeNativeChatAppearanceSettings(
+      updates.nativeChatAppearance
+    )
+  }
   if ('disabledTuiAgents' in updates) {
     sanitizedUpdates.disabledTuiAgents = normalizeDisabledTuiAgents(updates.disabledTuiAgents)
+  }
+  if ('nativeChatProviders' in updates) {
+    sanitizedUpdates.nativeChatProviders = normalizeNativeChatProviderChoices(
+      updates.nativeChatProviders
+    )
   }
   if ('worktreeVisibilityDefaults' in updates) {
     sanitizedUpdates.worktreeVisibilityDefaults = {
@@ -106,8 +132,14 @@ export function updateSettings(
     sanitizedUpdates.agentYoloDefaultsMigrated = true
   }
   if ('terminalQuickCommands' in updates) {
-    sanitizedUpdates.terminalQuickCommands = normalizeTerminalQuickCommands(
-      updates.terminalQuickCommands
+    const terminalQuickCommands = normalizeTerminalQuickCommands(updates.terminalQuickCommands)
+    // Every local and paired save lands here, so this is where an unstorable list is refused.
+    assertTerminalQuickCommandsStorable(terminalQuickCommands)
+    sanitizedUpdates.terminalQuickCommands = terminalQuickCommands
+  }
+  if ('terminalDefaultShell' in updates) {
+    sanitizedUpdates.terminalDefaultShell = normalizeTerminalDefaultShell(
+      updates.terminalDefaultShell
     )
   }
   if ('agentLaunchVariants' in updates) {
@@ -190,6 +222,11 @@ export function updateSettings(
       updates.prBotAuthorOverrides
     )
   }
+  // Why here: desktop IPC, the web RPC and the CLI all write through this boundary, so the name a
+  // runtime publishes is the trimmed, bounded form no matter which client set it.
+  if ('machineName' in updates) {
+    sanitizedUpdates.machineName = normalizeMachineName(updates.machineName)
+  }
   if ('mobilePairingCustomAddress' in updates) {
     sanitizedUpdates.mobilePairingCustomAddress = normalizeMobilePairingCustomAddress(
       updates.mobilePairingCustomAddress
@@ -258,6 +295,12 @@ export function updateSettings(
       ...sanitizedUpdates.notifications
     }),
     ...(mergedTelemetry !== undefined ? { telemetry: mergedTelemetry } : {})
+  }
+  if ('opencodeSessionCookie' in updates && !updates.opencodeSessionCookie) {
+    operations.removeRetainedBlob(PROTECTED_SECRET_SLOT.opencodeSessionCookie)
+  }
+  if ('httpProxyUrl' in updates && !updates.httpProxyUrl) {
+    operations.removeRetainedBlob(PROTECTED_SECRET_SLOT.httpProxyUrl)
   }
   if (
     !Object.is(

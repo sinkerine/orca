@@ -1,25 +1,36 @@
 import type { BrowserWindow } from 'electron'
 import { ipcMain } from 'electron'
 import type { Store } from '../../persistence'
-import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import type { Project, ProjectUpdateArgs } from '../../../shared/project-types'
-import type {
-  HostRepoCatalogSnapshot,
-  ListReposForExecutionHostArgs
-} from '../../../shared/host-repo-catalog-contract'
-import { normalizeExecutionHostId } from '../../../shared/execution-host'
+import {
+  getRepoExecutionHostId,
+  normalizeExecutionHostId,
+  parseExecutionHostId
+} from '../../../shared/execution-host'
+import type { OrcaRuntimeService } from '../../runtime/orca-runtime'
 import { enrichRepoGitUsernames } from '../../repo-git-username-enrichment'
 import { enrichMissingRepoGitRemoteIdentities } from '../../repo-git-remote-identity-enrichment'
 import { invalidateAuthorizedRootsCache } from '../registered-worktree-roots-cache'
 import { notifyReposChanged } from './repos-changed-notification'
+import { scheduleCurrentWorktreeBaseDirectoryWatcherSync } from '../worktree-base-directory-watcher'
 import { ProjectUpdateIpcArgs, parseProjectGroupIpcArgs } from './repo-ipc-arg-schemas'
-import { listReposForExecutionHost } from './host-repo-catalog-snapshot'
+import { visibleProjectHostSetups, visibleRepos } from '../../ssh/orcad-retained-source'
+import {
+  assertWslMoveProjectWritable,
+  assertWslMoveReposWritable,
+  isWslMoveSourceHost
+} from '../../persistence/moving-wsl-projects/wsl-move-scope-guard'
 
 export function registerRepoCatalogHandlers(
   mainWindow: BrowserWindow,
   store: Store,
-  runtime: OrcaRuntimeService
+  runtime: Pick<OrcaRuntimeService, 'removeProject'> & Partial<Pick<OrcaRuntimeService, 'guardPrimaryProjectRemoval'>>
 ): void {
+  const guardPrimaryProjectRemoval = async <T>(repoId: string, hostId: string | undefined, operation: () => Promise<T>): Promise<T> => {
+    if (!runtime.guardPrimaryProjectRemoval) {throw new Error('runtime_unavailable')}
+    return runtime.guardPrimaryProjectRemoval(repoId, hostId, operation)
+  }
+
   // Why one shared reference: enrichment dedupes coalesced callers by callback identity, so a fresh
   // closure per list call would stack up (and re-broadcast) for the length of a slow sweep.
   const broadcastReposChanged = (): void => notifyReposChanged(mainWindow)
@@ -28,14 +39,8 @@ export function registerRepoCatalogHandlers(
     enrichMissingRepoGitRemoteIdentities(store, { onChanged: broadcastReposChanged })
     // Why: username resolution spawns git/gh, so keep it off this sync handler (issue #7225); it re-lists when values land.
     enrichRepoGitUsernames(store, { onChanged: broadcastReposChanged })
-    return store.getRepos()
+    return visibleRepos(store)
   })
-
-  ipcMain.handle(
-    'repos:listForExecutionHost',
-    (_event, args: ListReposForExecutionHostArgs): Promise<HostRepoCatalogSnapshot> =>
-      listReposForExecutionHost(store, args)
-  )
 
   ipcMain.handle('projects:list', () => {
     enrichMissingRepoGitRemoteIdentities(store, { onChanged: broadcastReposChanged })
@@ -48,12 +53,14 @@ export function registerRepoCatalogHandlers(
       rawArgs,
       'project_update_invalid_args'
     )
+    const project = store.getProjects().find((entry) => entry.id === args.projectId)
+    assertWslMoveReposWritable(store, project?.sourceRepoIds ?? [])
     return store.updateProject(args.projectId, args.updates)
   })
 
   ipcMain.handle('projectHostSetups:list', () => {
     enrichMissingRepoGitRemoteIdentities(store, { onChanged: broadcastReposChanged })
-    return store.getProjectHostSetups()
+    return visibleProjectHostSetups(store)
   })
 
   ipcMain.handle(
@@ -91,8 +98,9 @@ export function registerRepoCatalogHandlers(
   )
 
   ipcMain.handle('repos:remove', async (_event, args: { repoId: string }) => {
-    await runtime.guardPrimaryProjectRemoval(args.repoId, undefined, async () => {
-      store.removeProject(args.repoId)
+    await guardPrimaryProjectRemoval(args.repoId, undefined, async () => {
+      const row = store.getRepos().find((repo) => repo.id === args.repoId)
+      if (row) {store.removeProjectForHost(row)}
     })
     invalidateAuthorizedRootsCache()
     notifyReposChanged(mainWindow)
@@ -106,8 +114,22 @@ export function registerRepoCatalogHandlers(
       if (!hostId) {
         throw new Error(`Invalid host ID: ${args.hostId}`)
       }
-      await runtime.guardPrimaryProjectRemoval(args.repoId, hostId, async () => {
-        store.removeProjectForHost(args.repoId, hostId)
+      if (isWslMoveSourceHost(hostId)) {
+        assertWslMoveProjectWritable(store, { repoId: args.repoId })
+      }
+      const row = store
+        .getRepos()
+        .find((repo) => repo.id === args.repoId && getRepoExecutionHostId(repo) === hostId)
+      // Why the runtime's removal: this process runs the project's local and SSH sessions, and only
+      // the host's own sweep stops the ones no renderer lists. A paired server's row is residue.
+      if (row && parseExecutionHostId(hostId)?.kind !== 'runtime') {
+        // It notifies the renderer and paired clients itself.
+        await runtime.removeProject(row)
+        scheduleCurrentWorktreeBaseDirectoryWatcherSync()
+        return
+      }
+      await guardPrimaryProjectRemoval(args.repoId, hostId, async () => {
+        store.removeProjectForHost({ id: args.repoId, executionHostId: hostId })
       })
       invalidateAuthorizedRootsCache()
       notifyReposChanged(mainWindow)

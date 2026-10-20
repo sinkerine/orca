@@ -204,7 +204,7 @@ describe('runtime window notifier relay', () => {
       targetGroupId: 'group-1',
       tabOrder: ['tab-1']
     })
-    notifier.closeTerminal('tab-1', 1)
+    notifier.closeTerminal('tab-1')
 
     expect(sendMock).not.toHaveBeenCalled()
     expect(() => notifier.closeSessionTab?.('tab-1', 'wt-1')).toThrow('runtime_unavailable')

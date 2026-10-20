@@ -1,15 +1,4 @@
-import { basename, dirname, isAbsolute, resolve } from 'node:path'
-import { getRepoExecutionHostId } from '../../../shared/execution-host'
-import {
-  applyMigrationJournal,
-  finishMigrationJournal,
-  readMainMigrationJournals
-} from '../../git/main-worktree-migration-journal'
-import {
-  markMainMigrationUnavailable,
-  clearMainMigrationUnavailable
-} from '../../git/main-worktree-migration-state'
-import { verifyMainWorktreeMigration } from '../../git/main-worktree-migration'
+import { ProjectPrimaryStoreOperations, profileStorageDirectory } from './project-primary-store-operations'
 import {
   setMigrationUnsupportedPty,
   setMigrationUnsupportedPtyPersistenceListener
@@ -18,37 +7,57 @@ import { agentHookServer } from '../../agent-hooks/server'
 import { ActiveViewPreference } from '../../active-view-preference'
 import { registerPersistedPaneKeyAlias } from '../restoring-sessions/pane-alias-normalization'
 import { normalizePersistedPaneIdentityState } from '../restoring-sessions/workspace-pane-normalization'
+import { nameEmptyPersistedTerminalLayoutRoots } from '../restoring-sessions/empty-terminal-layout-root-repair'
 import { StoreRuntimeState, type StoreRuntimeOptions } from './store-runtime-state'
 import {
   createStoreDomains,
   installStoreDomainContexts,
   STORE_DOMAIN_OPERATION_CLASSES,
-  type StoreDomains
+  type StoreDomains,
+  type StoreDomainOperations
 } from './store-domain-composition'
 import type { PersistedState } from '../../../shared/persisted-state-types'
+import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../shared/layout-owner-switch'
+import { dropInvalidWorkspaceLayoutsAtLoad } from '../restoring-sessions/invalid-workspace-layout-purge'
+import {
+  bindPersistedTabTerminalPanes,
+  sweepPersistedUnattachedTerminalRows
+} from '../restoring-sessions/tab-terminal-pane-binding-repair'
 import { scheduleSave } from './write-scheduling'
-import type { WriteSchedulingOperations } from './write-scheduling'
-import type { PrimaryStateWriteOperations } from './primary-state-writes'
-import type { ProjectCollectionOperations } from './project-collection-operations'
-import type { RepoLifecycleOperations } from './repo-lifecycle-operations'
-import type { MobileTabSelectionPersistence } from './mobile-tab-selection-persistence'
-import type { SparsePresetPersistence } from './sparse-preset-persistence'
-import type { AutomationPersistence } from './automation-persistence'
-import type { MetadataLineageOperations } from './metadata-lineage-operations'
-import type { ProfilePreferences } from './profile-preferences'
-import type { SessionHostPartitionOperations } from './session-host-partitions'
-import type { SessionSnapshotOperations } from './session-snapshot-operations'
-import type { PtyBindingPersistenceOperations } from './pty-binding-persistence'
-import type { SshProfileOperations } from './ssh-profile-operations'
-import type { RetiredWorktreeNamePersistence } from './retired-worktree-name-persistence'
-import type { SshLeaseRecoveryOperations } from './ssh-lease-recovery-operations'
-import type { WriteFlushBarrierOperations } from './write-flush-barriers'
-import type { PrimaryRemovalReservation } from '../../../shared/project-primary-removal'
-import type { Project } from '../../../shared/project-types'
-import type { ProjectHostSetup } from '../../../shared/project-types'
 import { ProjectPrimaryAuthorityPersistence } from './project-primary-authority-persistence'
+import {
+  migrateLegacyOpenCodeGoApiKey,
+  type OpenCodeGoApiKeyTarget
+} from './legacy-opencode-go-api-key-migration'
+import { enqueuePrimaryStateOperation, writeToDiskAsync } from './primary-state-writes'
+import type { ProfileStateDatabaseQuarantine } from '../profile-state/profile-state-database-quarantine'
+import { writeVersionedProfileStateExport } from '../profile-state/legacy-json/profile-state-versioned-export'
+import {
+  beginProfileStateMaintenance,
+  freezeProfileStateWrites,
+  freezeProfileStateWritesAsync,
+  type ProfileStateMaintenanceOptions
+} from './profile-state-maintenance'
+import type {
+  AsyncProfileStateAuthority,
+  ProfileStateAuthorityInitialState,
+  ProfileStateStartupPaneAlias,
+  ProfileStatePersistenceAuthority,
+  ProfileStateMaintenance
+} from './profile-state-authority'
 
-export type StoreOptions = StoreRuntimeOptions
+export type StoreOptions = StoreRuntimeOptions & {
+  /** Storage-form JSON supplied by a read-only profile migration/import boundary. */
+  serializedState?: string
+  collectUnboundPaneAlias?: (entry: ProfileStateStartupPaneAlias) => void
+  /** Reuse the authority's validated startup read without retaining a cached copy. */
+  initialAuthorityState?: ProfileStateAuthorityInitialState<ProfileStatePersistenceAuthority>
+}
+
+export type PreparedProfileStateExport = {
+  readonly json: string
+  commit(): void
+}
 export type PtyBindingSourceExpectation = {
   worktreeId?: string
   tabId: string
@@ -59,14 +68,38 @@ export type PtyBindingSourceExpectation = {
 
 /** Concrete composition root for profile persistence. */
 // oxlint-disable-next-line typescript-eslint/no-unsafe-declaration-merging -- Store installs the exact concrete domain class descriptors and contexts below
-export class Store {
-  private readonly runtime: StoreRuntimeState
-  private readonly domains: StoreDomains
-  private readonly state: PersistedState
-  private readonly primaryAuthorityPersistence: ProjectPrimaryAuthorityPersistence
+export class Store extends ProjectPrimaryStoreOperations {
+  protected readonly runtime: StoreRuntimeState
+  protected readonly domains: StoreDomains
+  protected readonly state: PersistedState
+  protected readonly primaryAuthorityPersistence: ProjectPrimaryAuthorityPersistence
+
+  protected flushPrimaryStoreSync(): void { this.flushOrThrow() }
+
+  protected flushPrimaryStore(): Promise<void> {
+    return this.flushPendingOrThrowAsync()
+  }
 
   constructor(options: StoreOptions = {}) {
+    super()
+    if (options.profileStateAuthority !== undefined && options.serializedState !== undefined) {
+      throw new Error('Store cannot use both a profile-state authority and serialized state')
+    }
+    if (
+      options.initialAuthorityState !== undefined &&
+      (options.profileStateAuthority === undefined ||
+        options.initialAuthorityState.authority !== options.profileStateAuthority)
+    ) {
+      throw new Error('Store initial authority state must belong to its profile-state authority')
+    }
+    if (options.profileStateAuthority === undefined && options.serializedState === undefined) {
+      throw new Error('Writable Store construction requires a SQLite profile-state authority')
+    }
+    const initial = options.initialAuthorityState
+    const parsedState = initial?.takeParsedState?.()
+    const imported = options.serializedState !== undefined
     this.runtime = new StoreRuntimeState(options)
+    this.runtime.writesFrozen = imported
     this.domains = createStoreDomains(this.runtime)
     installStoreDomainContexts(this, this.domains)
     this.primaryAuthorityPersistence = new ProjectPrimaryAuthorityPersistence({
@@ -78,8 +111,31 @@ export class Store {
       setPrimaryWorkspace: (id, primary) => this.domains.projects.setPrimaryWorkspace(id, primary)
     })
     this.runtime.flushOrThrow = () => this.flushOrThrow()
-    const loaded = this.domains.loader.load()
-    const normalized = normalizePersistedPaneIdentityState(loaded)
+    this.runtime.runDurableMutation = (mutate) => this.runDurableMutation(mutate)
+    let loaded: PersistedState
+    if (options.profileStateAuthority !== undefined) {
+      if (initial !== undefined) {
+        loaded =
+          initial.takeParsedState !== undefined
+            ? this.domains.loader.loadParsedFromAuthority(parsedState)
+            : this.domains.loader.loadFromAuthority(initial.serializedState)
+      } else {
+        loaded = this.domains.loader.loadFromAuthority(
+          options.profileStateAuthority.readSerializedState()
+        )
+      }
+    } else if (options.serializedState !== undefined) {
+      loaded = this.domains.loader.loadSerialized(options.serializedState)
+    } else {
+      throw new Error('Store requires an authority or a frozen serialized import')
+    }
+    const normalized = normalizePersistedPaneIdentityState(
+      nameEmptyPersistedTerminalLayoutRoots(loaded),
+      {
+        registerAliases: !imported,
+        collectUnboundPaneAlias: options.collectUnboundPaneAlias
+      }
+    )
     this.state = normalized.state
     this.runtime.state = this.state
     this.runtime.activeViewPreference = new ActiveViewPreference(
@@ -92,220 +148,190 @@ export class Store {
     // Load is the only place an orphaned repo id can be swept: every removal path needs the repo to
     // still be registered, so rows outlive their owner without one (#17776).
     const sweptRepoIds = this.domains.repos.sweepDeregisteredRepoResidue()
-    for (const entry of normalized.migrationUnsupportedEntries) {
-      setMigrationUnsupportedPty(entry)
+    if (ORCA_LAYOUT_OWNER_IS_MAIN) {
+      dropInvalidWorkspaceLayoutsAtLoad(this, this.state)
+      this.state = bindPersistedTabTerminalPanes(sweepPersistedUnattachedTerminalRows(this.state))
+      this.runtime.state = this.state
     }
-    for (const entry of normalized.legacyPaneKeyAliasEntries) {
-      registerPersistedPaneKeyAlias(entry)
-    }
-    setMigrationUnsupportedPtyPersistenceListener((entries) => {
-      this.state.migrationUnsupportedPtyEntries = entries
-      scheduleSave(this.domains.scheduling)
-    })
-    agentHookServer.setPaneKeyAliasPersistenceListener((entries) => {
-      this.state.legacyPaneKeyAliasEntries = entries
-      scheduleSave(this.domains.scheduling)
-    })
-    if (
-      normalized.changed ||
-      this.runtime.loadNeedsSave ||
-      adaptedProjectGroups ||
-      sweptRepoIds.length > 0
-    ) {
-      scheduleSave(this.domains.scheduling)
+    // Imported snapshots cannot own the live hook server or write their source file.
+    if (!imported) {
+      // A committed migration whose blob install failed or was cut short is finished here; shell
+      // history waits for the runtime's post-attach pass, which can see live shells.
+      this.domains.orcadMigrationBlobInstalls.installPendingOrcadMigrationReceivedBlobs()
+      for (const entry of initial?.unboundPaneAliases ?? []) {
+        agentHookServer.registerPaneKeyAlias(
+          entry.legacyPaneKey,
+          entry.stablePaneKey,
+          undefined,
+          entry.updatedAt
+        )
+      }
+      for (const entry of normalized.migrationUnsupportedEntries) {
+        setMigrationUnsupportedPty(entry)
+      }
+      for (const entry of normalized.legacyPaneKeyAliasEntries) {
+        registerPersistedPaneKeyAlias(entry)
+      }
+      setMigrationUnsupportedPtyPersistenceListener((entries) => {
+        this.state.migrationUnsupportedPtyEntries = entries
+        scheduleSave(this.domains.scheduling, ['migrationUnsupportedPtyEntries'])
+      })
+      agentHookServer.setPaneKeyAliasPersistenceListener((entries) => {
+        this.state.legacyPaneKeyAliasEntries = entries
+        scheduleSave(this.domains.scheduling, ['legacyPaneKeyAliasEntries'])
+      })
+      if (
+        normalized.changed ||
+        this.runtime.loadNeedsSave ||
+        adaptedProjectGroups ||
+        sweptRepoIds.length > 0
+      ) {
+        scheduleSave(this.domains.scheduling)
+      }
     }
   }
 
-  rebindLocalRepositoryAnchor(repoId: string, oldPath: string, newPath: string): void {
-    const repo = this.state.repos.find(
-      (entry) => entry.id === repoId && getRepoExecutionHostId(entry) === 'local'
-    )
-    if (!repo || (repo.path !== oldPath && repo.path !== newPath)) {
-      throw new Error('Repository anchor changed during Git checkout migration')
-    }
-    if (repo.worktreeBasePath && !isAbsolute(repo.worktreeBasePath)) {
-      repo.worktreeBasePath = resolve(oldPath, repo.worktreeBasePath)
-    }
-    repo.path = newPath
-    for (const setup of this.state.projectHostSetups) {
-      if (setup.repoId === repoId && setup.hostId === 'local') {
-        setup.path = newPath
-        if (repo.worktreeBasePath) {
-          setup.worktreeBasePath = repo.worktreeBasePath
-        }
-      }
-    }
-    scheduleSave(this.domains.scheduling)
-    this.flushOrThrow()
-  }
-
-  private recoverMainWorktreeMigrations(): void {
-    for (const { path, journal } of readMainMigrationJournals(dirname(this.runtime.dataFile))) {
-      const repo = this.state.repos.find(
-        (entry) => entry.id === journal.repoId && getRepoExecutionHostId(entry) === 'local'
-      )
-      try {
-        if (!repo || (repo.path !== journal.oldPath && repo.path !== journal.newPath)) {
-          throw new Error(`Git migration recovery requires the original repository anchor: ${path}`)
-        }
-        applyMigrationJournal(path, journal)
-        verifyMainWorktreeMigration(journal)
-        this.rebindLocalRepositoryAnchor(journal.repoId, journal.oldPath, journal.newPath)
-        finishMigrationJournal(path, journal)
-        clearMainMigrationUnavailable([journal.oldPath, journal.newPath])
-      } catch (error) {
-        markMainMigrationUnavailable(
-          [
-            journal.oldPath,
-            journal.newPath,
-            ...journal.operations.flatMap((operation) =>
-              operation.kind === 'write' && basename(operation.path) === '.git'
-                ? [dirname(operation.path)]
-                : []
-            )
-          ],
-          `${path}: ${String(error)}`
-        )
-        console.error(
-          '[git-migration] Repository needs recovery; other projects remain available:',
-          path,
-          error
-        )
-      }
+  /** Moves the #22551 settings-slot OpenCode Go key into `target`; it stays on disk until that succeeds. */
+  migrateLegacyOpenCodeGoApiKey(target: OpenCodeGoApiKeyTarget): void {
+    if (migrateLegacyOpenCodeGoApiKey(this.runtime.protectedSecrets, target)) {
+      scheduleSave(this.domains.scheduling)
     }
   }
 
   getProfileStorageDirectory(): string {
-    return dirname(this.runtime.dataFile)
+    return profileStorageDirectory(this.runtime.dataFile)
+  }
+
+  /**
+   * Prepare a storage-form export for a database importer.
+   *
+   * Secret retention is committed only after the caller durably accepts the
+   * export. This keeps a failed migration from discarding the prior sealed
+   * value from the in-memory fallback store.
+   */
+  prepareProfileStateExport(): PreparedProfileStateExport {
+    const built = this.domains.serialization.buildStateToSave()
+    let committed = false
+    return {
+      json: built.payload.toString('utf8'),
+      commit: () => {
+        if (committed) {
+          return
+        }
+        this.runtime.protectedSecrets.commitRetentionUpdates(built.protectedSecretUpdates)
+        committed = true
+      }
+    }
+  }
+
+  /** Publish an explicit rollback/compatibility export after flushing current state. */
+  writeProfileStateJsonExport(targetPath: string): number {
+    this.runtime.dirtyProfileStateDomains = null
+    this.flushOrThrow()
+    const authority = this.runtime.profileStateAuthority
+    if (authority?.asynchronous) {
+      throw new Error('Live profile exports require an awaited export')
+    }
+    if (authority?.writeJsonExport) {
+      return authority.writeJsonExport(targetPath)
+    }
+
+    throw new Error('Profile state exports require a SQLite profile-state authority')
+  }
+
+  /** Publish the latest SQLite revision as a durable, versioned rollback export. */
+  writeLatestProfileStateJsonExport(): number | undefined {
+    const authority = this.runtime.profileStateAuthority
+    if (authority?.asynchronous) {
+      throw new Error('Live profile exports require an awaited export')
+    }
+    if (!authority?.writeJsonExport) {
+      return undefined
+    }
+    this.runtime.dirtyProfileStateDomains = null
+    this.flushOrThrow()
+
+    const writeExport = authority.writeJsonExport.bind(authority)
+    return writeVersionedProfileStateExport(this.runtime.dataFile, writeExport)
+  }
+
+  writeLatestProfileStateJsonExportAsync(): Promise<number | undefined> {
+    if (!this.runtime.profileStateAuthority?.asynchronous) {
+      return Promise.resolve(this.writeLatestProfileStateJsonExport())
+    }
+    return this.enqueueProfileExport((authority) =>
+      authority.writeLatestJsonExport(this.runtime.dataFile)
+    )
+  }
+
+  private enqueueProfileExport(
+    exportState: (authority: AsyncProfileStateAuthority) => Promise<number | undefined>
+  ): Promise<number | undefined> {
+    if (
+      this.runtime.writesFrozen ||
+      this.runtime.quitFlushStarted ||
+      this.runtime.profileMaintenancePending
+    ) {
+      return Promise.reject(new Error('Cannot export finalized profile persistence'))
+    }
+    const authority = this.runtime.profileStateAuthority
+    if (!authority?.asynchronous) {
+      return Promise.resolve(undefined)
+    }
+    return enqueuePrimaryStateOperation(this.domains.writes, async () => {
+      this.runtime.dirtyProfileStateDomains = null
+      if (!(await writeToDiskAsync(this.domains.writes))) {
+        throw new Error('Profile state changed while preparing its export')
+      }
+      return exportState(authority)
+    })
+  }
+
+  /** Freeze writes, then preserve the SQLite family for an explicit recovery decision. */
+  quarantineProfileStateDatabase(
+    quarantineRoot?: string,
+    reason?: string
+  ): ProfileStateDatabaseQuarantine {
+    this.freezeWrites()
+    const authority = this.runtime.profileStateAuthority
+    if (authority?.asynchronous) {
+      throw new Error('Live profile quarantine requires an awaited close')
+    }
+    if (!authority?.quarantineDatabase) {
+      throw new Error('SQLite profile-state quarantine is unavailable')
+    }
+    return authority.quarantineDatabase(quarantineRoot, reason)
   }
 
   freezeWrites(): void {
-    this.runtime.writesFrozen = true
-    if (this.runtime.writeTimer) {
-      clearTimeout(this.runtime.writeTimer)
-      this.runtime.writeTimer = null
+    freezeProfileStateWrites(this.runtime)
+  }
+
+  beginProfileMaintenance(
+    options?: ProfileStateMaintenanceOptions
+  ): Promise<ProfileStateMaintenance> {
+    return beginProfileStateMaintenance(this.runtime, this.domains, options)
+  }
+
+  freezeWritesAsync(): Promise<void> {
+    return freezeProfileStateWritesAsync(this.runtime)
+  }
+
+  async quarantineProfileStateDatabaseAsync(
+    quarantineRoot?: string,
+    reason?: string
+  ): Promise<ProfileStateDatabaseQuarantine> {
+    await this.beginProfileMaintenance({ flush: false })
+    const authority = this.runtime.profileStateAuthority
+    if (!authority?.quarantineDatabase) {
+      throw new Error('SQLite profile-state quarantine is unavailable')
     }
-  }
-
-  getPrimaryRemovalReservations(): readonly PrimaryRemovalReservation[] {
-    return (this.state.primaryRemovalReservations ?? []).map((reservation) => ({
-      ...reservation,
-      target: { ...reservation.target }
-    }))
-  }
-
-  get isPrimaryWorkspaceMutationAvailable(): boolean {
-    return this.primaryAuthorityPersistence.isAvailable
-  }
-
-  async bindPrimaryAuthorityFingerprintDurably(
-    id: string,
-    fingerprint: string
-  ): Promise<Project | null> {
-    return this.primaryAuthorityPersistence.bind(id, fingerprint)
-  }
-
-  async registerRemoteProjectAuthorityCompatibilityDurably(input: {
-    remoteProject: Project
-    hostId: ProjectHostSetup['hostId']
-    setups: readonly ProjectHostSetup[]
-    authorityFingerprint: string
-    runtimeOwnerFingerprint?: string
-    isCurrent?: () => boolean
-  }): Promise<Project> {
-    const priorProjects = structuredClone(this.state.projects)
-    const priorSetups = structuredClone(this.state.projectHostSetups)
-    try {
-      if (input.isCurrent && !input.isCurrent()) {
-        throw new Error('runtime_environment_changed')
-      }
-      const { isCurrent, ...registration } = input
-      const project =
-        this.domains.projects.registerRemoteProjectAuthorityCompatibility(registration)
-      await this.flushPendingOrThrowAsync()
-      if (isCurrent && !isCurrent()) {
-        throw new Error('runtime_environment_changed')
-      }
-      return project
-    } catch (error) {
-      this.state.projects = priorProjects
-      this.state.projectHostSetups = priorSetups
-      scheduleSave(this.domains.scheduling)
-      try {
-        await this.flushPendingOrThrowAsync()
-      } catch {
-        this.freezeWrites()
-        throw new Error('remote_project_compatibility_rollback_failed', { cause: error })
-      }
-      throw error
-    }
-  }
-
-  async applyPrimaryAuthoritySnapshotDurably(input: {
-    projectId: string
-    fingerprint: string
-    primaryWorkspace: Project['primaryWorkspace'] | null | undefined
-    revision: number
-  }): Promise<Project | null> {
-    return this.primaryAuthorityPersistence.applySnapshot(input)
-  }
-
-  async setPrimaryWorkspaceDurably(
-    id: string,
-    primary: Project['primaryWorkspace'] | undefined
-  ): Promise<Project | null> {
-    return this.primaryAuthorityPersistence.set(id, primary)
-  }
-
-  async savePrimaryRemovalReservation(reservation: PrimaryRemovalReservation): Promise<void> {
-    const reservations = this.state.primaryRemovalReservations ?? []
-    if (reservations.some((entry) => entry.token === reservation.token)) {
-      throw new Error('duplicate_primary_removal_token')
-    }
-    this.state.primaryRemovalReservations = [
-      ...reservations,
-      {
-        ...reservation,
-        target: { ...reservation.target }
-      }
-    ]
-    scheduleSave(this.domains.scheduling)
-    await this.flushPendingOrThrowAsync()
-  }
-
-  async removePrimaryRemovalReservation(token: string): Promise<void> {
-    const reservations = this.state.primaryRemovalReservations ?? []
-    this.state.primaryRemovalReservations = reservations.filter((entry) => entry.token !== token)
-    scheduleSave(this.domains.scheduling)
-    try {
-      await this.flushPendingOrThrowAsync()
-    } catch (error) {
-      this.state.primaryRemovalReservations = reservations
-      scheduleSave(this.domains.scheduling)
-      throw error
-    }
+    return authority.quarantineDatabase(quarantineRoot, reason)
   }
 }
 
 // oxlint-disable-next-line typescript-eslint/consistent-type-definitions -- declaration merging derives Store's prototype API directly from the exact concrete domain classes installed below
-export interface Store
-  extends
-    WriteSchedulingOperations,
-    PrimaryStateWriteOperations,
-    ProjectCollectionOperations,
-    RepoLifecycleOperations,
-    MobileTabSelectionPersistence,
-    SparsePresetPersistence,
-    AutomationPersistence,
-    MetadataLineageOperations,
-    ProfilePreferences,
-    SessionHostPartitionOperations,
-    SessionSnapshotOperations,
-    PtyBindingPersistenceOperations,
-    SshProfileOperations,
-    RetiredWorktreeNamePersistence,
-    SshLeaseRecoveryOperations,
-    WriteFlushBarrierOperations {}
+export interface Store extends StoreDomainOperations {}
 
 for (const OperationClass of STORE_DOMAIN_OPERATION_CLASSES) {
   const descriptors = Object.getOwnPropertyDescriptors(OperationClass.prototype)

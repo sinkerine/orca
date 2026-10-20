@@ -11,6 +11,8 @@ import {
 } from './rpc-param-primitives'
 import { RUNTIME_NAVIGATION_TARGETS } from '../runtime-navigation'
 import { WorkspaceLinkedItemSchema } from '../workspace-linked-item-schema'
+import { WorkspaceAttachmentsSchema } from '../workspace-attachment-schema'
+import { DiffCommentSchema, MobileDiffReviewSchema } from '../diff-comment-schema'
 import { TaskSourceContextSchema } from '../task-source-context-schema'
 import { isWorkspaceLinkedItemSourceContextMatch } from '../workspace-linked-item-source-context'
 
@@ -74,7 +76,9 @@ export const WorktreePsParams = z.object({
 })
 
 export const WorktreeSortOrder = z.object({
-  orderedIds: z.array(z.string())
+  orderedIds: z.array(z.string()),
+  // Parallel to orderedIds: the copy each id names, so a same-id twin keeps its own order.
+  hostIds: z.array(z.string()).optional()
 })
 
 export const WorktreeSelector = z.object({
@@ -129,6 +133,9 @@ export const WorktreeSet = WorktreeSelector.extend({
   linkedAzureDevOpsPR: TriStateLinkedIssue,
   linkedGiteaPR: TriStateLinkedIssue,
   linkedWorkItem: WorkspaceLinkedItemSchema.nullable().optional(),
+  linkedItems: WorkspaceAttachmentsSchema.optional(),
+  linkedItemsBase: WorkspaceAttachmentsSchema.optional(),
+  linkedItemsSelectionChanged: z.boolean().optional(),
   linkedTaskSourceContext: TaskSourceContextSchema.nullable().optional(),
   isArchived: OptionalBoolean,
   isUnread: OptionalBoolean,
@@ -150,8 +157,9 @@ export const WorktreeSet = WorktreeSelector.extend({
     })
     .nullable()
     .optional(),
-  diffComments: z.array(z.unknown()).optional(),
-  mobileDiffReview: z.unknown().optional(),
+  // Older clients may send unsupported review shapes alongside unrelated metadata edits.
+  diffComments: z.array(DiffCommentSchema).optional().catch(undefined),
+  mobileDiffReview: MobileDiffReviewSchema.optional().catch(undefined),
   parentWorktree: OptionalString,
   noParent: OptionalBoolean
 }).superRefine((params, ctx) => {
@@ -171,7 +179,10 @@ export const WorktreeRemove = WorktreeSelector.extend({
   // desktop sets `force` for an ordinary confirmed delete too, so the PTY-stop
   // waiver travels on its own field.
   allowUnverifiedPtyStop: OptionalBoolean,
-  runHooks: OptionalBoolean
+  runHooks: OptionalBoolean,
+  // Why (#19334): a failed archive hook blocks removal. This waives that refusal and is recorded
+  // in the result; it is NOT `force`, and it does not decide whether the hook runs.
+  allowFailedArchiveHook: OptionalBoolean
 })
 
 export const WorktreeForceDeleteBranch = WorktreeSelector.extend({

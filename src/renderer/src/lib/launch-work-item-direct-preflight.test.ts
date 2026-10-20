@@ -35,8 +35,8 @@ describe('resolveDirectSetupDecision', () => {
       resolveDirectSetupDecision(
         'repo-1',
         {},
+        'local',
         {
-          activeRuntimeEnvironmentId: null,
           defaultSetupRunPolicy: 'skip-by-default'
         }
       )
@@ -59,8 +59,8 @@ describe('resolveDirectSetupDecision', () => {
               setupRunPolicy
             }
           },
+          'local',
           {
-            activeRuntimeEnvironmentId: null,
             defaultSetupRunPolicy: 'skip-by-default'
           }
         )
@@ -79,8 +79,8 @@ describe('resolveDirectSetupDecision', () => {
             setupRunPolicy: 'skip-by-default'
           }
         },
+        'local',
         {
-          activeRuntimeEnvironmentId: null,
           defaultSetupRunPolicy: 'run-by-default'
         }
       )
@@ -94,8 +94,8 @@ describe('resolveDirectSetupDecision', () => {
       resolveDirectSetupDecision(
         'repo-1',
         {},
+        'local',
         {
-          activeRuntimeEnvironmentId: null,
           defaultSetupRunPolicy: 'skip-by-default'
         }
       )

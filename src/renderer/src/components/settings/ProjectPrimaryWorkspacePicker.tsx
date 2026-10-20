@@ -16,7 +16,7 @@ import { getRepoHostIdentity } from '../../store/slices/repo-host-identity'
 import { resolvePaletteRepoForWorktree } from '../../lib/palette-repo-resolution'
 import { getPaletteWorktreeExecutionHostId } from '../../lib/palette-repo-resolution'
 import { selectExecutionHostDisplayLabel } from '../../lib/execution-host-display-label'
-import { getExplicitRuntimeEnvironmentIdForWorktree } from '../../lib/worktree-runtime-owner'
+import { runtimeEnvironmentIdWithLegacyFallbackUnlessTwin } from '../../lib/worktree-runtime-owner'
 import type { AppState } from '../../store/types'
 
 export function ProjectPrimaryWorkspacePicker({
@@ -107,7 +107,7 @@ export function ProjectPrimaryWorkspacePicker({
         const hostId = getPaletteWorktreeExecutionHostId(worktree)
         const hostLabel = hostId
           ? selectExecutionHostDisplayLabel(displayState, hostId, {
-              sshEnvironmentId: getExplicitRuntimeEnvironmentIdForWorktree(displayState, worktree.id)
+              sshEnvironmentId: runtimeEnvironmentIdWithLegacyFallbackUnlessTwin(displayState, worktree.id)
             })
           : translate(
               'auto.components.settings.ProjectPrimaryWorkspacePicker.local',

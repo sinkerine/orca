@@ -7,12 +7,14 @@ export type DirEntry = {
   isSymlink: boolean
 }
 
-export type MarkdownDocument = {
+export type FileDocument = {
   filePath: string
   relativePath: string
   basename: string
   name: string
 }
+
+export type MarkdownDocument = FileDocument
 
 // ─── Filesystem watcher ─────────────────────────────────────
 export type FsChangeEvent = {
@@ -25,4 +27,6 @@ export type FsChangeEvent = {
 export type FsChangedPayload = {
   worktreePath: string
   events: FsChangeEvent[]
+  /** SSH connection the root was watched on; absent for local roots. Lets the renderer tell a local and an SSH root at the same path apart. */
+  connectionId?: string
 }

@@ -5,14 +5,14 @@ import { isFolderRepo } from '../../shared/repo-kind'
 import { listRepoWorktreesForDetectedScan } from '../repo-worktrees'
 import { getLocalProjectWorktreeGitOptions } from '../project-runtime-git-options'
 import { runtimePathsEqual } from './runtime-worktree-path-identity'
-import type { Store } from '../persistence'
+import type { RuntimeStore } from './runtime-store-contract'
 import { resolveFilesystemRouteForHost } from '../providers/execution-host-provider-dispatch'
 import { getLocalWorktreePathAccess } from '../local-worktree-filesystem'
-import { isENOENT } from '../ipc/filesystem-auth'
+import { isENOENT } from '../ipc/filesystem-path-containment'
 
 export type PrimaryOwnerVerificationDeps = {
   listRepos: () => Repo[]
-  store: Store
+  store: RuntimeStore
   statOwnerPath?: (worktree: ResolvedWorktree, repo: Repo) => Promise<boolean>
 }
 
@@ -20,24 +20,17 @@ export type FolderRootPresence = 'present' | 'missing' | 'unverifiable'
 
 export async function inspectFolderRootPresence(
   repo: Repo,
-  store: Store
+  store: RuntimeStore
 ): Promise<FolderRootPresence> {
   if (!isFolderRepo(repo)) {
     return 'unverifiable'
   }
   try {
     const route = resolveFilesystemRouteForHost(getRepoExecutionHostId(repo))
-    if (route.kind === 'runtime' || (route.kind === 'ssh' && !route.provider)) {
+    if (route.kind !== 'local') {
       return 'unverifiable'
     }
-    const result: unknown =
-      route.kind === 'local'
-        ? await getLocalWorktreePathAccess(getLocalProjectWorktreeGitOptions(store, repo)).statPath(
-            repo.path
-          )
-        : route.provider
-          ? await route.provider.stat(repo.path)
-          : null
+    const result: unknown = await getLocalWorktreePathAccess(getLocalProjectWorktreeGitOptions(store, repo)).statPath(repo.path)
     if (!result || typeof result !== 'object') {
       return 'unverifiable'
     }
@@ -87,7 +80,7 @@ export async function verifyPrimaryOwner(
       worktree.instanceId
     )
   }
-  const currentMeta = deps.store.getWorktreeMetaForHost(worktree.id, hostId)
+  const currentMeta = deps.store.getWorktreeMetaForHost?.(worktree.id, hostId)
   if (!currentMeta?.instanceId || currentMeta.instanceId !== worktree.instanceId) {
     return false
   }
@@ -96,7 +89,7 @@ export async function verifyPrimaryOwner(
       return false
     }
     const route = resolveFilesystemRouteForHost(getRepoExecutionHostId(repo))
-    if (route.kind === 'runtime' || (route.kind === 'ssh' && !route.provider)) {
+    if (route.kind !== 'local') {
       return false
     }
     if (deps.statOwnerPath) {

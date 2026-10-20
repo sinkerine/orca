@@ -33,12 +33,12 @@ function makeState(overrides: Partial<AddRepoSkipFinalizationState>): AddRepoSki
     activeRepoId: null,
     filterRepoIds: [],
     filterGroupIds: [],
-    repos: [],
     projectGroups: [],
     showActiveOnly: false,
     hideDefaultBranchWorkspace: false,
     showSleepingWorkspaces: true,
     alwaysShowDefaultBranchWorkspace: true,
+    repos: [],
     worktreesByRepo: {},
     setActiveRepo: vi.fn(),
     setFilterRepoIds: vi.fn(),
@@ -65,9 +65,17 @@ describe('finalizeImportedRepoAfterSkip', () => {
     finalizeImportedRepoAfterSkip(state, 'repo-new')
 
     expect(state.setActiveRepo).toHaveBeenCalledWith('repo-new')
-    expect(state.setFilterRepoIds).toHaveBeenCalledWith([])
+    expect(state.setFilterRepoIds).toHaveBeenCalledWith(['repo-old', 'repo-new'])
     expect(state.setShowActiveOnly).toHaveBeenCalledWith(false)
     expect(state.setHideDefaultBranchWorkspace).not.toHaveBeenCalled()
+  })
+
+  it('leaves the project filter off when the import lands with no filter', () => {
+    const state = makeState({ filterRepoIds: [] })
+
+    finalizeImportedRepoAfterSkip(state, 'repo-new')
+
+    expect(state.setFilterRepoIds).not.toHaveBeenCalled()
   })
 
   it('clears default-branch hiding when it would hide every imported worktree', () => {
@@ -89,6 +97,69 @@ describe('finalizeImportedRepoAfterSkip', () => {
 
     expect(state.setHideDefaultBranchWorkspace).toHaveBeenCalledWith(false)
   })
+
+  it('clears default-branch hiding for a folder project whose only row is its root', () => {
+    const state = makeState({
+      hideDefaultBranchWorkspace: true,
+      repos: [{ id: 'folder-new', kind: 'folder' }],
+      worktreesByRepo: {
+        'folder-new': [
+          makeWorktree({
+            id: 'folder-new::/notes',
+            repoId: 'folder-new',
+            isMainWorktree: true,
+            head: '',
+            branch: ''
+          })
+        ]
+      }
+    })
+
+    finalizeImportedRepoAfterSkip(state, 'folder-new')
+
+    expect(state.setHideDefaultBranchWorkspace).toHaveBeenCalledWith(false)
+  })
+
+  it.each([false, true])(
+    'ignores archived siblings when revealing a folder root after Skip (root archived: %s)',
+    (rootArchived) => {
+      const state = makeState({
+        hideDefaultBranchWorkspace: true,
+        showSleepingWorkspaces: false,
+        alwaysShowDefaultBranchWorkspace: false,
+        repos: [{ id: 'folder-new', kind: 'folder' }],
+        worktreesByRepo: {
+          'folder-new': [
+            makeWorktree({
+              id: 'folder-new::/notes',
+              repoId: 'folder-new',
+              isMainWorktree: true,
+              head: '',
+              branch: '',
+              isArchived: rootArchived
+            }),
+            makeWorktree({
+              id: 'folder-new::/notes::workspace:archived',
+              repoId: 'folder-new',
+              head: '',
+              branch: '',
+              isArchived: true
+            })
+          ]
+        }
+      })
+
+      finalizeImportedRepoAfterSkip(state, 'folder-new')
+
+      if (rootArchived) {
+        expect(state.setHideDefaultBranchWorkspace).not.toHaveBeenCalled()
+        expect(state.setAlwaysShowDefaultBranchWorkspace).not.toHaveBeenCalled()
+      } else {
+        expect(state.setHideDefaultBranchWorkspace).toHaveBeenCalledWith(false)
+        expect(state.setAlwaysShowDefaultBranchWorkspace).toHaveBeenCalledWith(true)
+      }
+    }
+  )
 
   it('re-enables the default-branch exemption when the import would land asleep and hidden', () => {
     const state = makeState({
@@ -144,7 +215,7 @@ describe('finalizeImportedRepoAfterSkip', () => {
     finalizeImportedRepoAfterSkip(state, 'repo-new')
 
     expect(state.setActiveRepo).toHaveBeenCalledWith('repo-new')
-    expect(state.setFilterRepoIds).toHaveBeenCalledWith([])
+    expect(state.setFilterRepoIds).toHaveBeenCalledWith(['repo-old', 'repo-new'])
     expect(state.setShowActiveOnly).toHaveBeenCalledWith(false)
     expect(state.setHideDefaultBranchWorkspace).not.toHaveBeenCalled()
   })

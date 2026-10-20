@@ -6,9 +6,9 @@ import type {
   PtyRendererDeliveryStateReport
 } from '../../../../shared/pty-renderer-delivery-health'
 import { redactPtyIdForDiagnostics } from '../../../../shared/pty-delivery-diagnostics'
-import { setTerminalViewAttributes } from '../../../runtime/terminal-view-attribute-store'
-import { validateTerminalViewAttributes } from '../../../../shared/terminal-view-attributes'
+import { installTerminalViewAttributesIpc } from './terminal-view-attributes-ipc'
 import {
+  consumeHiddenRendererPtyDropMemory,
   recordHiddenRendererPtyDataDrop,
   setRendererPtyDeliveryInterest,
   shouldDropHiddenRendererPtyData
@@ -20,13 +20,10 @@ import {
   resolveRendererPtyClaimWindowId
 } from '../delivery/renderer-pty-window-claims'
 import {
-  deliveredHiddenRendererResizeOutputPtys,
   invalidatePendingPtyDrainPolicy,
   invalidatePendingPtyDrainPriority,
-  pendingHiddenRendererResizeOutputPtys,
   ptySizes,
   rendererVisibilityKnownPtys,
-  visibleRendererPtys
 } from '../delivery/visibility-state'
 import {
   mainDeliveryBreadcrumbs,
@@ -72,21 +69,9 @@ export function installPtyResizeVisibilityIpc(session: PtyIpcSession): void {
     if (!provider) {
       return
     }
-    const markedHiddenResizeOutput = session.rendererPtyIsKnownHidden(args.id)
-    if (markedHiddenResizeOutput) {
-      // Why: alt-screen TUIs repaint on SIGWINCH; a hidden repaint read after switch-back must not masquerade as live output and overwrite the correctly-sized screen.
-      pendingHiddenRendererResizeOutputPtys.add(args.id)
-      deliveredHiddenRendererResizeOutputPtys.delete(args.id)
-    } else if (visibleRendererPtys.has(args.id)) {
-      // Why: after the stale hidden-resize repaint is observed, the renderer's visible resize pulse owns the next repaint.
-      session.clearDeliveredHiddenRendererResizeOutput(args.id)
-    }
     try {
       provider.resize(args.id, args.cols, args.rows)
     } catch {
-      if (markedHiddenResizeOutput) {
-        pendingHiddenRendererResizeOutputPtys.delete(args.id)
-      }
       return
     }
     ptySizes.set(args.id, { cols: args.cols, rows: args.rows })
@@ -98,6 +83,21 @@ export function installPtyResizeVisibilityIpc(session: PtyIpcSession): void {
   ipcMain.on('pty:reportGeometry', (_event, args: { id: string; cols: number; rows: number }) => {
     runtime?.recordRendererGeometry(args.id, args.cols, args.rows)
   })
+
+  // Why the ack and not the serve: the pane can dispose across the serialize + IPC round trip,
+  // so the drop latch stays armed until the restored bytes are actually painted (#15504).
+  ipcMain.removeAllListeners('pty:hiddenOutputRestoreApplied')
+  ipcMain.on(
+    'pty:hiddenOutputRestoreApplied',
+    (_event, args: { id?: unknown; hiddenDropEpisode?: unknown }) => {
+      if (typeof args?.id !== 'string' || !args.id) {
+        return
+      }
+      const episode =
+        typeof args.hiddenDropEpisode === 'number' ? args.hiddenDropEpisode : undefined
+      consumeHiddenRendererPtyDropMemory(args.id, episode)
+    }
+  )
 
   // Why invoke + renderer-initiated: the field wedge (v1.4.121-rc.0) kills every main→renderer push channel while invoke survives, so the resync rides here plus a write-off lane.
   ipcMain.removeHandler('pty:reportRendererDeliveryState')
@@ -209,12 +209,6 @@ export function installPtyResizeVisibilityIpc(session: PtyIpcSession): void {
       const pending = session.pendingData.get(args.id)
       if (pending && transition.droppable) {
         session.pendingData.delete(args.id)
-        if (pending.projectionAdmissionIds) {
-          session.sshOutputIntake?.transferProjections(
-            pending.projectionAdmissionIds,
-            'hidden-drop'
-          )
-        }
         session.updateProducerFlowControl(args.id)
         session.pendingOverflowMarkedPtys.delete(args.id)
         const drop = recordHiddenRendererPtyDataDrop(args.id, pending.data.length)
@@ -223,7 +217,8 @@ export function installPtyResizeVisibilityIpc(session: PtyIpcSession): void {
             session,
             args.id,
             'hidden-drop',
-            runtime?.getPtyOutputSequence(args.id)
+            runtime?.getPtyOutputSequence(args.id),
+            drop.hiddenDropEpisode
           )
         }
       }
@@ -243,19 +238,13 @@ export function installPtyResizeVisibilityIpc(session: PtyIpcSession): void {
         session,
         args.id,
         'unhide',
-        runtime?.getPtyOutputSequence(args.id)
+        runtime?.getPtyOutputSequence(args.id),
+        transition.hiddenDropEpisode
       )
     }
   })
 
-  ipcMain.removeAllListeners('pty:terminalViewAttributes')
-  ipcMain.on('pty:terminalViewAttributes', (_event, args: unknown) => {
-    // Why validate-or-drop: a malformed palette gives a wrong color reply that breaks TUI theme detection worse than the silent-until-first-push default.
-    const attributes = validateTerminalViewAttributes(args)
-    if (attributes) {
-      setTerminalViewAttributes(attributes)
-    }
-  })
+  installTerminalViewAttributesIpc(session)
 
   ipcMain.removeAllListeners('pty:setPtyDeliveryInterest')
   ipcMain.on('pty:setPtyDeliveryInterest', (event, args: { id: string; interested: boolean }) => {
@@ -285,5 +274,14 @@ export function installPtyResizeVisibilityIpc(session: PtyIpcSession): void {
       ?.clearBuffer(args.id)
       .catch(() => {})
     runtime?.clearHeadlessTerminalBuffer(args.id).catch(() => {})
+  })
+
+  ipcMain.removeAllListeners('pty:resetInputModes')
+  ipcMain.on('pty:resetInputModes', (_event, args: { id: string }) => {
+    // Why: an older daemon or relay rejects the request; its model keeps the modes until reattach.
+    tryGetProviderForPty(args.id)
+      ?.resetInputModes(args.id)
+      .catch(() => {})
+    runtime?.resetHeadlessTerminalInputModes(args.id).catch(() => {})
   })
 }

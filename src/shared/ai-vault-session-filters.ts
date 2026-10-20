@@ -3,12 +3,12 @@
 // Metro only watches mobile/ + repo-root src/shared, never src/renderer.
 // INVARIANT: /shared is a leaf — this module must NOT import from src/renderer.
 import {
-  createNormalizedPathInsideOrEqualMatcher,
   normalizeRuntimePathForComparison,
   normalizeRuntimePathSeparators
 } from './cross-platform-path'
 import { isClipboardTextByteLengthOverLimit } from './clipboard-text'
-import { parseWslUncPath } from './wsl-paths'
+import { splitAiVaultSearchQuery } from './ai-vault-search-query-operators'
+import { createAiVaultScopeCwdMatcher } from './ai-vault-scope-cwd-match'
 import type {
   AiVaultAgent,
   AiVaultGroup,
@@ -79,10 +79,9 @@ export function filterAiVaultSessions(
 
   const agentSet = new Set(filters.agents)
   const parsedQuery = parseVaultQuery(filters.query)
-  const workspaceMatchers =
-    filters.scope === 'workspace'
-      ? filters.activeWorktreePaths.map(createAiVaultWorkspaceMatcher)
-      : []
+  const inWorkspace = createAiVaultScopeCwdMatcher(
+    filters.scope === 'workspace' ? filters.activeWorktreePaths : []
+  )
 
   const filtered = sessions.filter((session) => {
     if (!agentSet.has(session.agent)) {
@@ -100,9 +99,7 @@ export function filterAiVaultSessions(
       return false
     }
     if (filters.scope === 'workspace') {
-      const cwd = session.cwd
-      const normalizedCwd = cwd ? normalizeRuntimePathForComparison(cwd) : null
-      if (normalizedCwd === null || !workspaceMatchers.some((matches) => matches(normalizedCwd))) {
+      if (!inWorkspace(session.cwd, session.filePath)) {
         return false
       }
     }
@@ -179,31 +176,61 @@ export function agentLabel(agent: AiVaultAgent): string {
   return aiVaultAgentLabel(agent)
 }
 
+/**
+ * One reading of `repo:` / `path:` for the whole product.
+ *
+ * Delegates to `splitAiVaultSearchQuery`, which the search index also plans
+ * from, so a query cannot mean one thing in this list and another in the index.
+ * The values come back folded because everything this file compares is folded;
+ * the index keeps the unfolded form, which is why the split itself does not.
+ */
 export function parseVaultQuery(query: string): ParsedQuery {
-  const terms: string[] = []
-  const repoTerms: string[] = []
-  const pathTerms: string[] = []
-
-  for (const rawToken of tokenizeQuery(query)) {
-    const token = rawToken.toLowerCase()
-    if (token.startsWith('repo:')) {
-      const value = token.slice('repo:'.length)
-      if (value) {
-        repoTerms.push(value)
-      }
-      continue
-    }
-    if (token.startsWith('path:')) {
-      const value = token.slice('path:'.length)
-      if (value) {
-        pathTerms.push(value)
-      }
-      continue
-    }
-    terms.push(token)
+  const split = splitAiVaultSearchQuery(query)
+  const fold = (values: readonly string[]): string[] => values.map((value) => value.toLowerCase())
+  return {
+    terms: fold(split.terms),
+    repoTerms: fold(split.repoTerms),
+    pathTerms: fold(split.pathTerms)
   }
+}
 
-  return { terms, repoTerms, pathTerms }
+/** What `repo:` and `path:` are compared against for one session. */
+export type AiVaultQueryOperatorTarget = {
+  cwd: string | null
+  filePath: string
+  /**
+   * What `repo:` matches. The panel passes a resolved project label when it has
+   * one; everything else falls back to the last two path segments.
+   */
+  repoLabel?: string
+}
+
+/**
+ * Whether one session satisfies every `repo:` and `path:` term.
+ *
+ * The single definition of what those operators mean. The search index applies
+ * this over its retrieved rows rather than expressing it in SQL, because SQL
+ * cannot: LIKE folds ASCII and nothing else, and `path:` searches the transcript
+ * path as well as the working directory. Both keys are conjunctive, matching
+ * the qualifier semantics the panel has always had.
+ */
+export function matchesAiVaultQueryOperators(
+  target: AiVaultQueryOperatorTarget,
+  operators: { repoTerms: readonly string[]; pathTerms: readonly string[] }
+): boolean {
+  if (operators.repoTerms.length > 0) {
+    const repoLabel = (target.repoLabel ?? folderLabel(target.cwd)).toLowerCase()
+    if (operators.repoTerms.some((term) => !repoLabel.includes(term.toLowerCase()))) {
+      return false
+    }
+  }
+  if (operators.pathTerms.length > 0) {
+    const pathSearch = `${target.cwd ?? ''} ${target.filePath}`.toLowerCase()
+    if (operators.pathTerms.some((term) => !pathSearch.includes(term.toLowerCase()))) {
+      return false
+    }
+  }
+  return true
 }
 
 function matchesQuery(
@@ -229,25 +256,18 @@ function matchesQuery(
       return false
     }
   }
-  if (parsed.repoTerms.length > 0) {
-    const sessionProject = filters.sessionProjectById?.get(session.id)
-    const repoLabel = (
-      sessionProject?.kind === 'repo'
-        ? (filters.projectLabelByKey?.get(sessionProject.key) ?? sessionProject.label)
-        : folderLabel(session.cwd)
-    ).toLowerCase()
-    if (parsed.repoTerms.some((term) => !repoLabel.includes(term))) {
-      return false
-    }
-  }
-  if (parsed.pathTerms.length > 0) {
-    const pathSearch = `${session.cwd ?? ''} ${session.filePath}`.toLowerCase()
-    if (parsed.pathTerms.some((term) => !pathSearch.includes(term))) {
-      return false
-    }
-  }
-
-  return true
+  const sessionProject = filters.sessionProjectById?.get(session.id)
+  return matchesAiVaultQueryOperators(
+    {
+      cwd: session.cwd,
+      filePath: session.filePath,
+      repoLabel:
+        sessionProject?.kind === 'repo'
+          ? (filters.projectLabelByKey?.get(sessionProject.key) ?? sessionProject.label)
+          : undefined
+    },
+    parsed
+  )
 }
 
 function sessionSortTime(session: AiVaultSession, sort: AiVaultSort): number {
@@ -279,37 +299,4 @@ function getGroupIdentity(
     }
   }
   return { key: folderGroupKey(session.cwd), label: folderLabel(session.cwd) }
-}
-
-function createAiVaultWorkspaceMatcher(workspacePath: string): (normalizedCwd: string) => boolean {
-  const matches = createNormalizedPathInsideOrEqualMatcher(workspacePath)
-  const workspaceWslPath = parseWslUncPath(workspacePath)
-  if (!workspaceWslPath) {
-    return matches
-  }
-  // WSL transcripts record Linux cwd even when the workspace uses a UNC path.
-  const matchesLinux = createNormalizedPathInsideOrEqualMatcher(workspaceWslPath.linuxPath)
-  return (cwd) => matches(cwd) || matchesLinux(cwd)
-}
-
-function tokenizeQuery(query: string): string[] {
-  const tokens: string[] = []
-  // Why: keep quoted operator values (repo:/path:) intact so labels and paths
-  // containing spaces still match — e.g. path:"/Users/ada/My Project".
-  const pattern = /(repo|path):"([^"]+)"|(repo|path):'([^']+)'|"([^"]+)"|'([^']+)'|(\S+)/gi
-  let match: RegExpExecArray | null
-  while ((match = pattern.exec(query)) !== null) {
-    const operator = match[1] ?? match[3]
-    const operatorValue = match[2] ?? match[4]
-    if (operator && operatorValue?.trim()) {
-      tokens.push(`${operator.toLowerCase()}:${operatorValue.trim()}`)
-      continue
-    }
-
-    const token = match[5] ?? match[6] ?? match[7]
-    if (token?.trim()) {
-      tokens.push(token.trim())
-    }
-  }
-  return tokens
 }

@@ -8,8 +8,8 @@ import { ProjectPrimaryAuthorityWorkspaceParams } from '../../shared/project-pri
 import { resolveEnvironment } from '../../shared/runtime-environment-store'
 import { getPreferredPairingOffer } from '../../shared/runtime-environments'
 import { fingerprintPeerPublicKey } from '../runtime/peer-fingerprint'
-import { isRuntimeEnvironmentManuallyDisconnected } from './runtime-environment-connectivity-handlers'
-import { subscribeRuntimeEnvironment } from './runtime-environment-transport-routing'
+import { isRuntimeEnvironmentManuallyDisconnected } from './runtime-environments/runtime-environment-connectivity-handlers'
+import { subscribeRuntimeEnvironment } from './runtime-environments/runtime-environment-transport-routing'
 
 type Subscription = {
   close: () => void

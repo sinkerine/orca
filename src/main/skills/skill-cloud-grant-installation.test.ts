@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('electron', () => ({
   app: { getPath: () => '/state', isPackaged: true }
 }))
-vi.mock('../ipc/runtime-environment-transport-routing', () => ({
+vi.mock('../ipc/runtime-environments/runtime-environment-status-probe', () => ({
   getRuntimeEnvironmentStatus: mocks.getRuntimeEnvironmentStatus
 }))
 vi.mock('./skill-remote-install-service', () => ({
@@ -195,6 +195,7 @@ it.each(['skill-install-cancelled', 'skill-install-filesystem-failed'])(
         if (typeof key === 'string' && /^\d+$/.test(key)) {
           reads += 1
         }
+        // oxlint-disable-next-line anti-slop/no-reflect-get -- Proxy `get` trap: only Reflect.get forwards a raw string|symbol key with the proxy receiver.
         return Reflect.get(target, key, receiver)
       }
     })

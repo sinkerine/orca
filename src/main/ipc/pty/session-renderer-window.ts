@@ -1,7 +1,7 @@
-import type { BrowserWindow } from 'electron'
+import type { PtyRendererDelivery } from './session'
 import { getLastActiveMainWindow } from '../../window/main-window-registry'
 
-function isLiveRendererWindow(window: BrowserWindow | null | undefined): window is BrowserWindow {
+function isLiveRendererWindow(window: PtyRendererDelivery | null | undefined): window is PtyRendererDelivery {
   if (!window || window.isDestroyed()) {
     return false
   }
@@ -22,9 +22,9 @@ function isLiveRendererWindow(window: BrowserWindow | null | undefined): window 
  * fact and must not share an encoding.
  */
 export function resolveSessionRendererWindow(session: {
-  mainWindow: BrowserWindow
+  mainWindow?: PtyRendererDelivery
   headless: boolean
-}): BrowserWindow | null {
+}): PtyRendererDelivery | null {
   if (isLiveRendererWindow(session.mainWindow)) {
     return session.mainWindow
   }

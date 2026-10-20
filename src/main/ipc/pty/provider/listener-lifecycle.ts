@@ -1,4 +1,6 @@
-import type { WebContents } from 'electron'
+import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../../../shared/layout-owner-switch'
+import { notifyLocalPtyProviderRebound } from './local-provider-rebound'
+import type { PtyRendererDelivery } from '../session'
 
 // Why: localProvider.onData/onExit return unsubscribe functions. Without
 // storing and calling these on re-registration, macOS app re-activation
@@ -10,13 +12,13 @@ export let localBackgroundStreamUnsub: (() => void) | null = null
 export let localWriteUnavailableUnsub: (() => void) | null = null
 // Why: each main window installs its own orphan-sweep handler, so they are keyed by
 // webContents instead of a single latch that a second window would silently replace.
-export const didFinishLoadHandlersByWebContents = new Map<WebContents, () => void>()
-export let rendererLifecycleResetWebContents: WebContents | null = null
+export const didFinishLoadHandlersByWebContents = new Map<PtyRendererDelivery['webContents'], () => void>()
+export let rendererLifecycleResetWebContents: PtyRendererDelivery['webContents'] | null = null
 export let rendererLifecycleResetHandler: (() => void) | null = null
 // Why: the hidden-delivery gate registries mirror renderer state; a reload/crash destroys owners without unregistering, so they reset when the renderer is replaced (drop memory preserved).
 export let rendererGateResetLoadHandler: (() => void) | null = null
 export let rendererGateResetGoneHandler: (() => void) | null = null
-export let rendererGateResetWebContents: WebContents | null = null
+export let rendererGateResetWebContents: PtyRendererDelivery['webContents'] | null = null
 // Why: the backgrounded-delivery dedupe map lives in the registerPtyHandlers closure but teardown funnels through module-scope clearProviderPtyState.
 // Why null-init + wrapper fn: see delivery/debug.ts — rolldown const-folds `export let fn = noop` bridges (STA-5661).
 let clearBackgroundedDeliverySyncForPtyImpl: ((id: string) => void) | null = null
@@ -37,10 +39,13 @@ export let rendererDidStartNavigationHandler:
 
 // Why: Restart daemon must re-bind provider→renderer listeners after replaceDaemonProvider swaps localProvider, else subscribers stay bound to the disposed adapter and new PTY data silently drops.
 export let rebindProviderListeners: (() => void) | null = null
-export let sshOutputIntakeCleanup: (() => void) | null = null
 
 export function rebindLocalProviderListeners(): void {
   rebindProviderListeners?.()
+  // Switch point: main shows the live terminals a new or restarted provider reports.
+  if (ORCA_LAYOUT_OWNER_IS_MAIN) {
+    notifyLocalPtyProviderRebound()
+  }
 }
 
 export function setRebindProviderListeners(fn: (() => void) | null): void {
@@ -49,10 +54,6 @@ export function setRebindProviderListeners(fn: (() => void) | null): void {
 
 export function setClearBackgroundedDeliverySyncForPty(fn: (id: string) => void): void {
   clearBackgroundedDeliverySyncForPtyImpl = fn
-}
-
-export function setSshOutputIntakeCleanup(fn: (() => void) | null): void {
-  sshOutputIntakeCleanup = fn
 }
 
 export function setLocalDataUnsub(fn: (() => void) | null): void {
@@ -73,7 +74,7 @@ export function setLocalWriteUnavailableUnsub(fn: (() => void) | null): void {
 
 export function setDidFinishLoadHandler(
   handler: (() => void) | null,
-  contents: WebContents | null
+  contents: PtyRendererDelivery['webContents'] | null
 ): void {
   if (!contents) {
     return
@@ -89,7 +90,7 @@ export function setDidFinishLoadHandler(
   }
 }
 
-export function clearDidFinishLoadHandlerForWebContents(contents: WebContents): void {
+export function clearDidFinishLoadHandlerForWebContents(contents: PtyRendererDelivery['webContents']): void {
   const handler = didFinishLoadHandlersByWebContents.get(contents)
   if (handler) {
     contents.removeListener('did-finish-load', handler)
@@ -98,7 +99,7 @@ export function clearDidFinishLoadHandlerForWebContents(contents: WebContents): 
 }
 
 export function setRendererLifecycleResetState(args: {
-  contents: WebContents | null
+  contents: PtyRendererDelivery['webContents'] | null
   handler: (() => void) | null
   navigation: ((details: RendererNavigationDetails) => void) | null
 }): void {
@@ -108,7 +109,7 @@ export function setRendererLifecycleResetState(args: {
 }
 
 export function setRendererGateResetState(args: {
-  contents: WebContents | null
+  contents: PtyRendererDelivery['webContents'] | null
   load: (() => void) | null
   gone: (() => void) | null
 }): void {

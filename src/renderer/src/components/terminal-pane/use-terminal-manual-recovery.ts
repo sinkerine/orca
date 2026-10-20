@@ -9,7 +9,7 @@ import {
   terminalRecoveryFoundNothing,
   type TerminalRecoveryReport
 } from './terminal-manual-recovery'
-import type { PtyTransport } from './pty-transport'
+import type { PtyTransport } from './pty-transport-types'
 
 type UseTerminalManualRecoveryArgs = {
   managerRef: React.RefObject<PaneManager | null>

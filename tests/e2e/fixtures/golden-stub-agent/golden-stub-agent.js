@@ -138,5 +138,13 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
   process.on(signal, exitCleanly)
 }
 
+if (process.stdout.isTTY) {
+  process.stdout.on('resize', () => {
+    if (!exiting) {
+      render()
+    }
+  })
+}
+
 process.stdout.write('\x1b[?1049h')
 render()

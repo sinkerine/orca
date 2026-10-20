@@ -58,7 +58,7 @@ export function useAutomationsPageDestinationState({
     runtimeEnvironments,
     fetchRuntimeEnvironmentRepos
   } = store
-  const { createOpen, createTarget, editingAutomationId, editingRowKey, setOwnerAction } = local
+  const { createOpen, editingAutomationId, editingRowKey, setOwnerAction } = local
   const { hostCatalog, capturedAutomationOwners } = list
 
   const automationHostTarget = useMemo(
@@ -87,7 +87,7 @@ export function useAutomationsPageDestinationState({
       : null
   }, [activeWorktreeId, repoMap, worktreeMap])
   const createDestination = useAutomationCreateDestination({
-    open: createOpen && editingAutomationId === null && createTarget === 'orca',
+    open: createOpen && editingAutomationId === null,
     catalog: hostCatalog.catalog,
     entries: hostCatalog.entries,
     filterStableKey: hostCatalog.resolution.entry?.stableKey ?? null,

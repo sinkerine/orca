@@ -6,8 +6,8 @@ import { getPreferredPairingOffer } from '../../shared/runtime-environments'
 import { mainProcessState } from '../startup/main-process-state'
 import { fingerprintPeerPublicKey } from '../runtime/peer-fingerprint'
 import { subscribeProjectPrimaryAuthorityChanges } from '../runtime/project-primary-authority-notifier'
-import { isRuntimeEnvironmentManuallyDisconnected } from './runtime-environment-connectivity-handlers'
-import { callRuntimeEnvironment } from './runtime-environment-transport-routing'
+import { isRuntimeEnvironmentManuallyDisconnected } from './runtime-environments/runtime-environment-connectivity-handlers'
+import { callRuntimeEnvironment } from './runtime-environments/runtime-environment-transport-routing'
 import { listAuthenticatedProjectPeerWorktrees } from './project-primary-authority-peer-catalog'
 import {
   startProjectPrimaryAuthorityRunner,

@@ -82,8 +82,10 @@ export const ProjectHostSetupCreate = z.object({
   setupMethod: z.enum(['imported-existing-folder', 'cloned', 'provisioned']).optional()
 })
 
+// Why `hostId` is optional: older clients omit it, and older hosts strip it (first match by id).
 export const ProjectHostSetupUpdate = z.object({
   setupId: requiredString('Missing setup ID'),
+  hostId: RequestedHostId.optional(),
   updates: z.object({
     displayName: OptionalString,
     path: OptionalString,
@@ -98,5 +100,7 @@ export const ProjectHostSetupUpdate = z.object({
 })
 
 export const ProjectHostSetupDelete = z.object({
-  setupId: requiredString('Missing setup ID')
+  setupId: requiredString('Missing setup ID'),
+  hostId: RequestedHostId.optional(),
+  force: z.boolean().optional()
 })

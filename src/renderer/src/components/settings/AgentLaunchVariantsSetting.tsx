@@ -1,3 +1,4 @@
+import { createBrowserUuid } from '@/lib/browser-uuid'
 import { useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { ALL_TUI_AGENTS, TUI_AGENT_DISPLAY_NAMES } from '../../../../shared/tui-agent-display-names'
@@ -168,7 +169,7 @@ export function AgentLaunchVariantsSetting({
             )
           }
           onClick={() => {
-            const id = globalThis.crypto.randomUUID()
+            const id = createBrowserUuid()
             void save([...variants, { id, name: name.trim(), agent, command: command.trim() }])
             setName('')
             setCommand('')

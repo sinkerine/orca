@@ -11,7 +11,10 @@ import {
   type PRRefreshValidationDenialReason
 } from '../github/pr-refresh-validation-backoff'
 import type { Store } from '../persistence'
-import { getLocalProjectWorktreeGitOptions } from '../project-runtime-git-options'
+import {
+  getLocalProjectGhExecOptions,
+  type LocalProjectGhExecOptions
+} from '../project-runtime-git-options'
 
 export type GitHubRepoScopedArgs = {
   repoPath: string
@@ -73,6 +76,18 @@ export function assertRegisteredGitHubRepo(
   return result.repo
 }
 
+/** Pure: a project is still registered at the candidate's path on its execution host (the queue key's identity). */
+export function isPRRefreshCandidateRegistered(
+  candidate: GitHubPRRefreshCandidate,
+  repos: readonly Repo[]
+): boolean {
+  const repoPath = resolve(candidate.repoPath)
+  const hostId = getRepoExecutionHostId(candidate)
+  return repos.some(
+    (repo) => resolve(repo.path) === repoPath && getRepoExecutionHostId(repo) === hostId
+  )
+}
+
 export function getGitHubRepoConnectionId(repo: Repo): string | null {
   return repo.connectionId ?? null
 }
@@ -80,8 +95,8 @@ export function getGitHubRepoConnectionId(repo: Repo): string | null {
 export function getGitHubLocalGitOptionArgs(
   store: Store,
   repo: Repo
-): [] | [{ wslDistro?: string }] {
-  const localGitOptions = getLocalProjectWorktreeGitOptions(store, repo)
+): [] | [LocalProjectGhExecOptions] {
+  const localGitOptions = getLocalProjectGhExecOptions(store, repo)
   return Object.keys(localGitOptions).length > 0 ? [localGitOptions] : []
 }
 

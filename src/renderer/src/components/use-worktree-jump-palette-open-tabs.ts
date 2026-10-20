@@ -34,10 +34,6 @@ import {
   buildSimulatorPaletteItems,
   buildWorkspaceTabPaletteItems
 } from './worktree-jump-palette-open-tab-items'
-import {
-  collectPaletteTabIndexWorkspaces,
-  excludePaletteFolderWorkspaces
-} from './cmd-j/palette-folder-workspace-tab-index'
 
 const EMPTY_BROWSER_PAGE_ENTRIES: SearchableBrowserPage[] = []
 const EMPTY_SIMULATOR_TAB_ENTRIES: SearchableSimulatorTab[] = []
@@ -53,8 +49,7 @@ type WorktreeJumpPaletteOpenTabsInput = WorktreeJumpPaletteStoreState &
 export function useWorktreeJumpPaletteOpenTabs({
   paletteStatusInputsActive,
   browserSortedWorktrees,
-  allWorktrees,
-  folderWorkspaces,
+  workspaces,
   repoMap,
   repoByHostIdentity,
   worktreeOrder,
@@ -86,21 +81,13 @@ export function useWorktreeJumpPaletteOpenTabs({
   worktreeMatches,
   resolveWorktree
 }: WorktreeJumpPaletteOpenTabsInput) {
-  const tabIndexWorkspaces = useMemo(
-    () => collectPaletteTabIndexWorkspaces(allWorktrees, folderWorkspaces),
-    [allWorktrees, folderWorkspaces]
-  )
-  const tabIndexWorktreeRows = useMemo(
-    () => excludePaletteFolderWorkspaces(browserSortedWorktrees),
-    [browserSortedWorktrees]
-  )
   const browserPageEntries = useMemo<SearchableBrowserPage[]>(() => {
     if (!paletteStatusInputsActive) {
       return EMPTY_BROWSER_PAGE_ENTRIES
     }
     return buildSearchableBrowserPages({
-      worktrees: tabIndexWorkspaces,
-      ownershipWorktrees: tabIndexWorkspaces,
+      worktrees: browserSortedWorktrees,
+      ownershipWorktrees: workspaces,
       repoMap,
       repoMapByHostIdentity: repoByHostIdentity,
       worktreeOrder,
@@ -118,7 +105,7 @@ export function useWorktreeJumpPaletteOpenTabs({
     activeTabType,
     activeWorktreeId,
     activeWorkspaceExecutionHostId,
-    tabIndexWorkspaces,
+    workspaces,
     browserPagesByWorkspace,
     browserTabsByWorktree,
     repoByHostIdentity,
@@ -138,8 +125,8 @@ export function useWorktreeJumpPaletteOpenTabs({
       return EMPTY_SIMULATOR_TAB_ENTRIES
     }
     return buildSearchableSimulatorTabs({
-      worktrees: tabIndexWorktreeRows,
-      ownershipWorktrees: tabIndexWorkspaces,
+      worktrees: browserSortedWorktrees,
+      ownershipWorktrees: workspaces,
       repoMap,
       repoMapByHostIdentity: repoByHostIdentity,
       worktreeOrder,
@@ -156,8 +143,8 @@ export function useWorktreeJumpPaletteOpenTabs({
     activeTabType,
     activeWorktreeId,
     activeWorkspaceExecutionHostId,
-    tabIndexWorktreeRows,
-    tabIndexWorkspaces,
+    workspaces,
+    browserSortedWorktrees,
     groupsByWorktree,
     repoByHostIdentity,
     repoMap,
@@ -176,8 +163,8 @@ export function useWorktreeJumpPaletteOpenTabs({
       return EMPTY_WORKSPACE_TAB_ENTRIES
     }
     return buildSearchableWorkspaceTabs({
-      worktrees: tabIndexWorkspaces,
-      ownershipWorktrees: tabIndexWorkspaces,
+      worktrees: browserSortedWorktrees,
+      ownershipWorktrees: workspaces,
       repoMap,
       repoMapByHostIdentity: repoByHostIdentity,
       worktreeOrder,
@@ -212,7 +199,7 @@ export function useWorktreeJumpPaletteOpenTabs({
     activeTabTypeByWorktree,
     activeWorktreeId,
     activeWorkspaceExecutionHostId,
-    tabIndexWorkspaces,
+    workspaces,
     agentStatusByPaneKey,
     groupsByWorktree,
     openFiles,

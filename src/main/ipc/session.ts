@@ -1,6 +1,13 @@
 import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
 import type { Store } from '../persistence'
 import type { WindowScope } from '../../shared/window-scope'
+import type { OrcaRuntimeService } from '../runtime/orca-runtime'
+import { parseTerminalSurfaceCloseTarget } from '../../shared/terminal-surface-close-target'
+import { isFrozenOrcadSourceSessionPartition } from '../ssh/orcad-retained-source'
+import { markAgentLaunchesClosedByUser } from '../agent-launch/agent-launch-pane-attachment'
+import { windowViewPatchForMain, windowViewSaveForMain } from '../persistence/window-save-view'
+import { reportWindowSaveDrift } from '../persistence/window-save-divergence'
+import { ORCA_LAYOUT_OWNER_IS_MAIN } from '../../shared/layout-owner-switch'
 import type {
   WorkspaceSessionPatch,
   WorkspaceSessionState
@@ -10,7 +17,7 @@ import { resolveWindowScopeForWebContents } from '../window/window-view-state-re
 import { ownedSessionKeysForWindow } from '../window/window-session-ownership'
 import { withProjectWindowFocus } from '../window/project-window-session-focus'
 import { closeTerminalTabInWorkspaceSession } from '../../shared/workspace-session-terminal-tab-close'
-import { advanceTerminalTopologyRevision } from '../runtime/workspace-session-terminal-membership-authority'
+import { advanceTerminalTopologyRevision } from '../persistence/terminal-topology/terminal-topology-membership'
 
 function resolveSenderWindowScope(
   event: IpcMainEvent | IpcMainInvokeEvent | null | undefined
@@ -32,7 +39,11 @@ function ownedSessionKeysForSender(
   return ownedSessionKeysForWindow(store, event?.sender?.id, session)
 }
 
-export function registerSessionHandlers(store: Store): void {
+export function registerSessionHandlers(store: Store, runtime?: OrcaRuntimeService): void {
+  // Why: renderer saves would change a fenced host's frozen source partition.
+  const isFenced = (hostId?: string | null): boolean =>
+    isFrozenOrcadSourceSessionPartition(store, hostId)
+
   // Why: hostId is an optional second arg so an older renderer that invokes
   // these channels without it keeps reading/writing the 'local' partition
   // exactly as before. Channel names stay stable.
@@ -50,23 +61,76 @@ export function registerSessionHandlers(store: Store): void {
     return resolveSenderWindowScope(event) ? withProjectWindowFocus(read, owned) : read
   })
 
-  // Why the third arg is optional too: a window that declares no owned worktrees is the shared
-  // writer and its write replaces the session whole, exactly as before scoped windows existed.
+  // Why a census channel: boot used to infer which partitions exist from the repo catalog, which
+  // cannot name an SSH target whose only workspace is a folder — the runtime wrote that partition
+  // and no reader ever enumerated it (#12723).
+  ipcMain.handle('session:list-host-ids', () => {
+    return store.getWorkspaceSessionHostIds()
+  })
+
+  // Switch point: main keeps its own layout over the window's and takes the window's view and
+  // facts; the drift check reports where the save's layout still differs from main's.
+  const sessionForMain = (args: WorkspaceSessionState, hostId: string | null | undefined) => {
+    const stored = store.getWorkspaceSession(hostId)
+    reportWindowSaveDrift(stored, args, hostId, 'session:set')
+    return windowViewSaveForMain(stored, args, hostId, (session, partition) =>
+      runtime!.shutdownReconnectFactsFor(session, partition)
+    )
+  }
+  const patchForMain = (args: WorkspaceSessionPatch, hostId: string | null | undefined) => {
+    const stored = store.getWorkspaceSession(hostId)
+    reportWindowSaveDrift(stored, { ...stored, ...args }, hostId, 'session:patch')
+    return windowViewPatchForMain(stored, args, hostId, (session, partition) =>
+      runtime!.shutdownReconnectFactsFor(session, partition)
+    )
+  }
+
   ipcMain.handle('session:set', (event, args: WorkspaceSessionState, hostId?: string | null) => {
-    store.setWorkspaceSession(args, hostId, ownedSessionKeysForSender(store, event, args))
+    if (!isFenced(hostId)) {
+      store.setWorkspaceSession(
+        ORCA_LAYOUT_OWNER_IS_MAIN ? sessionForMain(args, hostId) : args,
+        hostId,
+        ownedSessionKeysForSender(store, event, store.getWorkspaceSession(hostId))
+      )
+    }
   })
 
   ipcMain.handle('session:patch', (event, args: WorkspaceSessionPatch, hostId?: string | null) => {
-    // Why the stored session and not the patch: a patch carries only changed fields, and the
-    // scope has to be resolved against every key the window could own.
-    const owned = ownedSessionKeysForSender(store, event, store.getWorkspaceSession(hostId))
-    store.patchWorkspaceSession(args, hostId, owned)
+    if (!isFenced(hostId)) {
+      store.patchWorkspaceSession(
+        ORCA_LAYOUT_OWNER_IS_MAIN ? patchForMain(args, hostId) : args,
+        hostId,
+        ownedSessionKeysForSender(store, event, store.getWorkspaceSession(hostId))
+      )
+    }
   })
+
+  // Why: a renderer save cannot shrink membership main owns, so each close commits it explicitly.
+  ipcMain.handle(
+    'session:close-terminal-surface',
+    (_event, args: { worktreeId?: unknown; target?: unknown; reason?: unknown } | undefined) => {
+      const target = parseTerminalSurfaceCloseTarget(args?.target)
+      if (typeof args?.worktreeId !== 'string' || !target) {
+        throw new Error('invalid_terminal_surface')
+      }
+      // Why only these two: main alone closes a tab for its process exit.
+      const reason = args.reason === 'cleanup' ? 'cleanup' : 'user'
+      if (reason === 'user') {
+        // A launch still starting or delivering in what the user closed stops, and says so.
+        markAgentLaunchesClosedByUser(args.worktreeId, target)
+      }
+      return runtime!.closeTerminalSurfaceFromRenderer({
+        worktreeId: args.worktreeId,
+        target,
+        reason
+      })
+    }
+  )
 
   ipcMain.handle('session:flush', () => {
     // Why: durable lifecycle RPCs must propagate disk failures instead of
     // returning success through Store.flush(), which intentionally only logs.
-    store.flushOrThrow()
+    return store.flushPendingOrThrowAsync()
   })
 
   ipcMain.handle(

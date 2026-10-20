@@ -1,4 +1,5 @@
-import type { BrowserWindow, WebContents } from 'electron'
+import type { WebContents } from 'electron'
+import type { PtyRendererDelivery } from '../session'
 import { getMainWindowForWebContents } from '../../../window/main-window-registry'
 import { getRuntimeDesktopSurface } from '../../../runtime/runtime-desktop-surface'
 import type { PtyIpcSession } from '../session'
@@ -7,7 +8,7 @@ import type { PtyIpcSession } from '../session'
 // Falling back to the session's resolved renderer window keeps single-window behavior
 // unchanged and covers PTYs that have not reached a published graph yet — without pinning
 // delivery to a registering window that may since have closed.
-export function getPtyRendererWindow(session: PtyIpcSession, id: string): BrowserWindow | null {
+export function getPtyRendererWindow(session: PtyIpcSession, id: string): PtyRendererDelivery | null {
   const ownerWindowId = session.runtime?.resolveOwnerWindowIdForPtyId?.(id) ?? null
   const owner =
     ownerWindowId === null ? null : getRuntimeDesktopSurface().findWindowById(ownerWindowId)

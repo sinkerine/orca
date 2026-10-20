@@ -2,7 +2,12 @@ import type { OrcaRuntimeService } from '../../../runtime/orca-runtime'
 import type { Store } from '../../../persistence'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { getProvider } from '../provider/registry'
-import { makePaneSpawnReservationKey, paneSpawnReservationsByOwnerKey } from './spawn-reservation'
+import { getConnectionExecutionHostId } from '../../../../shared/execution-host'
+import {
+  joinPaneSpawn,
+  makePaneSpawnReservationKey,
+  paneSpawnReservationsByOwnerKey
+} from './spawn-reservation'
 import {
   attachStablePaneOwner,
   resolveStablePaneOwner,
@@ -25,8 +30,8 @@ export async function adoptStablePane(
     ownerKey && !args.ownsPaneSpawnReservation
       ? paneSpawnReservationsByOwnerKey.get(ownerKey)
       : undefined
-  if (activePaneSpawn) {
-    const result = await activePaneSpawn.promise
+  const result = activePaneSpawn ? await joinPaneSpawn(activePaneSpawn) : null
+  if (result) {
     const owner = resolveStablePaneOwner(
       runtime,
       store,
@@ -60,7 +65,7 @@ export async function adoptStablePane(
   const adoption = attachStablePaneOwner({
     runtime,
     store,
-    provider: getProvider(args.connectionId),
+    provider: getProvider(getConnectionExecutionHostId(args.connectionId)),
     spawnOptions: {
       cols: args.cols,
       rows: args.rows,
@@ -70,7 +75,8 @@ export async function adoptStablePane(
     worktreeId: args.worktreeId,
     connectionId: args.connectionId,
     resolveOwner: () =>
-      resolveStablePaneOwner(runtime, store, paneKey, args.worktreeId, args.connectionId)
+      resolveStablePaneOwner(runtime, store, paneKey, args.worktreeId, args.connectionId),
+    keepAbsentBinding: args.ownsPaneSpawnReservation ? args.keepAbsentBinding : undefined
   })
   if (!ownerKey) {
     return await adoption

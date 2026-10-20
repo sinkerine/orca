@@ -1,6 +1,6 @@
 import type { ExecutionHostId, ExecutionHostScope } from '../../../../shared/execution-host'
 import type { Worktree } from '../../../../shared/worktree/types'
-import { getWorktreeGitIdentityDisplay } from '@/lib/worktree-git-identity-display'
+import { getWorktreeGitIdentityDisplay } from '../../../../shared/worktree/git-identity-display'
 
 /**
  * Predicates for what KIND of workspace a row is.

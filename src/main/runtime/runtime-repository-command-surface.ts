@@ -30,6 +30,8 @@ type GitHubRepositoryQueryCommandName =
   | 'listRepoLabels'
   | 'listRepoAssignableUsers'
   | 'getGitHubRateLimit'
+  | 'listGitHubBindableAccounts'
+  | 'validateGitHubAccountBinding'
 
 export type RuntimeRepositoryCommandSurface = {
   listProjects: RuntimeProjectHostSetupController['listProjects']
@@ -40,13 +42,17 @@ export type RuntimeRepositoryCommandSurface = {
   applyPrimaryAuthoritySnapshot: RuntimeProjectHostSetupController['applyPrimaryAuthoritySnapshot']
   runPrimaryWorkspaceMutation: RuntimeProjectHostSetupController['runPrimaryWorkspaceMutation']
   listProjectHostSetups: RuntimeProjectHostSetupController['listSetups']
+  listVisibleProjectHostSetups: RuntimeProjectHostSetupController['listVisibleSetups']
   createProjectHostSetup: RuntimeProjectHostSetupController['createSetup']
   setupProjectExistingFolder: RuntimeProjectHostSetupController['setupExistingFolder']
   setupProjectClone: RuntimeProjectHostSetupController['setupClone']
+  addSshRepo: RuntimeProjectHostSetupController['addSshRepo']
   updateProjectHostSetup: RuntimeProjectHostSetupController['updateSetup']
   deleteProjectHostSetup: RuntimeProjectHostSetupController['deleteSetup']
   listProjectGroups: RuntimeProjectGroupController['listGroups']
   listFolderWorkspaces: RuntimeProjectGroupController['listFolderWorkspaces']
+  listVisibleProjectGroups: RuntimeProjectGroupController['listVisibleGroups']
+  listVisibleFolderWorkspaces: RuntimeProjectGroupController['listVisibleFolderWorkspaces']
   createProjectGroup: RuntimeProjectGroupController['createGroup']
   updateProjectGroup: RuntimeProjectGroupController['updateGroup']
   deleteProjectGroup: RuntimeProjectGroupController['deleteGroup']
@@ -68,7 +74,6 @@ export type RuntimeRepositoryCommandSurface = {
   setRepoBaseRef: RuntimeRepositorySettingsController['setBaseRef']
   updateRepo: RuntimeRepositorySettingsController['update']
   removeProject: RuntimeRepositorySettingsController['remove']
-  guardPrimaryProjectRemoval: RuntimeRepositorySettingsController['guardPrimaryProjectRemoval']
   reorderRepos: RuntimeRepositorySettingsController['reorder']
   getRepoBaseRefDefault: RuntimeRepositoryRefQueries['getDefault']
   getRepoHooks: RuntimeRepositoryHooksCommands['getRepoHooks']
@@ -121,13 +126,17 @@ export function installRuntimeRepositoryCommandSurface(
     applyPrimaryAuthoritySnapshot: host.applyPrimaryAuthoritySnapshot.bind(host),
     runPrimaryWorkspaceMutation: host.runPrimaryWorkspaceMutation.bind(host),
     listProjectHostSetups: host.listSetups.bind(host),
+    listVisibleProjectHostSetups: host.listVisibleSetups.bind(host),
     createProjectHostSetup: host.createSetup.bind(host),
     setupProjectExistingFolder: host.setupExistingFolder.bind(host),
     setupProjectClone: host.setupClone.bind(host),
+    addSshRepo: host.addSshRepo.bind(host),
     updateProjectHostSetup: host.updateSetup.bind(host),
     deleteProjectHostSetup: host.deleteSetup.bind(host),
     listProjectGroups: groups.listGroups.bind(groups),
     listFolderWorkspaces: groups.listFolderWorkspaces.bind(groups),
+    listVisibleProjectGroups: groups.listVisibleGroups.bind(groups),
+    listVisibleFolderWorkspaces: groups.listVisibleFolderWorkspaces.bind(groups),
     createProjectGroup: groups.createGroup.bind(groups),
     updateProjectGroup: groups.updateGroup.bind(groups),
     deleteProjectGroup: groups.deleteGroup.bind(groups),
@@ -149,7 +158,6 @@ export function installRuntimeRepositoryCommandSurface(
     setRepoBaseRef: settings.setBaseRef.bind(settings),
     updateRepo: settings.update.bind(settings),
     removeProject: settings.remove.bind(settings),
-    guardPrimaryProjectRemoval: settings.guardPrimaryProjectRemoval.bind(settings),
     reorderRepos: settings.reorder.bind(settings),
     getRepoBaseRefDefault: refs.getDefault.bind(refs),
     getRepoSlug: reviews.getRepoSlug.bind(reviews),
@@ -168,6 +176,8 @@ export function installRuntimeRepositoryCommandSurface(
     listRepoLabels: queries.listRepoLabels.bind(queries),
     listRepoAssignableUsers: queries.listRepoAssignableUsers.bind(queries),
     getGitHubRateLimit: queries.getGitHubRateLimit.bind(queries),
+    listGitHubBindableAccounts: queries.listGitHubBindableAccounts.bind(queries),
+    validateGitHubAccountBinding: queries.validateGitHubAccountBinding.bind(queries),
     getRepoHooks: hooks.getRepoHooks.bind(hooks),
     checkRepoHooks: hooks.checkRepoHooks.bind(hooks),
     inspectRepoSetupScriptImports: hooks.inspectRepoSetupScriptImports.bind(hooks),
