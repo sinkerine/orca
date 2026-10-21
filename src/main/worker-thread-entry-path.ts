@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { getAppEnvironment, hasAppEnvironment } from '../shared/app-environment'
 
 /**
@@ -46,10 +46,17 @@ export function resolveWorkerThreadEntryPath(
 export function currentWorkerEntryLayout(moduleDir: string): WorkerEntryLayout {
   return {
     isPackaged: hasAppEnvironment() && getAppEnvironment().isPackaged(),
-    resourcesPath:
-      'resourcesPath' in process && typeof process.resourcesPath === 'string'
-        ? process.resourcesPath
-        : undefined,
+    resourcesPath: currentResourcesPath(),
     moduleDir
   }
+}
+
+function currentResourcesPath(): string | undefined {
+  if (!('resourcesPath' in process) || typeof process.resourcesPath !== 'string') {
+    return undefined
+  }
+  // Why: a shared-Electron launcher (`electron app.asar`, e.g. Nix) points process.resourcesPath
+  // at Electron's own resources, not the directory holding Orca's app.asar.
+  const appPath = hasAppEnvironment() ? getAppEnvironment().getAppPath() : ''
+  return basename(appPath) === 'app.asar' ? dirname(appPath) : process.resourcesPath
 }

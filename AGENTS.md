@@ -147,6 +147,10 @@ When adding or changing a Git command:
 - Prefer `rg` over the checked-out files for source searches. For history or refs, use a named ref, an explicit namespace/path, `--max-count`, and a bounded output; do not use an unqualified `--all` scan as a first diagnostic.
 - Keep repository-wide commands targeted to the current repository and worktree. If an unbounded scan is genuinely required, measure the ref count first, explain the cost, and get confirmation before running it.
 
+## Upstream Sync and Origin Custom Features
+
+When syncing from `upstream`, preserve every custom feature maintained on `origin`. Before resolving upstream changes, identify the origin-specific features touched by the incoming changes and retain their behavior through the sync. Use the `vm-test` skill to run the affected feature flows in an isolated VM and verify they still work after the sync; include regression checks for each affected custom feature and report any VM limitations.
+
 ## Git Provider Compatibility
 
 Source-control and review changes must consider GitLab and other supported git providers, not only GitHub. Keep provider-specific behavior behind explicit checks, and avoid GitHub-only naming for generic review concepts.
