@@ -12,6 +12,7 @@ const stateMock = vi.hoisted(() => ({
   remoteDetectedAgentIds: {} as Record<string, string[] | null>,
   runtimeDetectedAgentIds: {} as Record<string, string[] | null>,
   localDetectedAgentIdsByContext: {} as Record<string, string[] | null>,
+  ensureRuntimeDetectedAgents: vi.fn(async () => []),
   targetKey: 'local' as string | undefined
 }))
 
@@ -43,7 +44,7 @@ describe('resolveTerminalAgentTabShortcut variants', () => {
 
   it.each(['runtime:host-a', 'ssh:host-a', 'local', 'local:host', undefined])(
     'uses only the owning detection target for the default shortcut: %s',
-    (targetKey) => {
+    async (targetKey) => {
       stateMock.targetKey = targetKey
       stateMock.runtimeDetectedAgentIds['host-a'] = ['codex']
       stateMock.remoteDetectedAgentIds['host-a'] = ['pi']
@@ -58,25 +59,30 @@ describe('resolveTerminalAgentTabShortcut variants', () => {
               : targetKey === 'local'
                 ? 'claude'
                 : null
-      expect(
-        resolveTerminalAgentTabShortcut({
-          activeWorktreeId: 'wt-1',
-          keybindings: {},
-          matchShortcut: (candidate) => candidate === 'tab.newAgent'
-        })
-      ).toEqual({ actionId: 'tab.newAgent', agent: expected })
-    }
-  )
-
-  it('does not select local agents while remote detection is pending', () => {
-    stateMock.targetKey = 'runtime:host-a'
-    expect(
-      resolveTerminalAgentTabShortcut({
-        activeWorktreeId: 'folder:remote',
+      const result = resolveTerminalAgentTabShortcut({
+        activeWorktreeId: 'wt-1',
         keybindings: {},
         matchShortcut: (candidate) => candidate === 'tab.newAgent'
       })
-    ).toEqual({ actionId: 'tab.newAgent', agent: null })
+      expect(result).toMatchObject({ actionId: 'tab.newAgent', agent: expected })
+      if (expected === null) {
+        await expect(result.pendingAgent).resolves.toBeNull()
+      } else {
+        expect(result.pendingAgent).toBeUndefined()
+      }
+    }
+  )
+
+  it('does not select local agents while remote detection is pending', async () => {
+    stateMock.targetKey = 'runtime:host-a'
+    const result = resolveTerminalAgentTabShortcut({
+      activeWorktreeId: 'folder:remote',
+      keybindings: {},
+      matchShortcut: (candidate) => candidate === 'tab.newAgent'
+    })
+    expect(result).toMatchObject({ actionId: 'tab.newAgent', agent: null })
+    await expect(result.pendingAgent).resolves.toBeNull()
+    expect(stateMock.ensureRuntimeDetectedAgents).toHaveBeenCalledWith('host-a', undefined)
   })
 
   it('resolves a bound variant only while its base agent is enabled and detected', () => {

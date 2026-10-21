@@ -15,6 +15,7 @@ function fullyPopulatedSession(): WorkspaceSessionState {
     activeTabId: 'tab-1',
     tabsByWorktree: { 'repo-1::/wt': [] },
     terminalLayoutsByTabId: { 'tab-1': { root: null, activeLeafId: null, expandedLeafId: null } },
+    localOnlyScrollbackByTabId: { 'tab-1': { 'leaf-1': 'private terminal output' } },
     activeWorktreeIdsOnShutdown: ['repo-1::/wt'],
     openFilesByWorktree: { 'repo-1::/wt': [] },
     activeFileIdByWorktree: { 'repo-1::/wt': 'file.ts' },

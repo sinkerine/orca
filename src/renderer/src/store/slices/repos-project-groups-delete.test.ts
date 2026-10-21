@@ -119,13 +119,15 @@ describe('project group deletion store routing', () => {
     const store = createTestStore()
     store.setState({
       settings: { activeRuntimeEnvironmentId: 'env-1' } as never,
-      projectGroups: [projectGroup],
+      projectGroups: [{ ...projectGroup, executionHostId: 'runtime:env-1' }],
       repos: [groupedRepo]
     })
 
     await expect(store.getState().deleteProjectGroup(projectGroup.id)).resolves.toBe(false)
 
-    expect(store.getState().projectGroups).toEqual([projectGroup])
+    expect(store.getState().projectGroups).toEqual([
+      { ...projectGroup, executionHostId: 'runtime:env-1' }
+    ])
     expect(store.getState().repos).toEqual([groupedRepo])
     expect(runtimeEnvironmentCall).toHaveBeenCalledWith({
       selector: 'env-1',
@@ -191,12 +193,12 @@ describe('project group deletion store routing', () => {
       failedProjectRemovals: []
     })
 
-    expect(reposRemove).toHaveBeenCalledWith({ repoId: 'direct' })
-    expect(reposRemove).toHaveBeenCalledWith({ repoId: 'nested' })
+    expect(reposRemoveForHost).toHaveBeenCalledWith({ repoId: 'direct', hostId: 'local' })
+    expect(reposRemoveForHost).toHaveBeenCalledWith({ repoId: 'nested', hostId: 'local' })
     expect(store.getState().repos).toEqual([siblingRepo])
   })
 
-  it('processes local/direct-SSH same-ID contained rows sequentially', async () => {
+  it('removes local and direct-SSH same-ID members through their exact hosts', async () => {
     const localRepo = {
       ...remoteRepo,
       id: 'shared',
@@ -227,19 +229,15 @@ describe('project group deletion store routing', () => {
       groupId: projectGroup.id,
       requestedProjectIds: ['shared', 'shared'],
       removedProjectIds: ['shared'],
-      failedProjectRemovals: [
-        {
-          projectId: 'shared',
-          reason: 'Project remained in Orca after removeProject completed.'
-        }
-      ]
+      failedProjectRemovals: []
     })
 
     expect(reposRemoveForHost).toHaveBeenCalledWith({
       repoId: 'shared',
       hostId: 'local'
     })
-    expect(reposRemove).toHaveBeenCalledWith({ repoId: 'shared' })
+    expect(reposRemoveForHost).toHaveBeenCalledWith({ repoId: 'shared', hostId: 'ssh:ssh-1' })
+    expect(reposRemove).not.toHaveBeenCalled()
     expect(store.getState().repos).toEqual([])
   })
 
@@ -270,7 +268,7 @@ describe('project group deletion store routing', () => {
 
   it('reports project removal failures by comparing store state after removeProject', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    reposRemove.mockImplementation(async ({ repoId }: { repoId: string }) => {
+    reposRemoveForHost.mockImplementation(async ({ repoId }: { repoId: string }) => {
       if (repoId === 'nested') {
         throw new Error('remove failed')
       }

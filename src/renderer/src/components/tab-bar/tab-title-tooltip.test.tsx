@@ -94,38 +94,21 @@ vi.mock('../../../../shared/agent-title-decoration', () => ({
     title.replace(/^(?:[✳✦⏲◇✋⠀-⣿]+|[.*]\s)\s*/, '').trimStart() || title
 }))
 
-vi.mock('../../store', () => ({
-  useAppStore: (
-    selector: (state: {
-      agentStatusByPaneKey: Record<string, unknown>
-      sleepingAgentSessionsByPaneKey: Record<string, unknown>
-      terminalLayoutsByTabId: Record<string, unknown>
-      unreadTerminalTabs: Record<string, boolean>
-    }) => unknown
-  ) =>
-    selector({
-      agentStatusByPaneKey: {},
-      sleepingAgentSessionsByPaneKey: {},
-      terminalLayoutsByTabId: {},
-      unreadTerminalTabs: {}
-    })
+const tooltipStore = vi.hoisted(() => ({
+  openMarkdownPreview: vi.fn(),
+  settings: null,
+  agentStatusByPaneKey: {},
+  sleepingAgentSessionsByPaneKey: {},
+  terminalLayoutsByTabId: {},
+  ptyIdsByTabId: {},
+  unreadTerminalTabs: {}
 }))
 
 vi.mock('@/store', () => ({
-  useAppStore: (
-    selector: (state: {
-      openMarkdownPreview: () => void
-      settings: null
-      unreadTerminalTabs: Record<string, boolean>
-      agentStatusByPaneKey: Record<string, never>
-    }) => unknown
-  ) =>
-    selector({
-      openMarkdownPreview: vi.fn(),
-      settings: null,
-      unreadTerminalTabs: {},
-      agentStatusByPaneKey: {}
-    })
+  useAppStore: Object.assign(
+    (selector: (state: typeof tooltipStore) => unknown) => selector(tooltipStore),
+    { getState: () => tooltipStore }
+  )
 }))
 
 vi.mock('@/store/selectors', () => ({

@@ -1,4 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as DetectedProviderListing from './worktrees/listing/detected-provider-listing'
+
+const listingFixture = vi.hoisted(() => ({ served: false, listWorktrees: vi.fn() }))
+vi.mock('./worktrees/listing/detected-provider-listing', async (importOriginal) => {
+  const actual = await importOriginal<typeof DetectedProviderListing>()
+  return {
+    ...actual,
+    listDetectedWorktreesForCapturedRepo: async (
+      ...args: Parameters<typeof actual.listDetectedWorktreesForCapturedRepo>
+    ) => {
+      if (!listingFixture.served) {
+        return actual.listDetectedWorktreesForCapturedRepo(...args)
+      }
+      const [, repo, isCurrent, abort] = args
+      const worktrees = await listingFixture.listWorktrees(repo.path, { signal: abort?.signal })
+      return isCurrent() ? { repoId: repo.id, authoritative: true, source: 'git', worktrees } : null
+    }
+  }
+})
 import type { Worktree } from '../../shared/worktree/types'
 import type { ProviderRequestId } from '../../shared/detected-worktree-provider-contract'
 import {
@@ -104,6 +123,8 @@ const anyCatalogVersion = { epoch: expect.any(String), sequence: expect.any(Numb
 
 describe('registerWorktreeHandlers', () => {
   beforeEach(() => {
+    listingFixture.served = false
+    listingFixture.listWorktrees.mockReset()
     setupWorktreeHandlers()
   })
 
@@ -146,7 +167,7 @@ describe('registerWorktreeHandlers', () => {
     expect(store.removeWorktreeMeta).not.toHaveBeenCalled()
   })
 
-  it('selects the exact SSH repo owner when repo IDs collide across hosts', async () => {
+  it('keeps an unserved SSH repo listing non-authoritative when repo IDs collide', async () => {
     const runtime = setupWorktreeHandlers()
     const sshHostId = toSshExecutionHostId('target-a')
     const localRepo = {
@@ -162,17 +183,6 @@ describe('registerWorktreeHandlers', () => {
       displayName: 'remote repo',
       connectionId: 'target-a'
     }
-    const provider = {
-      listWorktrees: vi.fn().mockResolvedValue([
-        {
-          path: '/remote/feature',
-          head: 'feature-head',
-          branch: 'refs/heads/feature',
-          isBare: false,
-          isMainWorktree: false
-        }
-      ])
-    }
     store.getRepos.mockImplementation(() => [{ ...localRepo }, { ...sshRepo }])
     const expectedAuthority = getSshProviderAuthority('target-a')
 
@@ -183,30 +193,71 @@ describe('registerWorktreeHandlers', () => {
       expectedAuthority
     })
 
-    expect(provider.listWorktrees).toHaveBeenCalledWith('/remote/repo', {
+    expect(listWorktreesMock).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      status: 'non-authoritative',
+      providerRequestId: 'request-1',
+      repoId: 'shared-repo',
+      result: {
+        authoritative: false,
+        source: 'metadata-fallback'
+      }
+    })
+    expect(runtime.schedulePrimaryWorkspaceLifecycleFromAuthoritativeCatalog).not.toHaveBeenCalled()
+  })
+
+  it('lists only the exact served SSH owner when repo IDs collide', async () => {
+    const runtime = setupWorktreeHandlers()
+    const hostId = toSshExecutionHostId('target-a')
+    const localRepo = {
+      id: 'shared-repo',
+      path: '/local/repo',
+      displayName: 'local',
+      badgeColor: '#000',
+      addedAt: 0
+    }
+    store.getRepos.mockReturnValue([
+      localRepo,
+      { ...localRepo, path: '/remote/repo', connectionId: 'target-a' },
+      { ...localRepo, path: '/other/repo', connectionId: 'target-b' }
+    ])
+    listingFixture.served = true
+    listingFixture.listWorktrees.mockResolvedValue([
+      {
+        id: 'shared-repo::/remote/feature',
+        repoId: 'shared-repo',
+        path: '/remote/feature',
+        head: 'feature-head',
+        branch: 'refs/heads/feature',
+        isBare: false,
+        isMainWorktree: false
+      }
+    ])
+
+    const result = await handlers['worktrees:listDetected'](ipcEvent, {
+      providerRequestId: 'served-request',
+      repoId: 'shared-repo',
+      executionHostId: hostId,
+      expectedAuthority: getSshProviderAuthority('target-a')
+    })
+
+    expect(listingFixture.listWorktrees).toHaveBeenCalledExactlyOnceWith('/remote/repo', {
       signal: expect.any(AbortSignal)
     })
     expect(result).toMatchObject({
       status: 'complete',
-      providerRequestId: 'request-1',
       repoId: 'shared-repo',
+      authority: { executionHostId: hostId },
       result: {
         authoritative: true,
-        worktrees: [
-          expect.objectContaining({
-            hostId: sshHostId,
-            ownerHostId: sshHostId,
-            peerFingerprint: 'test-peer'
-          })
-        ]
+        worktrees: [expect.objectContaining({ path: '/remote/feature', hostId })]
       }
     })
     expect(runtime.schedulePrimaryWorkspaceLifecycleFromAuthoritativeCatalog).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ ownerHostId: sshHostId, peerFingerprint: 'test-peer' })
-      ]),
+      expect.arrayContaining([expect.objectContaining({ path: '/remote/feature', hostId })]),
       ['shared-repo']
     )
+    expect(listWorktreesMock).not.toHaveBeenCalled()
   })
 
   it('rejects malformed and contradictory repo host provenance', async () => {

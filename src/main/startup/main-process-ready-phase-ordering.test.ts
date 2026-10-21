@@ -114,7 +114,7 @@ describe('initial proxy application ordering', () => {
     expect(scopeIndex).toBeGreaterThan(storeIndex)
   })
 
-  it('awaits the proxy after the window opens and before the desktop relay starts', () => {
+  it('installs the relay before awaiting proxy readiness and starts push afterward', () => {
     const launch = readStartupSource('main-process-runtime-launch.ts')
     const desktopStart = launch.indexOf('async function launchDesktopMode(')
     const desktopEnd = launch.indexOf('\nexport async function initializeMainProcessRuntimeLaunch')
@@ -124,11 +124,13 @@ describe('initial proxy application ordering', () => {
 
     const windowIndex = desktop.indexOf('openMainWindow()')
     const proxyIndex = desktop.indexOf('await state.initialProxyApplicationReady')
-    const relayIndex = desktop.indexOf('new DesktopRelayService(')
+    const relayIndex = desktop.indexOf('startDesktopRelayService(runtimeRpc)')
+    const pushIndex = desktop.indexOf('startDesktopPushService(runtimeRpc)')
 
     expect(windowIndex).toBeGreaterThanOrEqual(0)
-    expect(proxyIndex).toBeGreaterThan(windowIndex)
-    expect(relayIndex).toBeGreaterThan(proxyIndex)
+    expect(relayIndex).toBeGreaterThan(windowIndex)
+    expect(proxyIndex).toBeGreaterThan(relayIndex)
+    expect(pushIndex).toBeGreaterThan(proxyIndex)
   })
 
   it('waits for i18n before the only launch-phase dialog that reads a translated string', () => {

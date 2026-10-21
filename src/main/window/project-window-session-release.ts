@@ -5,8 +5,7 @@ import {
 } from '../../shared/workspace-session-release'
 import { collectWorkspaceSessionWorktreeKeys } from '../../shared/workspace-session-window-rebase'
 import { getMainWindows, sendToWindow } from './main-window-registry'
-import { ownedSessionKeysForWindow } from './window-session-ownership'
-import { resolveWindowScopeForWebContents } from './window-view-state-registry'
+import { hasWindowSessionPartition, ownedSessionKeysForWindow } from './window-session-ownership'
 
 /**
  * Makes a project move live: every window is told which of the workspaces it is showing now
@@ -29,9 +28,7 @@ export function publishWorkspaceSessionRelease(store: Store): void {
   for (const window of windows) {
     const webContentsId = window.webContents.id
     const owned = ownedSessionKeysForWindow(store, webContentsId, session)
-    // Why the scope check: an empty result means "owns everything" for a free window, but a
-    // project window whose group has no stored workspace owns nothing and must still let go.
-    if (owned.size === 0 && resolveWindowScopeForWebContents(webContentsId) === null) {
+    if (!hasWindowSessionPartition(store, webContentsId, session)) {
       continue
     }
     const workspaceKeys = [...allKeys].filter((key) => !owned.has(key))

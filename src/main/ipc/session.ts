@@ -14,7 +14,10 @@ import type {
 } from '../../shared/workspace-session-state-types'
 import { partitionWorkspaceSessionByWorktrees } from '../../shared/workspace-session-window-rebase'
 import { resolveWindowScopeForWebContents } from '../window/window-view-state-registry'
-import { ownedSessionKeysForWindow } from '../window/window-session-ownership'
+import {
+  hasWindowSessionPartition,
+  ownedSessionKeysForWindow
+} from '../window/window-session-ownership'
 import { withProjectWindowFocus } from '../window/project-window-session-focus'
 import { closeTerminalTabInWorkspaceSession } from '../../shared/workspace-session-terminal-tab-close'
 import { advanceTerminalTopologyRevision } from '../persistence/terminal-topology/terminal-topology-membership'
@@ -54,7 +57,7 @@ export function registerSessionHandlers(store: Store, runtime?: OrcaRuntimeServi
     const owned = ownedSessionKeysForSender(store, event, session)
     // Why one branch for both window kinds: `owned` already means "the keys this window serves",
     // so a project window gets its group and the free window gets everything else.
-    if (owned.size === 0) {
+    if (!hasWindowSessionPartition(store, event?.sender?.id, session)) {
       return session
     }
     const read = partitionWorkspaceSessionByWorktrees(session, owned).owned
@@ -87,6 +90,13 @@ export function registerSessionHandlers(store: Store, runtime?: OrcaRuntimeServi
 
   ipcMain.handle('session:set', (event, args: WorkspaceSessionState, hostId?: string | null) => {
     if (!isFenced(hostId)) {
+      const current = store.getWorkspaceSession(hostId)
+      if (
+        hasWindowSessionPartition(store, event?.sender?.id, current) &&
+        ownedSessionKeysForSender(store, event, current).size === 0
+      ) {
+        return
+      }
       store.setWorkspaceSession(
         ORCA_LAYOUT_OWNER_IS_MAIN ? sessionForMain(args, hostId) : args,
         hostId,
@@ -97,6 +107,13 @@ export function registerSessionHandlers(store: Store, runtime?: OrcaRuntimeServi
 
   ipcMain.handle('session:patch', (event, args: WorkspaceSessionPatch, hostId?: string | null) => {
     if (!isFenced(hostId)) {
+      const current = store.getWorkspaceSession(hostId)
+      if (
+        hasWindowSessionPartition(store, event?.sender?.id, current) &&
+        ownedSessionKeysForSender(store, event, current).size === 0
+      ) {
+        return
+      }
       store.patchWorkspaceSession(
         ORCA_LAYOUT_OWNER_IS_MAIN ? patchForMain(args, hostId) : args,
         hostId,
@@ -145,7 +162,10 @@ export function registerSessionHandlers(store: Store, runtime?: OrcaRuntimeServi
       }
       const session = store.getWorkspaceSession(hostId)
       const owned = ownedSessionKeysForSender(store, event, session)
-      if (owned.size > 0 && !owned.has(args.worktreeId)) {
+      if (
+        hasWindowSessionPartition(store, event?.sender?.id, session) &&
+        !owned.has(args.worktreeId)
+      ) {
         throw new Error('worktree_not_owned')
       }
       const result = closeTerminalTabInWorkspaceSession(session, args.worktreeId, args.tabId)

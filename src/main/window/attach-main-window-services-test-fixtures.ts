@@ -21,10 +21,13 @@ export type RuntimeStub = {
 }
 
 export function createStore(): Store & { flushPendingAsync: MockFn } {
-  return {
+  const store = {
     getProfileStorageDirectory: vi.fn(() => '/profile-a'),
+    getSshTargets: vi.fn(() => []),
     flushPendingAsync: vi.fn(() => Promise.resolve())
-  } as unknown as Store & { flushPendingAsync: MockFn }
+  }
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: notifier tests mock service registration; only these store reads and flush are exercised.
+  return store as unknown as Store & { flushPendingAsync: MockFn }
 }
 
 export function createRuntime(): RuntimeStub {

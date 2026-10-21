@@ -126,6 +126,7 @@ export abstract class OrcaRuntimeWithAttachWindow extends OrcaRuntimeWithNotifyS
       this.persistWindowlessPtyBindingsForDesktopAttach()
       this.pendingHeadlessPromotionWindowId = windowId
       this.authoritativeWindowId = windowId
+      this.registerWindowGraphPublication(windowId)
       this.beginGraphReload(windowId)
       return
     }
@@ -134,6 +135,17 @@ export abstract class OrcaRuntimeWithAttachWindow extends OrcaRuntimeWithNotifyS
       // background PTYs keep arriving; every windowless gap needs this handoff.
       this.persistWindowlessPtyBindingsForDesktopAttach()
       this.authoritativeWindowId = windowId
+    }
+    this.registerWindowGraphPublication(windowId)
+  }
+
+  private registerWindowGraphPublication(windowId: number): void {
+    if (!this.windowGraphPublications.has(windowId)) {
+      this.windowGraphPublications.set(windowId, {
+        tabIds: new Set(),
+        leafKeys: new Set(),
+        browserPageIds: new Set()
+      })
     }
   }
 

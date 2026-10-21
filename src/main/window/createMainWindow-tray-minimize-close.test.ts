@@ -4,6 +4,10 @@ const { recordAgentSessionRuntimeEndMock } = vi.hoisted(() => ({
   recordAgentSessionRuntimeEndMock: vi.fn()
 }))
 
+vi.mock('../runtime/agent-session-runtime-end-record', () => ({
+  recordAgentSessionRuntimeEnd: recordAgentSessionRuntimeEndMock
+}))
+
 vi.mock('electron', async () =>
   (await import('./createMainWindow-test-harness')).electronModuleMock()
 )

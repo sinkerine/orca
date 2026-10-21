@@ -464,11 +464,7 @@ describe('registerAppMenu', () => {
 
     const fileLabels = getSubmenu(template, 'File').map((item) => item.label)
     expect(fileLabels).toEqual(
-      expect.arrayContaining([
-        `New Window\t${isMac ? '⌘⌥N' : 'Ctrl+Alt+N'}`,
-        `Settings\t${isMac ? '⌘,' : 'Ctrl+,'}`,
-        'Exit'
-      ])
+      expect.arrayContaining([`New Window\t${isMac ? '⌘⌥N' : 'Ctrl+Alt+N'}`, 'Settings', 'Exit'])
     )
 
     const helpLabels = getSubmenu(template, 'Help').map((item) => item.label)

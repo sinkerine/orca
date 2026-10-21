@@ -301,6 +301,7 @@ function setLineageState(
     pendingRevealWorktree: null,
     prCache: {},
     projectGroups: [],
+    projects: [],
     ptyIdsByTabId: {},
     recordFeatureInteraction: vi.fn(),
     remoteBranchConflictByWorktreeId: {},

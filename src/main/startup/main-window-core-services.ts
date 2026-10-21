@@ -27,6 +27,7 @@ export function attachMainWindowCoreServices(
   deps: {
     markExpectedRendererReload: (webContentsId: number) => void
     recordRendererReload: (ignoreCache: boolean) => void
+    openScopedMainWindow?: (windowId: string) => BrowserWindow | null
   }
 ): void {
   const store = state.store
@@ -83,6 +84,7 @@ export function attachMainWindowCoreServices(
     state.crashReports ?? undefined,
     keybindings,
     {
+      openScopedMainWindow: deps.openScopedMainWindow,
       getAdditionalAiVaultCodexHomePaths: () =>
         codexRuntimeHome.getHostCodexHomePathsForSessionDiscovery(),
       prepareAiVaultSessionResume: (args) =>

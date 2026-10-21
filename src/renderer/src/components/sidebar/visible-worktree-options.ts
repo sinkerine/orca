@@ -1,6 +1,6 @@
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree } from '../../../../shared/worktree/types'
-import { getAllWorktreesFromState } from '@/store/selectors'
+import { getIndexedAllWorktrees } from '@/store/worktree-repo-index'
 import {
   hasSavedPrimaryWorkspace,
   resolveProjectPrimaryWorkspace
@@ -59,7 +59,7 @@ export function buildVisibleWorktreeOptionsFromState(
   state: AppState,
   repoMap: Map<string, Repo>
 ): VisibleWorktreeOptions {
-  const catalog = getAllWorktreesFromState({ worktreesByRepo: state.worktreesByRepo })
+  const catalog = getIndexedAllWorktrees(state.worktreesByRepo)
   const primaryWorktreeIdentities = new Set<string>()
   const savedPrimaryRepoIds = new Set<string>()
   for (const project of state.projects) {

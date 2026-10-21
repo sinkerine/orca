@@ -43,7 +43,7 @@ const TRAY_CREATE_FALLBACK_MS = 12_000
 const AGENT_STATE_CRASH_BREADCRUMB_MIN_INTERVAL_MS = 30_000
 
 export function openMainWindow(
-  options: { revealOnDidFinishLoad?: boolean; forceNewWindow?: boolean } = {}
+  options: { revealOnDidFinishLoad?: boolean; forceNewWindow?: boolean; windowId?: string } = {}
 ): BrowserWindow {
   logStartupMilestone('open-main-window-start')
   const { store, keybindings } = requireMainWindowServices({
@@ -92,6 +92,7 @@ export function openMainWindow(
   }
   const window = createMainWindow(store, {
     forceNewWindow: options.forceNewWindow,
+    windowId: options.windowId,
     onNewWindow:
       store.getSettings().experimentalMultiWindow === true
         ? () => state.openNewWindow?.()
@@ -194,6 +195,7 @@ export function openMainWindow(
   }
   window.webContents.on('did-finish-load', onFirstWindowLoad)
   attachMainWindowCoreServices(window, {
+    openScopedMainWindow: (windowId) => openMainWindow({ forceNewWindow: true, windowId }),
     markExpectedRendererReload,
     recordRendererReload: (ignoreCache) =>
       recordCrashBreadcrumb('renderer_reload_requested', { ignoreCache })

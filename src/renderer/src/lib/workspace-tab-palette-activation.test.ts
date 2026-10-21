@@ -497,8 +497,7 @@ describe('activateWorkspaceTabPaletteResult', () => {
       mocks.activateAndRevealWorkspace.mockReturnValue(false)
 
       expect(activateWorkspaceTabPaletteResult(makeResult({ worktreeId: workspaceKey }))).toEqual({
-        status: 'failed',
-        reason: 'activation-declined'
+        status: 'blocked'
       })
       expect(mocks.store.focusGroup).not.toHaveBeenCalled()
     })

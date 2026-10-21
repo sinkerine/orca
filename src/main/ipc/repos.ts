@@ -23,6 +23,7 @@ export function registerRepoHandlers(
   // Remove previously registered handlers so we can re-register on macOS app re-activation (new window).
   ipcMain.removeHandler('repos:list')
   ipcMain.removeHandler('repos:add')
+  ipcMain.removeHandler('repos:remove')
   ipcMain.removeHandler('repos:removeForHost')
   ipcMain.removeHandler('repos:reorder')
   ipcMain.removeHandler('repos:reorderForHost')
