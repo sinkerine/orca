@@ -29,7 +29,7 @@ describe('host port bootstrap wiring', () => {
     'setMainWindowElectronBindings({',
     'setPtyHostBindings({',
     'setRuntimeDesktopSurface(electronRuntimeDesktopSurface)',
-    'setRuntimeBrowserCommandsFactory(electronRuntimeBrowserCommandsFactory)',
+    'installElectronBrowserCommands()',
     'setDefaultProxySessionResolver(',
     'setMainHttpClient(electronHttpClient)',
     'setSpeechServiceFactories(electronSpeechServiceFactories)',
@@ -78,7 +78,7 @@ describe('host port bootstrap wiring', () => {
     // port is a window where an early path resolve either kills the process — which is what took
     // down every macOS `orca serve` — or caches the pre-override directory for the whole session.
     // Keeping the four statements adjacent is what makes that window zero rather than merely small.
-    const decide = source.indexOf('configureDevUserDataPath(isDev)')
+    const decide = source.indexOf('configureDevUserDataPath(is.dev)')
     const install = source.indexOf('setAppEnvironment(new ElectronAppEnvironment())')
     const capture = source.indexOf('initDataPath()')
 
@@ -93,7 +93,7 @@ describe('host port bootstrap wiring', () => {
       .filter((line) => line.length > 0 && !line.startsWith('//'))
 
     expect(statements).toEqual([
-      'configureDevUserDataPath(isDev)',
+      'configureDevUserDataPath(is.dev)',
       'configureOrcaUserDataPathEnv()',
       'setAppEnvironment(new ElectronAppEnvironment())'
     ])

@@ -111,12 +111,13 @@ describe('verifyPrimaryOwner folder proof', () => {
     expect(statOwnerPath).not.toHaveBeenCalled()
   })
 
-  it('uses SSH stat result and rejects errors and non-directories', async () => {
+  it('does not accept SSH stat data for a host this process does not serve', async () => {
     const provider = { stat: vi.fn().mockResolvedValue({ type: 'directory' }) }
     resolveFilesystemRouteMock.mockReturnValue({ kind: 'ssh', provider })
     await expect(
       verifyPrimaryOwner(base('/remote/root', 'ssh:target-a'), deps('/remote/root', 'ssh:target-a'))
-    ).resolves.toBe(true)
+    ).resolves.toBe(false)
+    expect(provider.stat).not.toHaveBeenCalled()
     provider.stat.mockResolvedValue({ type: 'file' })
     await expect(
       verifyPrimaryOwner(base('/remote/root', 'ssh:target-a'), deps('/remote/root', 'ssh:target-a'))

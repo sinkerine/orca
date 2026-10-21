@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { setAppEnvironment } from '../../../shared/app-environment'
 import type { PrimaryRemovalReservation } from '../../../shared/project-primary-removal'
+import { closeTestStores, createSqliteTestStore } from '../../persistence-test-harness'
 
 vi.mock('electron', () => ({
   app: {
@@ -30,15 +31,16 @@ setAppEnvironment({
   getAppMetrics: () => []
 })
 const stores: InstanceType<typeof Store>[] = []
-afterEach(() => {
+afterEach(async () => {
   for (const store of stores.splice(0)) {
     store.flush()
   }
   vi.restoreAllMocks()
+  await closeTestStores()
 })
 
 function openStore(dataFile: string): InstanceType<typeof Store> {
-  const store = new Store({ dataFile })
+  const store = createSqliteTestStore(Store, { dataFile })
   stores.push(store)
   return store
 }

@@ -96,6 +96,19 @@ describe('publishWorkspaceSessionRelease', () => {
     expect(sentKeys(project)).toEqual([OTHER_WT])
   })
 
+  it('releases every key when the free window owns no remaining workspace', () => {
+    const free = createWindow(1, 'free-window-uuid')
+    createWindow(2, 'group:orca')
+    const store = createStore()
+    const session = store.getWorkspaceSession()
+    delete session.tabsByWorktree[OTHER_WT]
+    vi.spyOn(store, 'getWorkspaceSession').mockReturnValue(session)
+
+    publishWorkspaceSessionRelease(store)
+
+    expect(sentKeys(free)).toEqual([PROJECT_FOLDER, PROJECT_WT])
+  })
+
   it('says nothing while a single window is up', () => {
     const free = createWindow(1, 'free-window-uuid')
 

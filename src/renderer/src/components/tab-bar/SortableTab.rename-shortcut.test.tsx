@@ -172,6 +172,7 @@ vi.mock('./middle-button-default-guard', () => ({
 
 const useAppStoreExport = (selector: (state: typeof storeState) => unknown) => selector(storeState)
 useAppStoreExport.getState = () => ({
+  ...storeState,
   unifiedTabsByWorktree: {
     'wt-1': [{ id: 'terminal-tab-1', groupId: 'group-1' }]
   },

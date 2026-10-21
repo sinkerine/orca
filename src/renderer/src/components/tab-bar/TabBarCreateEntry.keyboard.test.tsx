@@ -257,7 +257,7 @@ describe('TabBarCreateEntry keyboard navigation', () => {
     setQuery('gem')
     submitForm()
 
-    expect(onLaunchAgent).toHaveBeenCalledWith(agentOptions[0])
+    expect(onLaunchAgent).toHaveBeenCalledWith(agentOptions[0].agent)
   })
 
   it('exposes the highlighted row to assistive tech via aria-activedescendant', () => {

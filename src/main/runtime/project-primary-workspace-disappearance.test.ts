@@ -34,9 +34,10 @@ describe('fenceObservedMissingPrimaryWorktree', () => {
       'peer-a'
     )
 
-    expect(write).toHaveBeenCalledWith('repo-a::/gone', 'local', {
-      instanceId: expect.not.stringMatching(/^old-instance$/)
-    })
+    expect(write).toHaveBeenCalledWith(
+      { id: 'repo-a::/gone', hostId: 'local' },
+      { instanceId: expect.not.stringMatching(/^old-instance$/) }
+    )
     expect(project.primaryWorkspace).toBe(primary)
   })
 })

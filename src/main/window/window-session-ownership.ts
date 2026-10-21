@@ -32,6 +32,21 @@ export function scopeSessionKeys(
  * result from a free window means no project windows are up: it is the shared writer and owns the
  * whole session, exactly as before scoped windows existed.
  */
+export function hasWindowSessionPartition(
+  store: Store,
+  webContentsId: number | undefined,
+  session: WorkspaceSessionState
+): boolean {
+  if (typeof webContentsId === 'number' && resolveWindowScopeForWebContents(webContentsId)) {
+    return true
+  }
+  return resolveScopesServedByOtherWindows(
+    webContentsId,
+    getMainWindows(),
+    resolveWindowScopeForWebContents
+  ).some((scope) => scopeSessionKeys(store, scope, session).size > 0)
+}
+
 export function ownedSessionKeysForWindow(
   store: Store,
   webContentsId: number | undefined,

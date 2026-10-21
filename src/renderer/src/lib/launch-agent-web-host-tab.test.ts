@@ -6,10 +6,22 @@ const mockCreateWebRuntimeSessionTerminal = vi.fn()
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }))
 
 vi.mock('@/store', () => ({
-  useAppStore: { getState: () => ({ tabsByWorktree: {}, setActiveTabType: vi.fn() }) }
+  useAppStore: {
+    getState: () => ({
+      tabsByWorktree: {},
+      setActiveTabType: vi.fn(),
+      setActiveWorktree: vi.fn().mockReturnValue(true)
+    })
+  }
 }))
 
-vi.mock('@/runtime/web-runtime-session', () => ({
+vi.mock('@/runtime/web-runtime-terminal-create-operation', () => ({
+  createWebRuntimeSessionTerminalResult: async (args: unknown) => ({
+    outcome: await mockCreateWebRuntimeSessionTerminal(args)
+  })
+}))
+
+vi.mock('@/runtime/web-runtime-terminal-creation', () => ({
   createWebRuntimeAgentSessionTerminal: vi.fn(),
   createWebRuntimeAgentSessionTerminalWithLaunchDraft: vi.fn(),
   createWebRuntimeSessionTerminal: mockCreateWebRuntimeSessionTerminal,

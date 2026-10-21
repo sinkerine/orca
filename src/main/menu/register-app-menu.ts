@@ -287,7 +287,7 @@ function buildAndApplyMenu(options: RegisterAppMenuOptions): void {
   const windowMenu: Electron.MenuItemConstructorOptions = {
     label: translateMain('menu.window', 'Window'),
     submenu: [
-      { role: 'minimize' },
+      { role: 'minimize', ...(isMac ? {} : { accelerator: '', registerAccelerator: false }) },
       { role: 'zoom' },
       { type: 'separator' },
       {

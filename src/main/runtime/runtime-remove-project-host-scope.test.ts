@@ -7,6 +7,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { Repo } from '../../shared/repo-types'
+import type { RepoHostTarget } from '../../shared/repo-host-identity'
+import { getRepoExecutionHostId } from '../../shared/execution-host'
 import { OrcaRuntimeService } from './orca-runtime'
 
 function makeRepos(): Repo[] {
@@ -39,7 +41,9 @@ function createRuntime() {
       }
     }
   })
-  const removeProjectForHost = vi.fn((id: string, hostId: string) => {
+  const removeProjectForHost = vi.fn((target: RepoHostTarget) => {
+    const { id } = target
+    const hostId = getRepoExecutionHostId(target)
     for (let index = repos.length - 1; index >= 0; index -= 1) {
       const repo = repos[index]
       const repoHostId =

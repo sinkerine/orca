@@ -85,13 +85,19 @@ describe('main window profile-state update preparation', () => {
     'flushes SQL after preserving auth before an update quit (failure: %s)',
     async (fails) => {
       const window = { webContents: { id: 17 } }
+      const openScopedMainWindow = vi.fn(() => null)
 
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: mocked BrowserWindow only needs webContents for this composition-root wiring test.
       attachMainWindowCoreServices(window as never, {
         markExpectedRendererReload: vi.fn(),
-        recordRendererReload: vi.fn()
+        recordRendererReload: vi.fn(),
+        openScopedMainWindow
       })
 
+      expect(registerCoreHandlersMock.mock.calls[0]?.[16]).toHaveProperty(
+        'openScopedMainWindow',
+        openScopedMainWindow
+      )
       const options = attachMainWindowServicesMock.mock.calls[0]?.[5]
       if (
         typeof options !== 'object' ||

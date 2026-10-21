@@ -87,7 +87,12 @@ export function createWorkspaceTerminalHydrationActions(
           if (session.activeWorktreeId && validWorktreeIds.has(session.activeWorktreeId)) {
             return session.activeWorktreeId
           }
-          if (s.activeWorktreeId && validWorktreeIds.has(s.activeWorktreeId)) {
+          if (
+            s.activeWorktreeId &&
+            validWorktreeIds.has(s.activeWorktreeId) &&
+            (!options?.replaceWorkspaceKeys?.includes(s.activeWorktreeId) ||
+              session.tabsByWorktree[s.activeWorktreeId] !== undefined)
+          ) {
             return s.activeWorktreeId
           }
           // Why: a workspace with no tabs is still valid; fall back from the active repo to avoid a blank landing screen when tabs were pruned or never created.

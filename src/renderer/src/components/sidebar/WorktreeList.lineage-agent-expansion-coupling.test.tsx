@@ -324,6 +324,7 @@ function setAgentLineageState(options: {
     pendingRevealWorktree: null,
     prCache: {},
     projectGroups: [],
+    projects: [],
     ptyIdsByTabId: {},
     recordFeatureInteraction: vi.fn(),
     remoteBranchConflictByWorktreeId: {},

@@ -23,7 +23,7 @@ vi.mock('../../store', () => ({
 vi.mock('./tab-move-to-workspace', () => ({ moveTabToWorkspace }))
 
 vi.mock('@/lib/worktree-runtime-owner', () => ({
-  getRuntimeEnvironmentIdForWorktree: (_state: unknown, worktreeId: string) =>
+  runtimeEnvironmentIdWithLegacyFallbackUnlessTwin: (_state: unknown, worktreeId: string) =>
     runtimeEnvironmentIdByWorktree.get(worktreeId) ?? null
 }))
 

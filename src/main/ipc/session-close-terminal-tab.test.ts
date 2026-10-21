@@ -5,7 +5,8 @@ import type { Store } from '../persistence'
 
 const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
-  owned: new Set<string>()
+  owned: new Set<string>(),
+  partitioned: false
 }))
 
 vi.mock('electron', () => ({
@@ -20,7 +21,8 @@ vi.mock('../window/window-view-state-registry', () => ({
   resolveWindowScopeForWebContents: vi.fn(() => null)
 }))
 vi.mock('../window/window-session-ownership', () => ({
-  ownedSessionKeysForWindow: vi.fn(() => mocks.owned)
+  ownedSessionKeysForWindow: vi.fn(() => mocks.owned),
+  hasWindowSessionPartition: vi.fn(() => mocks.partitioned)
 }))
 vi.mock('../window/project-window-session-focus', () => ({
   withProjectWindowFocus: vi.fn((s) => s)
@@ -57,6 +59,7 @@ describe('session:closeTerminalTab', () => {
   beforeEach(() => {
     mocks.handlers.clear()
     mocks.owned.clear()
+    mocks.partitioned = false
   })
 
   it('writes requested host partition, advances fence, and flushes after write', () => {
@@ -81,6 +84,41 @@ describe('session:closeTerminalTab', () => {
     )
     expect(writes[0]).toMatchObject({ tabsByWorktree: { [worktreeId]: [] } })
     expect(store.flushOrThrow).toHaveBeenCalledOnce()
+  })
+
+  it('returns an empty session and ignores writes when every workspace belongs elsewhere', () => {
+    mocks.partitioned = true
+    const current = session()
+    const store = {
+      getWorkspaceSession: vi.fn(() => current),
+      setWorkspaceSession: vi.fn(),
+      patchWorkspaceSession: vi.fn()
+    }
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the empty-ownership handlers return before calling additional store methods.
+    registerSessionHandlers(store as unknown as Store)
+    const event = { sender: { id: 1 } }
+    expect(mocks.handlers.get('session:get')!(event)).toMatchObject({ tabsByWorktree: {} })
+    mocks.handlers.get('session:set')!(event, current)
+    mocks.handlers.get('session:patch')!(event, { tabsByWorktree: {} })
+    expect(store.setWorkspaceSession).not.toHaveBeenCalled()
+    expect(store.patchWorkspaceSession).not.toHaveBeenCalled()
+  })
+
+  it('refuses a close when another window owns every workspace', () => {
+    mocks.partitioned = true
+    const store = {
+      getWorkspaceSession: vi.fn(session),
+      setWorkspaceSession: vi.fn()
+    }
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: rejection happens before any store write or flush.
+    registerSessionHandlers(store as unknown as Store)
+    expect(() =>
+      mocks.handlers.get('session:closeTerminalTab')!(
+        { sender: { id: 1 } },
+        { worktreeId, tabId: 'tab-1' }
+      )
+    ).toThrow('worktree_not_owned')
+    expect(store.setWorkspaceSession).not.toHaveBeenCalled()
   })
 
   it('rolls back authoritative memory when flush fails', () => {

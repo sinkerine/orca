@@ -148,7 +148,7 @@ describe('launchAgentInNewTab paired web runtime', () => {
       forceTerminal: true
     })
 
-    expect(result?.surface.kind === 'local-terminal' ? result.surface.tabId : undefined).toBeNull()
+    expect(result?.surface).toEqual({ kind: 'host-published' })
     expect(mocks.createWebRuntimeSessionTerminal).toHaveBeenCalledWith(
       expect.objectContaining({
         environmentId: 'web-runtime',

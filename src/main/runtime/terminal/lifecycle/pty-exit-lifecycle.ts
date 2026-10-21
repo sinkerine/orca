@@ -20,6 +20,8 @@ import type {
 export abstract class OrcaRuntimeWithOnPtyExit extends OrcaRuntimeWithOnClientDisconnected {
   protected abstract pruneDisconnectedPtyRecords(): void
 
+  abstract handleWindowScopesChanged(): void
+
   protected abstract failActiveDispatchOnExit(
     handle: string,
     paneKey: string | null,
@@ -94,6 +96,10 @@ export abstract class OrcaRuntimeWithOnPtyExit extends OrcaRuntimeWithOnClientDi
     if (processDeathCertified) {
       // An unverifiable exit keeps the facet tracked until a certified exit or prune.
       this.clearLiveProgramStatusFacet(ptyId)
+      this.suppressedPtyOwnerWindowIds.add(ptyId)
+      this.transientPtyOwnerWindowById.delete(ptyId)
+      this.explicitPtyOwnerWindowById.delete(ptyId)
+      this.handleWindowScopesChanged()
     }
     if (processDeathCertified && exitPaneKeys.size > 0) {
       this.reconcileAgentStatusForEndedProcessFn?.(exitPaneKeys)
