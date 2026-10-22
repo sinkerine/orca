@@ -21,6 +21,8 @@ import {
 import { withProjectWindowFocus } from '../window/project-window-session-focus'
 import { closeTerminalTabInWorkspaceSession } from '../../shared/workspace-session-terminal-tab-close'
 import { advanceTerminalTopologyRevision } from '../persistence/terminal-topology/terminal-topology-membership'
+import { cloneWorkspaceSessionState } from '../persistence/restoring-sessions/session-owner-fields'
+import { rollbackWorkspaceSessionAfterFailedAsyncWrite } from '../persistence/restoring-sessions/workspace-session-write-rollback'
 
 function resolveSenderWindowScope(
   event: IpcMainEvent | IpcMainInvokeEvent | null | undefined
@@ -156,80 +158,65 @@ export function registerSessionHandlers(store: Store, runtime?: OrcaRuntimeServi
       event,
       args: { worktreeId?: unknown; tabId?: unknown; confirmed?: unknown },
       hostId?: string | null
-    ): { closed: boolean; pinned: boolean } => {
+    ): Promise<{ closed: boolean; pinned: boolean }> => {
       if (typeof args?.worktreeId !== 'string' || typeof args?.tabId !== 'string') {
         throw new Error('invalid_terminal_tab_close')
       }
-      const session = store.getWorkspaceSession(hostId)
-      const owned = ownedSessionKeysForSender(store, event, session)
-      if (
-        hasWindowSessionPartition(store, event?.sender?.id, session) &&
-        !owned.has(args.worktreeId)
-      ) {
-        throw new Error('worktree_not_owned')
-      }
-      const result = closeTerminalTabInWorkspaceSession(session, args.worktreeId, args.tabId)
-      if (result.pinned) {
-        if (args.confirmed !== true) {
-          return { closed: false, pinned: true }
-        }
-        // Renderer pin confirmation is the user authorization; preserve the host-side guard for all other callers.
-        const unpinnedSession = {
-          ...session,
-          tabsByWorktree: {
-            ...session.tabsByWorktree,
-            [args.worktreeId]: (session.tabsByWorktree[args.worktreeId] ?? []).map((tab) =>
-              tab.id === args.tabId ? { ...tab, isPinned: false } : tab
-            )
-          },
-          unifiedTabs: {
-            ...session.unifiedTabs,
-            [args.worktreeId]: (session.unifiedTabs?.[args.worktreeId] ?? []).map((tab) =>
-              tab.id === args.tabId || tab.entityId === args.tabId
-                ? { ...tab, isPinned: false }
-                : tab
-            )
+      const worktreeId = args.worktreeId
+      const tabId = args.tabId
+      return store
+        .runDurableMutation<{
+          closed: boolean
+          pinned: boolean
+          error?: string
+        }>(() => {
+          const session = cloneWorkspaceSessionState(store.getWorkspaceSession(hostId))
+          const owned = ownedSessionKeysForSender(store, event, session)
+          if (
+            hasWindowSessionPartition(store, event?.sender?.id, session) &&
+            !owned.has(worktreeId)
+          ) {
+            return {
+              value: { closed: false, pinned: false, error: 'worktree_not_owned' },
+              persist: false
+            }
           }
-        }
-        const confirmedResult = closeTerminalTabInWorkspaceSession(
-          unpinnedSession,
-          args.worktreeId,
-          args.tabId
-        )
-        if (!confirmedResult.closed) {
-          return { closed: false, pinned: true }
-        }
-        store.setWorkspaceSession(
-          advanceTerminalTopologyRevision(confirmedResult.session, args.worktreeId),
-          hostId,
-          owned
-        )
-        try {
-          store.flushOrThrow()
-        } catch (error) {
-          store.setWorkspaceSession(session, hostId, owned)
-          throw error
-        }
-        return { closed: true, pinned: false }
-      }
-      if (!result.closed) {
-        return { closed: false, pinned: false }
-      }
-      if (!store.setWorkspaceSession || !store.flushOrThrow) {
-        throw new Error('workspace_session_unavailable')
-      }
-      store.setWorkspaceSession(
-        advanceTerminalTopologyRevision(result.session, args.worktreeId),
-        hostId,
-        owned
-      )
-      try {
-        store.flushOrThrow()
-      } catch (error) {
-        store.setWorkspaceSession(session, hostId, owned)
-        throw error
-      }
-      return { closed: true, pinned: false }
+          const result = closeTerminalTabInWorkspaceSession(session, worktreeId, tabId, {
+            force: args.confirmed === true
+          })
+          if (result.pinned) {
+            return { value: { closed: false, pinned: true }, persist: false }
+          }
+          if (!result.closed) {
+            return { value: { closed: false, pinned: false }, persist: false }
+          }
+          store.setWorkspaceSession(
+            advanceTerminalTopologyRevision(result.session, worktreeId),
+            hostId,
+            owned
+          )
+          const staged = cloneWorkspaceSessionState(store.getWorkspaceSession(hostId))
+          return {
+            value: { closed: true, pinned: false },
+            rollback: () => {
+              const current = store.getWorkspaceSession(hostId)
+              const restored = rollbackWorkspaceSessionAfterFailedAsyncWrite(
+                session,
+                staged,
+                current
+              )
+              if (restored !== current) {
+                store.setWorkspaceSession(restored, hostId, owned)
+              }
+            }
+          }
+        })
+        .then((result) => {
+          if (result.error) {
+            throw new Error(result.error)
+          }
+          return { closed: result.closed, pinned: result.pinned }
+        })
     }
   )
 
