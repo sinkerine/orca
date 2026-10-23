@@ -1,0 +1,9 @@
+{
+  "capturedAt": "2026-10-22T20:30:16.644Z",
+  "platform": "linux",
+  "command": ["codex", "--no-alt-screen"],
+  "cols": 60,
+  "rows": 24,
+  "note": null,
+  "exitCode": 0
+}

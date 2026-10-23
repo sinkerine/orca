@@ -10,6 +10,7 @@ export const EXECUTION_HOST_METHODS = [
   'ui.setJiraQuickFilters',
   'ui.getJiraSavedFilters',
   'ui.mutateJiraSavedFilters',
+  'terminal.modelControl',
   'agent.launch',
   'agent.launchReplay',
   'agentTeams.prepareLaunch',

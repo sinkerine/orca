@@ -1,0 +1,40 @@
+[?2004h[>4;0m[>7u[?1004h[6n]10;?\]11;?\[?u[c[>c[?2026h[?2026h[1;1H[J[?25l[1;2H[0m[49m[K[2;29H[0m[49m[K[3;13H[0m[49m[K[4;2H[0m[49m[K[5;2H[0m[49m[K[6;27H[0m[49m[K[7;2H[0m[49m[K[8;2H[0m[49m[K[1;1H [2;1H  [38;5;75;49m>_ [1m[39;49mOpenAI Codex[22m[2m[2m (v0.161.0)[3;1H[22m     [2mloading[4;1H[22m [5;1H [6;1H[1m›[22m [2mAsk Codex to do anything[7;1H[22m [8;1H [39m[49m[0m[1;1H[0 q[1;1H [39m[49m[0m[6;3H[?25h[?2026l[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[?25l[3;6H[2m/job/src[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l[?2026h[39m[49m[0m[6;3H[?25h[?2026l]0;src[?2026h[1;1H[J[?25l[1;2H[0m[49m[K[2;29H[0m[49m[K[3;14H[0m[49m[K[4;25H[0m[49m[K[5;2H[0m[49m[K[6;2H[0m[49m[K[7;27H[0m[49m[K[8;2H[0m[49m[K[1;1H [2;1H  [38;5;75;49m>_ [1m[39;49mOpenAI Codex[22m[2m[2m (v0.161.0)[3;1H[22m     [2m/job/src[4;1H  permissions: [22m[1m[38;5;5;49mYOLO mode[5;1H[22m[39;49m [6;1H [7;1H[1m›[22m [2mAsk Codex to do anything[8;1H[22m [9;1H  [38;5;223;49mGPT-6.1-Sol default[39;49m · [38;5;151;49m/job/src[39;49m · [38;5;216;49mContext 100% left[39;49m · [38;5;216;49mCont…[39m[49m[0m[1;1H[0 q[1;1H [39m[49m[0m[7;3H[?25h[?2026l[?2026h[1;24r[1;1HMMMMMMMM[r[1;8r[1;1H
+[39;49m[K[2m╭──────────────────────────────────────────────────────────╮[39m[49m[0m
+[39;49m[K[2m│ [22m[1m[38;5;75;49m✨ Update available![22m[39;49m [1m0.161.0 -> 0.163.0[22m[2m[2m                  │[39m[49m[0m
+[39;49m[K[2m│ [22mSee [4m[38;5;75;49m]8;;https://github.com/openai/codexhttps://github.com/openai/codex]8;;[24m[39;49m for installation[2m     │[39m[49m[0m
+[39;49m[K[2m│ [22moptions.[2m                                                 │[39m[49m[0m
+[39;49m[K[2m│                                                          │[39m[49m[0m
+[39;49m[K[2m│ [22mSee full release notes:[2m                                  │[39m[49m[0m
+[39;49m[K[2m│ [22m[4m[38;5;75;49m]8;;https://github.com/openai/codex/releases/latesthttps://github.com/openai/codex/releases/latest]8;;[24m[2m[39;49m          │[39m[49m[0m
+[39;49m[K[2m╰──────────────────────────────────────────────────────────╯[39m[49m[0m[r[7;3H[?25l[9;2H[0m[49m[K[10;29H[0m[49m[K[11;14H[0m[49m[K[12;25H[0m[49m[K[13;2H[0m[49m[K[14;2H[0m[49m[K[15;27H[0m[49m[K[16;2H[0m[49m[K[17;60H[0m[49m[K[9;1H [10;1H  [38;5;75;49m>_ [1m[39;49mOpenAI Codex[22m[2m[2m (v0.161.0)[11;1H[22m     [2m/job/src[12;1H  permissions: [22m[1m[38;5;5;49mYOLO mode[13;1H[22m[39;49m [14;1H [15;1H[1m›[22m [2mAsk Codex to do anything[16;1H[22m [17;1H  [38;5;223;49mGPT-6.1-Sol default[39;49m · [38;5;151;49m/job/src…[39;49m  ⚠ [38;5;179;49m1 warning[39;49m · [1mf2[22m to view[39m[49m[0m[9;1H[0 q[9;1H [39m[49m[0m[15;3H[?25h[?2026l[?2026h[39m[49m[0m[15;3H[?25h[?2026l[?2026h[9;1H[J[9;24r[9;1HMMMMMMMMMMM[r[1;19r[8;1H
+[39;49m[K[39m[49m[0m
+[39;49m[K[39m[49m[0m
+[39;49m[K  [38;5;75;49m>_ [1m[39;49mOpenAI Codex[22m[2m[2m (v0.161.0)[39m[49m[0m
+[39;49m[K     [2m/job/src[39m[49m[0m
+[39;49m[K[2m  permissions: [22m[1m[38;5;5;49mYOLO mode[39m[49m[0m
+[39;49m[K[39m[49m[0m
+[39;49m[K[2m  To get started, describe a task or try one of these[39m[49m[0m
+[39;49m[K[2m  commands:[39m[49m[0m
+[39;49m[K[39m[49m[0m
+[39;49m[K  /init[2m - create an AGENTS.md file with instructions for[39m[49m[0m
+[39;49m[K  [2mCodex[39m[49m[0m
+[39;49m[K  /status[2m - show current session configuration[39m[49m[0m
+[39;49m[K  /permissions[2m - choose what Codex is allowed to do[39m[49m[0m
+[39;49m[K  /model[2m - choose what model and reasoning effort to use[39m[49m[0m
+[39;49m[K  /review[2m - review any changes and find issues[39m[49m[0m[r[15;3H[?25l[20;2H[0m[49m[K[21;2H[0m[49m[K[22;27H[0m[49m[K[23;2H[0m[49m[K[24;60H[0m[49m[K[20;1H [21;1H [22;1H[1m›[22m [2mAsk Codex to do anything[23;1H[22m [24;1H  [38;5;223;49mGPT-6.1-Sol low[39;49m · [38;5;151;49m/job/src[39;49m · [38;5;216;49mC…[39;49m  ⚠ [38;5;179;49m1 warning[39;49m · [1mf2[22m to view[39m[49m[0m[20;1H[0 q[20;1H [39m[49m[0m[22;3H[?25h[?2026l[?2026h[39m[49m[0m[22;3H[?25h[?2026l[?2026h[1;19r[19;1H
+[r[22;3H[19;1H[J[?25l[19;2H[0m[49m[K[21;2H[0m[49m[K[22;9H[0m[49m[K[23;2H[0m[49m[K[19;1H [20;1H[7m[1m› /model  [22mchoose what model and reasoning effort to use[1m     [21;1H[27m[22m [22;1H[1m›[22m /model[23;1H [24;1H  [38;5;223;49mGPT-6.1-Sol low[39;49m · [38;5;151;49m/job/src[39;49m · [38;5;216;49mContext 100% left[39;49m · [38;5;216;49mContext …[39m[49m[0m[19;1H[0 q[19;1H [39m[49m[0m[22;9H[?25h[?2026l[?2026h[1;18r[18;1H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[r[22;9H[4;1H[J[?25l[4;2H[0m[49m[K[5;2H[0m[49m[K[6;26H[0m[49m[K[7;2H[0m[49m[K[8;2H[0m[49m[K[11;58H[0m[49m[K[12;49H[0m[49m[K[13;58H[0m[49m[K[14;35H[0m[49m[K[15;58H[0m[49m[K[16;42H[0m[49m[K[17;55H[0m[49m[K[18;35H[0m[49m[K[19;53H[0m[49m[K[20;50H[0m[49m[K[21;60H[0m[49m[K[22;49H[0m[49m[K[23;2H[0m[49m[K[4;1H [5;1H [6;1H  [1mSelect Model and Effort[7;1H[22m [8;1H [9;1H[7m[1m› 1. GPT-6.1-Sol (current)  [22mLatest workhorse model for[1m      [10;1H                            [22mcoding and everyday work.[1m       [11;1H[27m[22m  2. GPT-6-Astra            [2mFrontier intelligence for the[12;1H[22m                            [2mmost demanding work.[13;1H[22m  3. GPT-6-Sol              [2mPrevious generation workhorse[14;1H[22m                            [2mmodel.[15;1H[22m  4. GPT-6-Luna             [2mFast and affordable model for[16;1H[22m                            [2measier tasks.[17;1H[22m  5. GPT-5.6-Sol            [2mOlder generation workhorse[18;1H[22m                            [2mmodel.[19;1H[22m  6. GPT-5.6-Terra          [2mOlder balanced model for[20;1H[22m                            [2mstraightforward work.[21;1H[22m  7. GPT-5.6-Luna           [2mOlder fast and efficient model.[22;1H[22m  8. GPT-5.5                [2mLegacy coding model.[23;1H[22m [24;1H  [1menter[22m[2m[2m select · [22m[1mesc[22m[2m[2m back                                   [39m[49m[0m[?2026l

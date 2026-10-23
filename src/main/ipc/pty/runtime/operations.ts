@@ -1,3 +1,4 @@
+import { terminalModelInputAllowed } from '../../../runtime/terminal-model-input-lease'
 import { isRemoteRuntimePtyId } from '../../../../shared/remote-runtime-pty-id'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import type { IPtyProvider } from '../../../providers/pty-provider-contract'
@@ -38,6 +39,9 @@ export function writePtyFromRuntimeController(
   inputKind: TerminalInputKind,
   options?: { waitForSettlement: true }
 ): boolean | WriteSettlement | Promise<WriteSettlement> {
+  if (!terminalModelInputAllowed(ptyId)) {
+    return options?.waitForSettlement ? writeRefused('provider_refused_write') : false
+  }
   const observeAcceptedInput = (): void => {
     if (inputKind === 'driving' && ptyOwnership.get(ptyId) === LOCAL_EXECUTION_HOST_ID) {
       deps.runtime?.observeClaudeTerminalEvidence?.(ptyId, { kind: 'input', data })
