@@ -1,4 +1,0 @@
-$ node config/scripts/build-mobile-web-app-bundle.mjs && node config/scripts/verify-mobile-web-app-bundle.mjs
-[build-mobile-web-app-bundle] OK — 15 route(s), 78 chunk(s), 1363084 bytes before the first route, 128 asset(s), 8572082 bytes, buildId 32876a25ca5df8390e8cbe8036fede98052c92ef62c12bb683f48c07e013aedb -> /home/sinkerine/orca/workspaces/orca/last-prompt/out/mobile-web
-[verify-packaged-mobile-web-bundle] OK — buildId 32876a25ca5df8390e8cbe8036fede98052c92ef62c12bb683f48c07e013aedb, 128 asset(s), 8572082 bytes
-[verify-mobile-web-app-bundle] OK — 128 asset(s), 8572082/9437184 bytes, reproducible buildId 32876a25ca5df8390e8cbe8036fede98052c92ef62c12bb683f48c07e013aedb

@@ -1,9 +1,0 @@
-$ node config/scripts/check-changed-code-quality.mjs HEAD
-code quality: 0 new finding(s) across 11 changed file(s).
-casting code quality: 0 new finding(s) across 11 changed file(s).
-focused plugins: 0 new finding(s) across 11 changed file(s).
-type-aware code quality: 0 new finding(s) across 11 changed file(s).
-React Doctor: 0 new finding(s) across 11 changed file(s).
-design system: 0 new finding(s) across 11 changed file(s).
-casting SAFETY: rationale: 0 new finding(s) across 11 changed file(s).
-Changed-code quality gate passed since a0befb9d876f.
