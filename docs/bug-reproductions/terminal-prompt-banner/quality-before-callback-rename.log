@@ -1,0 +1,12 @@
+$ node config/scripts/check-changed-code-quality.mjs HEAD
+code quality: 0 new finding(s) across 6 changed file(s).
+casting code quality: 0 new finding(s) across 6 changed file(s).
+focused plugins: 0 new finding(s) across 6 changed file(s).
+type-aware code quality: 0 new finding(s) across 6 changed file(s).
+::error file=src/renderer/src/components/terminal-pane/TerminalPromptBanner.tsx,line=78,title=react-doctor(effect-needs-cleanup)::`observe` creates a subscription in useEffect without guaranteed cleanup. Return a cleanup function that owns every allocation so it does not leak after unmount.
+React Doctor: 1 new finding(s) across 6 changed file(s).
+src/renderer/src/components/terminal-pane/TerminalPromptBanner.tsx:78 react-doctor(effect-needs-cleanup): `observe` creates a subscription in useEffect without guaranteed cleanup. Return a cleanup function that owns every allocation so it does not leak after unmount.
+design system: 0 new finding(s) across 6 changed file(s).
+casting SAFETY: rationale: 0 new finding(s) across 6 changed file(s).
+Changed-code quality gate failed with 1 finding(s) since d635d665f92d.
+[ELIFECYCLE] Command failed with exit code 1.

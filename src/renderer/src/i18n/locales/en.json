@@ -21036,6 +21036,9 @@
       "body": "To hide it, type /diff in Claude Code. Claude remembers that choice for later sessions.",
       "gotIt": "Got it"
     },
+    "promptBanner": {
+      "unknown": "No prompt recorded at this position"
+    },
     "paneTopBanner": {
       "openNewTerminal": "Open new terminal",
       "learnMore": "Learn more",
