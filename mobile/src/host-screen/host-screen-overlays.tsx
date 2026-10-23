@@ -11,6 +11,7 @@ import { NewWorktreeModalController } from '../components/NewWorktreeModalContro
 import { hostNewWorktreeSessionRoute } from '../host-route-action-state'
 import { isWorktreePinned } from '../worktree/workspace-list-sections'
 import { hostScreenStyles as styles } from './host-screen-styles'
+import { NewProjectDrawer } from './NewProjectDrawer'
 import { WorkspaceOptionsSheet } from './workspace-options-sheet'
 import { WorkspaceDetailsSheet } from './workspace-details-sheet'
 import type { HostScreenController } from './use-host-screen-controller'
@@ -39,6 +40,16 @@ export function HostScreenOverlays({ controller }: { controller: HostScreenContr
   return (
     <>
       <WorkspaceOptionsSheet controller={controller} />
+      {controller.showNewProject ? (
+        <NewProjectDrawer
+          key={hostId}
+          client={client}
+          connected={connState === 'connected'}
+          hostName={controller.hostDisplay.title}
+          onClose={() => controller.setShowNewProject(false)}
+          onCreated={controller.refreshProjectCatalog}
+        />
+      ) : null}
 
       {/* Worktree long-press action sheet (inline confirm to avoid double-Modal lag) */}
       <BottomDrawer

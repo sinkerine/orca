@@ -1,3 +1,4 @@
+import { TERMINAL_MODEL_CONTROL_METHODS } from './terminal/terminal-model-control-method'
 import { TERMINAL_LIFECYCLE_METHODS } from './terminal/terminal-lifecycle-methods'
 import { TERMINAL_MULTIPLEX_METHODS } from './terminal/terminal-multiplex-method'
 import { TERMINAL_QUERY_METHODS } from './terminal/terminal-query-methods'
@@ -19,5 +20,6 @@ export const TERMINAL_METHODS = [
   ...TERMINAL_MULTIPLEX_METHODS,
   ...TERMINAL_SUBSCRIBE_METHODS,
   ...TERMINAL_VIEWPORT_METHODS_AFTER_STREAMS,
+  ...TERMINAL_MODEL_CONTROL_METHODS,
   ...TERMINAL_VIEWER_COLORS_METHODS
 ]
