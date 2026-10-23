@@ -1,4 +1,5 @@
 import type { TuiAgent } from '../../../src/shared/tui-agent'
+import { normalizeAgentLaunchVariants } from '../../../src/shared/agent-launch-variants'
 import {
   filterEnabledMobileTuiAgents,
   isMobileTuiAgent,
@@ -9,11 +10,14 @@ import {
 export type MobileNewTabAgentSettings = {
   defaultTuiAgent?: TuiAgent | 'blank' | null
   disabledTuiAgents?: unknown
+  agentLaunchVariants?: unknown
 }
 
 export type MobileNewTabAgentOption = {
   agent: TuiAgent
   label: string
+  variantId?: string
+  command?: string
 }
 
 export function orderMobileNewTabAgents(
@@ -40,12 +44,20 @@ export function buildMobileNewTabAgentOptions(
   if (!detectedAgentIds) {
     return []
   }
-  return orderMobileNewTabAgents(
+  const agents = orderMobileNewTabAgents(
     settings?.defaultTuiAgent,
     detectedAgentIds,
     settings?.disabledTuiAgents
-  ).map((agent) => ({
-    agent,
-    label: MOBILE_TUI_AGENT_LABELS[agent]
-  }))
+  )
+  return [
+    ...agents.map((agent) => ({ agent, label: MOBILE_TUI_AGENT_LABELS[agent] })),
+    ...normalizeAgentLaunchVariants(settings?.agentLaunchVariants)
+      .filter((variant) => agents.includes(variant.agent))
+      .map((variant) => ({
+        agent: variant.agent,
+        label: `${MOBILE_TUI_AGENT_LABELS[variant.agent]}: ${variant.name}`,
+        variantId: variant.id,
+        command: variant.command
+      }))
+  ]
 }
