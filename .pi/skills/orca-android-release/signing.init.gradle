@@ -1,0 +1,30 @@
+gradle.beforeProject { project ->
+    ['com.android.application', 'com.android.library'].each { pluginId ->
+        project.pluginManager.withPlugin(pluginId) {
+            project.extensions.getByName('androidComponents').finalizeDsl { android ->
+                def buildTools = System.getenv('ORCA_ANDROID_BUILD_TOOLS')
+                if (buildTools) android.buildToolsVersion = buildTools
+                def cmake = System.getenv('ORCA_ANDROID_CMAKE_VERSION')
+                if (cmake) {
+                    android.externalNativeBuild.cmake.version = cmake
+                }
+            }
+        }
+    }
+    project.pluginManager.withPlugin('com.android.application') {
+        project.extensions.getByName('androidComponents').finalizeDsl { android ->
+            def signingDir = System.getenv('ORCA_ANDROID_SIGNING_DIR')
+            if (!signingDir) throw new GradleException('Set ORCA_ANDROID_SIGNING_DIR to the private signing directory')
+            def credentials = new Properties()
+            new File(signingDir, 'signing.properties').withInputStream { credentials.load(it) }
+            def signing = android.signingConfigs.maybeCreate('orcaLocalRelease')
+            signing.storeFile = new File(signingDir, 'orca-release.p12')
+            signing.storeType = 'PKCS12'
+            signing.storePassword = credentials.getProperty('storePassword')
+            signing.keyAlias = credentials.getProperty('keyAlias')
+            signing.keyPassword = credentials.getProperty('keyPassword')
+            android.buildTypes.getByName('release').signingConfig = signing
+            project.extensions.getByName('react').extraPackagerArgs.addAll(['--max-workers', '2'])
+        }
+    }
+}
