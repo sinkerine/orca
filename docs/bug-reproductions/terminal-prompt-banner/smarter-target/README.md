@@ -1,0 +1,15 @@
+# Smarter prompt jump and Android support
+
+The matcher uses unique complete normalized prompt text within 200 physical rows and 64K characters of the recorded marker, retaining row mappings across soft wraps and explicit newlines. Ambiguous or missing text retains the timing marker. Matching happens at status acceptance and again on click, bounded by neighboring prompt anchors. Restored prompts can gain a position from unique buffer text.
+
+Shared implementation: `src/shared/terminal-prompt-history.ts` and `terminal-prompt-position.ts`. Desktop and the mobile served session page use the same history. Android's native session route mounts MobileWebShellScreen, whose web session uses TerminalWebView.web.tsx; that page now supplies prompt status and a 44px touch banner.
+
+VM run `s1-8466da8a`, ORCA_BACKGROUND_LAUNCH=1. CDP proof: wrote the actual prompt followed by 80 response lines before publishing its status. Click selected viewport row 2, and that row read `> Locate the actual submitted prompt`. See desktop.png.
+
+Checks observed: 9 history tests and 1 banner component test pass; desktop typecheck passes across 15,342 files; mobile typecheck passes before the final interface narrowing; 21 existing mobile document/layout tests pass. Basic mobile lint passes. Shared lint had index-existence style errors, corrected; retry output preserved. The mobile bundle build was interrupted when the first VM stopped responding to SSH during Metro export; no complete bundle result is claimed. A fresh validation VM `s1-487784d9` verified 11 focused tests after final replay-order and lifecycle repairs, plus 21 mobile regressions. Basic desktop/shared/mobile lint passes. The default desktop typecheck initially lacked Bun in this minimal install; native compiler fallback was OOM-killed (kernel log confirmed 5.8 GB RSS). Bun retry passed: no errors in 15,342 files. Final mobile typecheck completed without diagnostics. Results are in the retained logs.
+
+Android emulator verification BLOCKED. Used the version-matched `orca-emulator-android` guide from orca-ide-cli. `orca-ide-cli emulator devices --json` returned `ok:true,result:[]`; attaching Pixel_3a_API_34_extension_level_7_x86_64 returned `emulator_device_not_found`, message `"Pixel_3a_API_34_extension_level_7_x86_64" is not a running device or a known AVD.` Android SDK and that AVD exist on disk but were unavailable to Orca's running backend. No Android input, emulator boot or install was performed. Actual Android validation remains required.
+
+Independent review identified a mount-before-replay bug; fixed by allowing markerless prompts to resolve on click, with a new passing regression. Mobile now detaches history on mount failures/replacement and listens for buffer switches. Prompt status serialization spreads the authoritative live payload; container and terminal host are both flex:1, so the banner reserves layout space.
+
+VMs stopped after preserving evidence. No host dependencies installed, no commit or PR created.

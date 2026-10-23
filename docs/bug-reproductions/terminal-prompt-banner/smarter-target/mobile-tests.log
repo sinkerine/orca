@@ -1,0 +1,15 @@
+$ vitest run src/terminal/terminal-web-document-mount.test.ts src/session/mobile-session-terminal-frame-layout.test.tsx
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /job/src/mobile
+
+ ✓ src/session/mobile-session-terminal-frame-layout.test.tsx (2 tests) 10ms
+ ✓ src/terminal/terminal-web-document-mount.test.ts (19 tests) 202ms
+
+ Test Files  2 passed (2)
+      Tests  21 passed (21)
+   Start at  23:30:59
+   Duration  1.25s (transform 485ms, setup 40ms, import 618ms, tests 213ms, environment 404ms)
+
