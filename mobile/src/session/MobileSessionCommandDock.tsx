@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TextInput, Pressable } from 'react-native'
+import { MobileTerminalModelPicker } from './MobileTerminalModelPicker'
 import { hostOs } from '../platform/host-os'
 import {
   ArrowUp,
@@ -105,6 +106,13 @@ export function MobileSessionCommandDock({ controller }: { controller: MobileSes
                 />
               </View>
             </Pressable>
+          )}
+          {controller.terminalModelControlSupported && activeHandle && (
+            <MobileTerminalModelPicker
+              client={controller.client}
+              terminal={activeHandle}
+              disabled={!canSend}
+            />
           )}
           {/* Why: default tap handling makes the first accessory-key tap dismiss the keyboard and get swallowed (#5106). */}
           <ScrollView

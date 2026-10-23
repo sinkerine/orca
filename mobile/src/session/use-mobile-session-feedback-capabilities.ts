@@ -32,6 +32,7 @@ export function useMobileSessionFeedbackCapabilities(scope: MobileSessionTermina
   const [agentSessionHistorySupported, setAgentSessionHistorySupported] = useState<boolean | null>(
     null
   )
+  const [terminalModelControlSupported, setTerminalModelControlSupported] = useState(false)
   const [quickCommandsSupported, setQuickCommandsSupported] = useState<boolean | null>(null)
   // Why: an older host's character cap; null until a host says it has one.
   const [quickCommandAgentPromptMaxLength, setQuickCommandAgentPromptMaxLength] = useState<
@@ -133,6 +134,8 @@ export function useMobileSessionFeedbackCapabilities(scope: MobileSessionTermina
     setBrowserScreencastSupported,
     agentSessionHistorySupported,
     setAgentSessionHistorySupported,
+    terminalModelControlSupported,
+    setTerminalModelControlSupported,
     quickCommandsSupported,
     setQuickCommandsSupported,
     quickCommandAgentPromptMaxLength,
