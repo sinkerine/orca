@@ -46,10 +46,20 @@ describe('mobile new-tab agent loading', () => {
     ])
   })
 
-  it('detects agents through the worktree repo connection for SSH sessions', async () => {
+  it('loads saved variants for agents detected through the worktree SSH connection', async () => {
     const client = createClient(async (method, params) => {
       if (method === 'settings.get') {
-        return { ok: true, result: { settings: {} } }
+        return {
+          ok: true,
+          result: {
+            settings: {
+              agentLaunchVariants: [
+                { id: 'remote', name: 'Remote', agent: 'claude', command: 'claude --verbose' },
+                { id: 'local', name: 'Local', agent: 'codex', command: 'codex --fast' }
+              ]
+            }
+          }
+        }
       }
       if (method === 'repo.list') {
         return { ok: true, result: { repos: [{ id: 'repo-1', connectionId: 'ssh-1' }] } }
@@ -66,7 +76,10 @@ describe('mobile new-tab agent loading', () => {
         client,
         worktreeId: 'repo-1::/remote/worktree'
       })
-    ).resolves.toEqual([{ agent: 'claude', label: 'Claude' }])
+    ).resolves.toEqual([
+      { agent: 'claude', label: 'Claude' },
+      { agent: 'claude', label: 'Claude: Remote', variantId: 'remote', command: 'claude --verbose' }
+    ])
     expect(client.sendRequest.mock.calls.map(([method]) => method)).toEqual([
       'repo.list',
       'settings.get',
