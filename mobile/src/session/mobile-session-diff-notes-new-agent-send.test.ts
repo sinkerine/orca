@@ -54,8 +54,23 @@ function launchReply(promptOutcome: 'handed-to-terminal' | 'not-delivered'): Rpc
 function launchClient() {
   const replies: ((reply: RpcResponse) => void)[] = []
   const sendRequest = vi.fn(
-    (method: string) =>
+    (method: string, _params?: unknown) =>
       new Promise<RpcResponse>((resolve) => {
+        if (method === 'session.tabs.createTerminal') {
+          resolve({
+            id: 'created',
+            ok: true,
+            result: {
+              tab: {
+                type: 'terminal',
+                id: 'variant-tab',
+                terminal: 'variant-terminal',
+                title: 'Codex',
+                isActive: true
+              }
+            }
+          })
+        }
         if (method === 'agent.launchReplay') {
           replies.push(resolve)
         }
@@ -74,12 +89,13 @@ function launchClient() {
   }
   const launches = () =>
     sendRequest.mock.calls.filter(([method]) => method === 'agent.launchReplay')
-  return { client, replies, launches }
+  return { client, replies, launches, sendRequest }
 }
 
 type Screen = {
   send: () => void
-  sendActions: { onPress: () => void }[]
+  sendActions: { label: string; onPress: () => void }[]
+  createActions: { label: string; onPress: () => void }[]
   pendingDelivery: DiffNotesDelivery | null
   sendingIds: ReadonlySet<string>
   creatingTerminalRef: { current: string | null }
@@ -100,7 +116,10 @@ function screen(): Screen {
   return rendered
 }
 
-async function mountSessionScreen(client: RpcClient): Promise<void> {
+async function mountSessionScreen(
+  client: RpcClient,
+  hostCapabilities: string[] = LAUNCH_CAPABILITIES
+): Promise<void> {
   function Harness() {
     const [diffComments, setDiffComments] = useState<DiffComment[]>([NOTE])
     const diffCommentsRef = useRef(diffComments)
@@ -116,7 +135,7 @@ async function mountSessionScreen(client: RpcClient): Promise<void> {
       worktreeId: 'workspace-1',
       isFloatingWorkspaceRoute: false,
       client,
-      hostCapabilities: LAUNCH_CAPABILITIES,
+      hostCapabilities,
       connState: 'connected',
       diffComments,
       setDiffComments,
@@ -149,7 +168,11 @@ async function mountSessionScreen(client: RpcClient): Promise<void> {
       subscribeToTerminal: () => {},
       fetchSessionTabs: async () => {},
       createTabAgentLoadState: 'loaded',
-      createTabAgentOptions: [{ agent: 'codex', label: 'Codex' }],
+      createTabAgentOptions: [
+        { agent: 'codex', label: 'Codex' },
+        { agent: 'codex', label: 'Codex: Fast', variantId: 'fast', command: 'codex --fast' }
+      ],
+      setShowCreateTabDrawer: () => {},
       setSessionContentRowWidth: () => {}
     }
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the scope carries every member these hooks read on the send path; a missing one throws on use.
@@ -165,6 +188,7 @@ async function mountSessionScreen(client: RpcClient): Promise<void> {
     rendered = {
       send: notes.sendDiffCommentsToAgent,
       sendActions: route.sendDiffNotesAgentActions,
+      createActions: route.createTabAgentActions,
       pendingDelivery: pendingDiffNotesDelivery,
       sendingIds: notes.sendingDiffCommentIds,
       creatingTerminalRef
@@ -193,6 +217,31 @@ function landLaunchedTab(): void {
 }
 
 describe('sending review notes to a new agent session', () => {
+  it.each([
+    { host: 'current', capabilities: LAUNCH_CAPABILITIES },
+    { host: 'older', capabilities: [] }
+  ])('launches a variant via terminal creation on an $host host', async ({ capabilities }) => {
+    const { client, sendRequest, launches } = launchClient()
+    await mountSessionScreen(client, capabilities)
+    expect(screen().createActions.map((action) => action.label)).toEqual(['Codex', 'Codex: Fast'])
+    await act(async () => screen().createActions[1]?.onPress())
+    expect(sendRequest).toHaveBeenCalledWith(
+      'session.tabs.createTerminal',
+      expect.objectContaining({
+        worktree: 'id:workspace-1',
+        agent: 'codex',
+        command: 'codex --fast',
+        afterTabId: 'existing-tab',
+        activate: false,
+        select: true,
+        navigation: 'caller'
+      })
+    )
+    expect(launches()).toHaveLength(0)
+    await act(async () => screen().send())
+    expect(screen().sendActions.map((action) => action.label)).toEqual(['Codex'])
+  })
+
   it('starts one agent while the first send of the same notes is still waiting on its reply', async () => {
     const { client, replies, launches } = launchClient()
     await mountSessionScreen(client)
