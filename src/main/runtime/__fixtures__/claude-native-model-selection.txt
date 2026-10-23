@@ -1,0 +1,44 @@
+7[r8[?25h[?25l[?2004h[?2031h[?1004h[>0q[?u[c[>4m[<u[?1004l[?2031l[?2004l[?2004h[?2031h[?1004h]0;✳ Claude Code[38;5;174m ▐[48;5;16m▛███▛█[12G[39m[49m[1mClaude[19GCode[24G[22m[38;5;246mv2.1.292[39m
+[38;5;174m▝▜[48;5;16m█████[49m█▀[12G[38;5;246mOpus[17G5.5[21G·[23GClaude[30GPro[39m
+[38;5;174m ▝▝[7G▝▝[12G[38;5;246m/job/src[39m
+
+
+[38;5;244m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+❯ [2mTry[7G"fix[12Glint[17Gerrors"[22m
+[38;5;244m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[3G[38;5;211m⏵⏵[6Gbypass[13Gpermissions[25Gon[38;5;246m (shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents[101G◐[103Gmedium[110G·[112G/effort[39m
+[2C[3A[?25h[>0q[?u[c[?25l[2D[3B[2C[3A[38;5;153m/model[39m[K[2C[2B[38;5;153m❯ /[1mmodel[22m                      Set the AI [1mmodel[22m for Claude Code (currently Opus 5.5)[101G[39m[K
+[3G[38;5;246m [5G/auto-mode-setup[33GTeach[39Gauto[44Gmode[49Gabout[55Gyour[60Genvironment,[73Gplus[78Goptional[87Grule[92Gtweaks[39m
+[3G[38;5;246m [5G/code-review[33G3[35Gfree[40G/ultrareview[53G·[55GReview[62Gthe[66Gcurrent[74Gdiff,[80Gor[83Ga[85GPR[88Gnumber/branch/path[107Gtarget,[115Gfor[39m
+[33G[38;5;246mcorrectness[45Gbugs[50G(plus[56Greuse/simplification/efficiency[88Gcleanups[97Gwhere[103Gthe[107G[39m[1mmodel[22m[38;5;246m's[115Grev…[39m
+[3G[38;5;246m [5G/update-config[33GUse[37Gthis[42Gskill[48Gto[51Gconfigure[61Gthe[65GClaude[72GCode[77Gharness[85Gvia[89Gsettings.json.[104GAutomated[39m
+[33G[38;5;246mbehaviors[43G("from[50Gnow[54Gon[57Gwhen[62GX",[66G"each[72Gtime[77GX",[81G"whenever[91GX",[95G"before/after[109GX")[113Grequi…[39m
+[3G[38;5;246m [5G/loop[33GRun[37Ga[39Gprompt[46Gor[49Gslash[55Gcommand[63Gon[66Ga[68Grecurring[78Ginterval[87G(e.g.[93G/loop[99G5m[102G/foo).[109GOmit[114Gthe[39m
+[33G[38;5;246minterval[42Gto[45Glet[49Gthe[53G[39m[1mmodel[22m[38;5;246m self-pace.[39m
+[3G[38;5;246m [5G/claude-api[33GReference[43Gfor[47Gthe[51GClaude[58GAPI[62G/[64GAnthropic[74GSDK[78G—[80G[39m[1mmodel[22m[38;5;246m ids,[91Gpricing,[100Gparams,[108Gstreaming,[39m
+[33G[38;5;246mtool[38Guse,[43GMCP,[48Gagents,[56Gcaching,[65Gtoken[71Gcounting,[81G[39m[1mmodel[22m[38;5;246m migration.[98GTRIGGER[106G—[108Gread[113GBEFOR…[39m
+[3G[38;5;246m [5G/advisor[33GLet[37GClaude[44Gconsult[52Ga[54Gstronger[63G[39m[1mmodel[22m[38;5;246m at[72Gkey[76Gmoments[39m
+[3G[38;5;246m [5G/effort[33GSet[37Geffort[44Glevel[50Gfor[54G[39m[1mmodel[22m[38;5;246m usage[39m
+[3G[38;5;246m [5G/status[33GShow[38GClaude[45GCode[50Gstatus[57Gincluding[67Gversion,[76G[39m[1mmodel[22m[38;5;246m,[83Gaccount,[92GAPI[96Gconnectivity,[110Gand[114Gtool[39m
+[33G[38;5;246mstatuses[39m
+
+
+
+
+
+
+[8C[22A[?25h[?25l[8D[22B[2K[G[1A[22A[48;5;237m[38;5;246m❯ [38;5;231m/model[39m                                                                                                                [1B[49m[K[1B[38;5;153m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[2C[1B[1mSelect model[22m[39m[K[2C[1B[38;5;246mSwitch betw[15Gen Claude[25Gmodels.[33GYour pick becomes the[55Gdefault for n[69Gw sessions. F[83Gr other/previous model names, [2C[1Bspe[7Gify with --model.[39m[K[32C[1B[K[2C[1B[38;5;153m❯[39m [38;5;246m1.  [38;5;114mDefault (recommended)[39m [38;5;114m✔[39m  [38;5;174mOpus 5.5[38;5;246m · Bes[49G for everyday, complex[72Gtasks[39m[K[4C[1B[38;5;246m2.  [39mOpus[14G5.5[33G [38;5;246mFor c[40Gmplex w[48Grk and everyday tasks[39m[K[2C[1B  [38;5;246m3.  [39mSonnet 5.5               [38;5;246mMost[39Gefficient[49Gfor simpler tasks[39m[K[4C[1B[38;5;246m4.  [39mFable[15G5.1[33G [38;5;246mFor your toughest challeng[61Gs[39m[K[2C[1B  [38;5;246m5.  [39mHaiku 4.5                [38;5;246mFast[39Gst for quick answ[57Grs[39m[K[4C[1B[38;5;246m6.  [39mSonnet[16G5[33G [38;5;246mEffici[41Gnt for[48Groutine[56Gt[58Gsks[39m[K[2C[1B  [38;5;246m7.  [39mOpus 5                   [38;5;246mBest for everyday, complex tasks[39m[K[2C[1B  [38;5;246m8.  [39mFable 5                  [38;5;246mMost capab[46G for your harde[62Gt and longest-running tasks[2C[1B[39m  [38;5;246m9.  [39mOpus 4.8                 [38;5;246mBest for [44Gveryday, complex tasks[39m[K[2C[1B[38;5;246m↓[5G10. [39mOpus[14G4.7[33G [38;5;246mBest for everyday, complex tasks[5C[1B… +3 models[2C[2B[38;5;174m◐[38;5;246m Medium effort (default)[38;5;239m ←/→ to adjust[2C[2B[38;5;246mEnter to set as default · s to use this session only · Esc to cancel[1B[39m[K[2C[15A[2D[15B[2C[15A [2C[1B[38;5;153m❯[9GOpus 5.5[39m
+
+
+
+
+
+
+
+
+
+
+
+
+
+[2C[14A[2D[14B[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G[1A[1C[7A[48;5;237m [1B[49m[38;5;246m  ⎿  [39mSet[10Gmodel[16Gto[19G[38;5;153mOpus 5.5[28G[39mfor[32Gthis[37Gsession[45Gonly[1B[K[1B[38;5;244m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[1B[39m❯ [K[1B[38;5;244m────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[2C[1B[38;5;211m⏵⏵ bypass permissions on[38;5;246m (shift+tab to cycle) · ← for agents[101G◐ medium · /effort[1B[39m[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[1B[K[14A[2C[3A[?25h
