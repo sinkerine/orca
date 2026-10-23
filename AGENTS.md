@@ -49,6 +49,10 @@ Avoid type assertions except `as const`. Unavoidable casts need a line-specific 
 - **Design system**: `pnpm run lint:design-system` for the full renderer report (not a gate); the changed-lines gate above is what CI enforces
 - **Real Claude CLI**: when you change Claude structured-session code (`src/main/claude/claude-structured-*`), run `ORCA_REAL_CLAUDE_CLI_TEST=1 pnpm test src/main/claude/claude-structured-real-cli.test.ts src/main/claude/claude-structured-real-cli-fold.test.ts`; it uses your real Claude login
 
+## Validation Artifacts Must Stay Out of Commits
+
+Never commit validation logs, screenshots, recordings, raw command output, or generated diagnostic dumps (including JSON evidence). Keep them outside the repository or in an ignored temporary directory. Report verification results concisely in prose; do not add artifact files to Git as proof. Before every commit, inspect the staged file list and remove these artifacts from the index.
+
 # Writing Pull Requests
 
 Fill in [`.github/pull_request_template.md`](./.github/pull_request_template.md), written for a reviewer who has never seen this code:

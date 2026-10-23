@@ -1,3 +1,0 @@
-$ tsc --noEmit
-src/components/pr-sidebar/mermaid-page-engine.ts(40,31): error TS2307: Cannot find module './mermaid-page-engine.generated' or its corresponding type declarations.
-[ELIFECYCLE] Command failed with exit code 2.
