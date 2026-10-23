@@ -85,6 +85,7 @@ export type TerminalSelectionEvents = {
 
 export type TerminalWebViewProps = {
   promptStatus?: import('../../../src/shared/agent-status-types').AgentStatusEntry | null
+  promptClient?: import('../transport/rpc-client').RpcClient | null
   style?: StyleProp<ViewStyle>
   terminalTheme?: MobileTerminalTheme
   // Why: baseline zoom multiplier applied on top of fit-to-width scale; raw

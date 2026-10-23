@@ -1,0 +1,12 @@
+{
+  "result": {
+    "type": "object",
+    "value": {
+      "prompt": "Android latest restored prompt",
+      "viewport": 80,
+      "target": 68,
+      "tap": { "x": 0.5, "y": 0.14166666666666666 },
+      "height": 44
+    }
+  }
+}

@@ -1,17 +1,31 @@
 import type { IMarker, Terminal } from '@xterm/xterm'
 import type { AgentStatusEntry } from './agent-status-types'
-import { findTerminalPromptRow } from './terminal-prompt-position'
+import { findTerminalPromptRow, terminalPromptWindow } from './terminal-prompt-position'
 
 type PromptStatus = Pick<
   AgentStatusEntry,
   'prompt' | 'promptInteractionKey' | 'turnStartedAt' | 'restoredUnconfirmed' | 'sessionBoundary'
 >
-type PromptAnchor = { text: string; key: string; marker: IMarker | undefined }
+type PromptAnchor = { text: string; key: string; marker: IMarker | undefined; positioned: boolean }
+const histories = new WeakMap<object, TerminalPromptHistory>()
 const MAX_PROMPTS = 200
+
+export function terminalPromptHistory(
+  terminal: Pick<Terminal, 'buffer' | 'registerMarker'>
+): TerminalPromptHistory {
+  const retained = histories.get(terminal)
+  if (retained) {
+    return retained
+  }
+  const history = new TerminalPromptHistory(terminal)
+  histories.set(terminal, history)
+  return history
+}
 
 /** Presentation history belongs to this terminal buffer, never to the execution host's status. */
 export class TerminalPromptHistory {
   private anchors: PromptAnchor[] = []
+  private scanKey = ''
 
   constructor(private terminal: Pick<Terminal, 'buffer' | 'registerMarker'>) {}
 
@@ -20,8 +34,8 @@ export class TerminalPromptHistory {
     if (!status) {
       return
     }
+    // Ending the agent leaves its terminal transcript readable.
     if (status.sessionBoundary) {
-      this.dispose()
       return
     }
     if (!status.prompt.trim()) {
@@ -46,9 +60,65 @@ export class TerminalPromptHistory {
       buffer.type === 'normal' && (matched !== null || (live && !status.restoredUnconfirmed))
         ? this.terminal.registerMarker((matched ?? cursor) - cursor)
         : undefined
-    this.anchors.push({ text: status.prompt, key, marker })
+    this.anchors.push({ text: status.prompt, key, marker, positioned: matched !== null })
     while (this.anchors.length > MAX_PROMPTS) {
       this.anchors.shift()?.marker?.dispose()
+    }
+  }
+
+  seedPrompts(prompts: readonly { id: string; text: string }[]): void {
+    const existing = new Set(this.anchors.map((anchor) => anchor.key))
+    const latestText = this.anchors.at(-1)?.text
+    const restored = prompts
+      .filter(
+        (prompt, index) =>
+          prompt.text.trim() &&
+          !existing.has(`transcript:${prompt.id}`) &&
+          !(index === prompts.length - 1 && prompt.text === latestText)
+      )
+      .slice(-MAX_PROMPTS)
+      .map((prompt) => ({
+        text: prompt.text,
+        key: `transcript:${prompt.id}`,
+        marker: undefined,
+        positioned: false
+      }))
+    const combined = [...restored, ...this.anchors]
+    for (const anchor of combined.slice(0, Math.max(0, combined.length - MAX_PROMPTS))) {
+      anchor.marker?.dispose()
+    }
+    this.anchors = combined.slice(-MAX_PROMPTS)
+    this.scanKey = ''
+  }
+
+  /** Replay and delayed output can place a prompt after its status was accepted. */
+  refreshPositions(): void {
+    this.prune()
+    const buffer = this.terminal.buffer.active
+    if (buffer.type !== 'normal') {
+      return
+    }
+    const key = `${buffer.viewportY}:${buffer.baseY}:${buffer.cursorY}:${this.anchors.length}`
+    if (key === this.scanKey) {
+      return
+    }
+    this.scanKey = key
+    const find = terminalPromptWindow(buffer, buffer.viewportY)
+    for (const anchor of this.anchors) {
+      if (!anchor.positioned) {
+        const row = find(anchor.text)
+        const shortSeed = anchor.key.startsWith('transcript:') && anchor.text.trim().length < 12
+        const rowText =
+          row === null ? '' : (buffer.getLine(row)?.translateToString(true).trimStart() ?? '')
+        if (row !== null && (!shortSeed || /^(?:>|❯|›|you\s*[:>])/i.test(rowText))) {
+          const marker = this.terminal.registerMarker(row - (buffer.baseY + buffer.cursorY))
+          if (marker) {
+            anchor.marker?.dispose()
+            anchor.marker = marker
+            anchor.positioned = true
+          }
+        }
+      }
     }
   }
 
@@ -58,13 +128,17 @@ export class TerminalPromptHistory {
     if (buffer.type === 'alternate' || buffer.viewportY >= buffer.baseY) {
       return this.anchors.at(-1)
     }
-    for (let i = this.anchors.length - 1; i >= 0; i--) {
-      const anchor = this.anchors[i]
-      if (anchor.marker && anchor.marker.line <= buffer.viewportY) {
-        return anchor
+    let selected: PromptAnchor | undefined
+    for (const anchor of this.anchors) {
+      if (
+        anchor.marker &&
+        anchor.marker.line <= buffer.viewportY &&
+        (!selected?.marker || anchor.marker.line >= selected.marker.line)
+      ) {
+        selected = anchor
       }
     }
-    return undefined
+    return selected
   }
 
   current(): string | null {
@@ -98,6 +172,7 @@ export class TerminalPromptHistory {
       if (refined) {
         anchor.marker?.dispose()
         anchor.marker = refined
+        anchor.positioned = true
       }
     }
     return anchor.marker?.line ?? null

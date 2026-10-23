@@ -1,0 +1,5 @@
+$ pnpm run typecheck:web
+$ pnpm run build:packages && node config/scripts/run-typecheck-projects-in-parallel.mjs --project=config/tsconfig.tc.web.json
+$ pnpm --filter @orca/process-host build
+$ tsx --conditions=orca-source scripts/build-dist.mjs
+✓ No type errors in 15,343 files [12.45s]
