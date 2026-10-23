@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 import { startRuntimeCapabilityProbe } from '../transport/runtime-capability-probe'
+import { TERMINAL_MODEL_CONTROL_CAPABILITY } from '../../../src/shared/terminal-model-control'
 import {
   supportsMobileQuickCommands,
   terminalQuickCommandAgentPromptMaxLength
@@ -37,6 +38,7 @@ export function useMobileSessionTabReconciliation(scope: MobileSessionMarkdownAc
     setAgentSessionHistorySupported,
     setAgentSessionHostSupport,
     setQuickCommandsSupported,
+    setTerminalModelControlSupported,
     setQuickCommandAgentPromptMaxLength,
     nativeChatStream,
     fetchTerminals,
@@ -152,6 +154,7 @@ export function useMobileSessionTabReconciliation(scope: MobileSessionMarkdownAc
 
   useEffect(() => {
     if (!client || connState !== 'connected') {
+      setTerminalModelControlSupported(false)
       setBrowserScreencastSupported(null)
       setAgentSessionHistorySupported(null)
       setAgentSessionHostSupport(null)
@@ -163,6 +166,7 @@ export function useMobileSessionTabReconciliation(scope: MobileSessionMarkdownAc
     }
     // Why: a client swap can keep the route connected while moving to an older
     // host; clear the prior capability before exposing host-specific actions.
+    setTerminalModelControlSupported(false)
     setBrowserScreencastSupported(null)
     setAgentSessionHistorySupported(null)
     setAgentSessionHostSupport(null)
@@ -173,6 +177,7 @@ export function useMobileSessionTabReconciliation(scope: MobileSessionMarkdownAc
     // Why: the probe retries — a relay→direct cutover or request timeout rejects
     // status.get without changing connState, which used to latch these hidden.
     return startRuntimeCapabilityProbe(client, (capabilities) => {
+      setTerminalModelControlSupported(capabilities.includes(TERMINAL_MODEL_CONTROL_CAPABILITY))
       setBrowserScreencastSupported(capabilities.includes('browser.screencast.v1'))
       setAgentSessionHistorySupported(capabilities.includes(MOBILE_AI_VAULT_CAPABILITY))
       setAgentSessionHostSupport(structuredAgentSessionHostSupport(capabilities))
