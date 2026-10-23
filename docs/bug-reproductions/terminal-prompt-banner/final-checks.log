@@ -1,0 +1,30 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (config/vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+  - ESM syntax in a file loaded as CommonJS (config/scripts/vitest-node-runtime-pool.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /job/src
+
+ ✓ |node| src/renderer/src/components/terminal-pane/terminal-prompt-history.test.ts (5 tests) 23ms
+ ✓ |node| src/renderer/src/components/terminal-pane/pane-top-warning-banner.test.tsx (2 tests) 20ms
+ ✓ |node| src/renderer/src/components/terminal-pane/TerminalPromptBanner.test.tsx (1 test) 34ms
+
+ Test Files  3 passed (3)
+      Tests  8 passed (8)
+   Start at  22:08:25
+   Duration  679ms (environment 48%, import 21%, transform 18%, tests 6%, setup 4%, worker 2%)
+
+$ pnpm run typecheck:web
+$ pnpm run build:packages && node config/scripts/run-typecheck-projects-in-parallel.mjs --project=config/tsconfig.tc.web.json
+$ pnpm --filter @orca/process-host build
+$ tsx --conditions=orca-source scripts/build-dist.mjs
+✓ No type errors in 15,341 files [19.08s]
+$ node config/scripts/check-changed-code-quality.mjs HEAD
+code quality: 0 new finding(s) across 6 changed file(s).
+casting code quality: 0 new finding(s) across 6 changed file(s).
+focused plugins: 0 new finding(s) across 6 changed file(s).
+type-aware code quality: 0 new finding(s) across 6 changed file(s).
+React Doctor: 0 new finding(s) across 6 changed file(s).
+design system: 0 new finding(s) across 6 changed file(s).
+casting SAFETY: rationale: 0 new finding(s) across 6 changed file(s).
+Changed-code quality gate passed since d635d665f92d.
