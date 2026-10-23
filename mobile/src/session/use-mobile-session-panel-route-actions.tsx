@@ -67,7 +67,10 @@ export function useMobileSessionPanelRouteActions(scope: MobileSessionPresentati
             renderIcon: () => <MobileAgentIcon agentId={option.agent} size={16} />,
             onPress: () => {
               setShowCreateTabDrawer(false)
-              void handleCreateTerminal(option.agent)
+              void handleCreateTerminal(
+                option.agent,
+                option.command ? { startupCommand: option.command } : undefined
+              )
             }
           }))
         : createTabAgentLoadState === 'loaded'
@@ -106,24 +109,26 @@ export function useMobileSessionPanelRouteActions(scope: MobileSessionPresentati
             }
           ]
         : createTabAgentOptions.length > 0
-          ? createTabAgentOptions.map((option) => ({
-              label: option.label,
-              hint: 'New agent session',
-              icon: Bot,
-              onPress: () => {
-                const delivery = pendingDiffNotesDelivery
-                setPendingDiffNotesDelivery(null)
-                if (!delivery) {
-                  return
-                }
-                void sendDiffNotesToNewAgent(delivery, async () => {
-                  await handleCreateTerminal(option.agent, {
-                    initialPrompt: delivery.prompt,
-                    onPromptSent: () => void clearDeliveredDiffComments(delivery.comments)
+          ? createTabAgentOptions
+              .filter((option) => !option.variantId)
+              .map((option) => ({
+                label: option.label,
+                hint: 'New agent session',
+                icon: Bot,
+                onPress: () => {
+                  const delivery = pendingDiffNotesDelivery
+                  setPendingDiffNotesDelivery(null)
+                  if (!delivery) {
+                    return
+                  }
+                  void sendDiffNotesToNewAgent(delivery, async () => {
+                    await handleCreateTerminal(option.agent, {
+                      initialPrompt: delivery.prompt,
+                      onPromptSent: () => void clearDeliveredDiffComments(delivery.comments)
+                    })
                   })
-                })
-              }
-            }))
+                }
+              }))
           : createTabAgentLoadState === 'loaded'
             ? [
                 {

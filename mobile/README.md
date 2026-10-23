@@ -19,6 +19,25 @@ The Node commands `pnpm rpc:diff` and `pnpm rpc:record` use a development depend
 - Expo Go on your phone, or a development client build when native modules are needed
 - Phone and desktop on the same LAN when testing a physical phone
 
+### Nix and direnv
+
+From the repository root, run `direnv allow` once. The root `.envrc` loads the
+flake, which provides JDK 17, Android API 36, Build Tools 36.0.0, NDK
+27.1.12297006, CMake 3.30.5, platform tools, and an Android emulator image. It sets
+`JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT` for Expo and Gradle. The
+environment also applies after `cd mobile`.
+
+Create an Android virtual device once, using `x86_64` on Intel/AMD or
+`arm64-v8a` on ARM:
+
+```bash
+avdmanager create avd -n orca-android -k "system-images;android-36;google_apis;x86_64"
+emulator -avd orca-android
+```
+
+On ARM, replace `x86_64` in the image name with `arm64-v8a`. Run the app with
+`cd mobile && pnpm android` after the emulator is running.
+
 ## Start Desktop Orca
 
 From the repository root:

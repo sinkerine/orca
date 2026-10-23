@@ -274,3 +274,10 @@ export const AgentTeamsPrepareLaunch = z.object({
   env: z.record(z.string(), z.string()).optional(),
   prepareAuth: z.boolean().optional()
 })
+
+export const TerminalModelControl = z.object({
+  terminal: requiredString('Missing terminal handle'),
+  action: z.enum(['open', 'select', 'cancel', 'release']),
+  transactionId: z.string().uuid().optional(),
+  optionId: z.string().uuid().optional()
+})

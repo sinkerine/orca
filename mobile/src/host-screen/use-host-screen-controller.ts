@@ -71,6 +71,7 @@ export function useHostScreenController({
   const now = useNow(30_000)
   const { hostCapabilities, floatingWorkspaceEnabled } = useHostProtocolGates()
   const state = useHostScreenState(hostId, action)
+  const [showNewProject, setShowNewProject] = useState(false)
   const settings = useHostViewSettings({ client, connState, state })
   const hostDisplay = useHostDisplay(
     hostId && state.hostName
@@ -193,6 +194,12 @@ export function useHostScreenController({
     setDismissedNotice,
     settings,
     showNewWorktree,
+    showNewProject,
+    setShowNewProject,
+    refreshProjectCatalog: () => {
+      void fetchRepoMetadata({ force: true, queueIfInFlight: true })
+      void catalog.fetchWorktrees({ allowDuringModal: true })
+    },
     state
   }
 }

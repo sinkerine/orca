@@ -1,0 +1,9 @@
+{
+  "capturedAt": "2026-10-22T20:31:06.601Z",
+  "platform": "linux",
+  "command": ["/job/tools/node_modules/.bin/pi"],
+  "cols": 60,
+  "rows": 24,
+  "note": null,
+  "exitCode": 129
+}

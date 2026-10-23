@@ -1,3 +1,4 @@
+import { terminalModelInputAllowed } from '../../../runtime/terminal-model-input-lease'
 import type { IpcMainEvent, IpcMainInvokeEvent } from 'electron'
 import type { PtyRendererDelivery } from '../session'
 import type { OrcaRuntimeService } from '../../../runtime/orca-runtime'
@@ -112,6 +113,9 @@ export function createPtyWriteInput(deps: {
     data: string,
     verify: boolean
   ): boolean | Promise<boolean> => {
+    if (!terminalModelInputAllowed(id)) {
+      return false
+    }
     if (!verify) {
       return provider.write(id, data) !== false
     }

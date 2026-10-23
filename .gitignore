@@ -47,6 +47,7 @@ package-lock.json
 .env.local
 .env.*.local
 /.direnv/
+/.android-test/
 /.envrc.local
 
 # IDE
@@ -103,6 +104,8 @@ design-docs/
 # Durable docs that should be tracked must live in one of the allow-listed
 # locations below (assets, readme, STYLEGUIDE, and mobile terminal shortcut bar).
 docs/**
+!docs/reference/
+!docs/reference/android-nix-emulator.md
 !docs/
 # The deployable docs app is source, not local engineering notes.
 !docs/site/
