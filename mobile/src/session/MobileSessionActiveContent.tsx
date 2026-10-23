@@ -201,6 +201,13 @@ export function MobileSessionActiveContent({
         <TerminalPaneView
           key={terminal.handle}
           handle={terminal.handle}
+          promptStatus={
+            controller.sessionTabs.flatMap((tab) =>
+              tab.type === 'terminal' && tab.terminal === terminal.handle && tab.agentStatus
+                ? [tab.agentStatus]
+                : []
+            )[0]
+          }
           active={terminal.handle === activeHandle}
           keyboardLift={terminal.handle === activeHandle ? activeTerminalKeyboardLift : 0}
           terminalTheme={terminal.terminalTheme}

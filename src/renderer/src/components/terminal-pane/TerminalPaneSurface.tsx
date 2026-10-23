@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { TerminalPaneFileDropOwner } from './TerminalPaneFileDropOwner'
+import { TerminalPromptBanner } from './TerminalPromptBanner'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
 import TerminalSearch from '@/components/TerminalSearch'
 import { DaemonActionDialog } from '@/components/shared/useDaemonActions'
@@ -185,6 +186,14 @@ export function TerminalPaneSurface({
           cwd={cwd}
           managerRef={managerRef}
           paneTransportsRef={paneTransportsRef}
+        />
+      ))}
+      {managedPanes.map((pane) => (
+        <TerminalPromptBanner
+          key={makePaneKey(tabId, pane.leafId)}
+          pane={pane}
+          tabId={tabId}
+          visible={!(effectiveChatViewMode && activePaneIsChatLeaf && pane.id === activePane?.id)}
         />
       ))}
       <TerminalPaneCodexRestartPortals controller={controller} />

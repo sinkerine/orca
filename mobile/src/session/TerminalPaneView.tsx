@@ -10,6 +10,7 @@ import type {
 
 type TerminalPaneViewProps = {
   handle: string
+  promptStatus?: import('../../../src/shared/agent-status-types').AgentStatusEntry | null
   active: boolean
   keyboardLift: number
   terminalTheme?: MobileTerminalTheme
@@ -33,6 +34,7 @@ type TerminalPaneViewProps = {
 
 export function TerminalPaneView({
   handle,
+  promptStatus,
   active,
   keyboardLift,
   terminalTheme,
@@ -73,6 +75,7 @@ export function TerminalPaneView({
     >
       <TerminalWebView
         ref={setRef}
+        promptStatus={promptStatus}
         style={styles.terminalWebView}
         terminalTheme={terminalTheme}
         textScale={textScale}

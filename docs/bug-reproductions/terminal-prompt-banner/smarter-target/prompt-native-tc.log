@@ -1,0 +1,3 @@
+native config/tsconfig.tc.web.json exited with signal SIGKILL
+Found 0 warnings and 0 errors.
+Finished in 87ms on 3 files with 181 rules using 4 threads.
