@@ -23,6 +23,28 @@ describe('mobile new-tab agent options', () => {
     ).toEqual([{ agent: 'codex', label: 'Codex' }])
   })
 
+  it('adds normalized variants only for enabled agents detected on the execution host', () => {
+    expect(
+      buildMobileNewTabAgentOptions(
+        {
+          defaultTuiAgent: 'codex',
+          disabledTuiAgents: ['claude'],
+          agentLaunchVariants: [
+            { id: 'fast', name: ' Fast ', agent: 'codex', command: ' codex --fast ' },
+            { id: 'fast', name: 'Duplicate', agent: 'codex', command: 'codex' },
+            { id: 'disabled', name: 'Disabled', agent: 'claude', command: 'claude' },
+            { id: 'missing', name: 'Missing', agent: 'gemini', command: 'gemini' },
+            { id: 'invalid', name: 'Invalid', agent: 'codex', command: ' ' }
+          ]
+        },
+        ['claude', 'codex']
+      )
+    ).toEqual([
+      { agent: 'codex', label: 'Codex' },
+      { agent: 'codex', label: 'Codex: Fast', variantId: 'fast', command: 'codex --fast' }
+    ])
+  })
+
   it('does not show stale presets while detection is pending', () => {
     expect(buildMobileNewTabAgentOptions({ defaultTuiAgent: 'codex' }, null)).toEqual([])
   })
