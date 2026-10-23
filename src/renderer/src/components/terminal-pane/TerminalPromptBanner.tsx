@@ -5,7 +5,12 @@ import type { ManagedPane } from '@/lib/pane-manager/pane-manager'
 import { useAppStore } from '@/store'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { useReservePaneTopSpace } from './PaneTopWarningBanner'
-import { TerminalPromptHistory } from '../../../../shared/terminal-prompt-history'
+import type { TerminalPromptHistory } from '../../../../shared/terminal-prompt-history'
+import { terminalPromptHistory } from '../../../../shared/terminal-prompt-history'
+import { terminalTranscriptPrompts } from '../../../../shared/terminal-transcript-prompts'
+import { getNativeChatSessionTransport } from '../native-chat/native-chat-session-transport'
+import { runtimeEnvironmentIdWithLegacyFallbackUnlessTwin } from '@/lib/worktree-runtime-owner'
+import { isNativeChatSupportedAgent } from '../../../../shared/native-chat-agent-support'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -76,10 +81,13 @@ export function TerminalPromptBanner({
     jumpable: false
   })
   useEffect(() => {
-    const history = new TerminalPromptHistory(pane.terminal)
+    const history = terminalPromptHistory(pane.terminal)
+    let disposed = false
+    let transcriptIdentity = ''
     historyRef.current = history
     const paneKey = makePaneKey(tabId, pane.leafId)
     const refresh = (): void => {
+      history.refreshPositions()
       const text = history.current()
       const known = history.hasPrompts()
       const jumpable = history.canAttemptJump()
@@ -90,8 +98,33 @@ export function TerminalPromptBanner({
       )
     }
     const acceptStatus = (live: boolean): void => {
-      history.acceptStatus(useAppStore.getState().agentStatusByPaneKey[paneKey], live)
+      const state = useAppStore.getState()
+      const status = state.agentStatusByPaneKey[paneKey]
+      history.acceptStatus(status, live)
       refresh()
+      const provider = status?.providerSession
+      const agent = status?.agentType
+      const identity = JSON.stringify([agent, provider?.id, provider?.transcriptPath])
+      if (
+        provider?.id &&
+        agent &&
+        isNativeChatSupportedAgent(agent) &&
+        identity !== transcriptIdentity
+      ) {
+        transcriptIdentity = identity
+        const transport = getNativeChatSessionTransport(
+          runtimeEnvironmentIdWithLegacyFallbackUnlessTwin(state, status.worktreeId)
+        )
+        void transport
+          .readSession(agent, provider.id, 200, provider.transcriptPath)
+          .then((result) => {
+            if (!disposed && transcriptIdentity === identity && 'messages' in result) {
+              history.seedPrompts(terminalTranscriptPrompts(result.messages))
+              refresh()
+            }
+          })
+          .catch(() => {})
+      }
     }
     acceptStatus(false)
     const unsubscribe = useAppStore.subscribe((state, previous) => {
@@ -103,11 +136,11 @@ export function TerminalPromptBanner({
     const parsed = pane.terminal.onWriteParsed(refresh)
     const buffer = pane.terminal.buffer.onBufferChange(refresh)
     return () => {
+      disposed = true
       unsubscribe()
       scroll.dispose()
       parsed.dispose()
       buffer.dispose()
-      history.dispose()
       historyRef.current = null
     }
   }, [pane.terminal, pane.leafId, tabId])

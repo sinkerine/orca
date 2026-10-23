@@ -29,7 +29,7 @@ export type { TerminalWebViewHandle } from './terminal-webview-contract'
  */
 export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
   function TerminalWebView(props, ref) {
-    const prompt = useTerminalPromptBanner(props.promptStatus)
+    const prompt = useTerminalPromptBanner(props.promptStatus, props.promptClient)
     const hostRef = useRef<View>(null)
     const documentRef = useRef<TerminalWebDocument | null>(null)
     // The document reports itself ready from inside the mount call, through the seam below, so the

@@ -1,0 +1,13 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (config/vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+  - ESM syntax in a file loaded as CommonJS (config/scripts/vitest-node-runtime-pool.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 /home/sinkerine/orca/workspaces/orca/last-prompt
+
+
+ Test Files  3 passed (3)
+      Tests  15 passed (15)
+   Start at  18:13:42
+   Duration  1.11s (transform 48%, environment 22%, import 21%, tests 6%, setup 2%, worker 1%)
+

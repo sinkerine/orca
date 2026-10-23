@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { Terminal } from '@xterm/headless'
-import { TerminalPromptHistory } from '../../../../shared/terminal-prompt-history'
+import {
+  TerminalPromptHistory,
+  terminalPromptHistory
+} from '../../../../shared/terminal-prompt-history'
 
 const terminals: Terminal[] = []
 function fixture(scrollback = 1000) {
@@ -18,6 +21,45 @@ afterEach(() => {
 })
 
 describe('viewport prompt context', () => {
+  it('selects by buffer position even when seeded prompts follow retained sessions', async () => {
+    const { terminal, history, write } = fixture()
+    await write(`> Retained old prompt\r\n${'old\r\n'.repeat(15)}`)
+    history.acceptStatus({ prompt: 'Retained old prompt' })
+    await write(`> Seeded later prompt\r\n${'later\r\n'.repeat(15)}`)
+    history.seedPrompts([{ id: 'later', text: 'Seeded later prompt' }])
+    terminal.scrollToLine(20)
+    history.refreshPositions()
+    expect(history.current()).toBe('Seeded later prompt')
+  })
+
+  it('updates scroll context from prompts loaded after mount and replay', async () => {
+    const { terminal, history, write } = fixture()
+    history.acceptStatus({ prompt: 'Newest prompt' }, false)
+    history.seedPrompts([{ id: 'old', text: 'Earlier prompt' }])
+    await write(
+      `> Earlier prompt\r\n${'old response\r\n'.repeat(
+        15
+      )}> Newest prompt\r\n${'new response\r\n'.repeat(15)}`
+    )
+    terminal.scrollToLine(5)
+    history.refreshPositions()
+    expect(history.current()).toBe('Earlier prompt')
+    terminal.scrollToLine(20)
+    history.refreshPositions()
+    expect(history.current()).toBe('Newest prompt')
+    expect(history.currentLine()).toBe(16)
+  })
+
+  it('retains history across banner remounts for the same terminal only', () => {
+    const a = fixture()
+    const b = fixture()
+    const retained = terminalPromptHistory(a.terminal)
+    retained.acceptStatus({ prompt: 'Retained prompt' })
+    expect(terminalPromptHistory(a.terminal)).toBe(retained)
+    expect(terminalPromptHistory(a.terminal).current()).toBe('Retained prompt')
+    expect(terminalPromptHistory(b.terminal).current()).toBeNull()
+  })
+
   it('resolves a status mounted before scrollback replay on the first click', async () => {
     const { history, write } = fixture()
     history.acceptStatus({ prompt: 'Replay this prompt', restoredUnconfirmed: true }, false)
@@ -122,6 +164,8 @@ describe('viewport prompt context', () => {
     history.acceptStatus(undefined)
     expect(history.hasPrompts()).toBe(true)
     history.acceptStatus({ prompt: '', sessionBoundary: true })
+    expect(history.hasPrompts()).toBe(true)
+    history.dispose()
     expect(terminal.markers).toHaveLength(0)
     expect(history.current()).toBeNull()
   })
@@ -137,6 +181,6 @@ describe('viewport prompt context', () => {
     expect(b.history.current()).toBe('B')
     await a.write('\u001b[?1049l')
     a.history.acceptStatus({ prompt: 'ended', sessionBoundary: true })
-    expect(a.history.current()).toBeNull()
+    expect(a.history.current()).toBe('alternate turn')
   })
 })

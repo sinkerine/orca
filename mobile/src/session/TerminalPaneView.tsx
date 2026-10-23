@@ -11,6 +11,7 @@ import type {
 type TerminalPaneViewProps = {
   handle: string
   promptStatus?: import('../../../src/shared/agent-status-types').AgentStatusEntry | null
+  promptClient?: import('../transport/rpc-client').RpcClient | null
   active: boolean
   keyboardLift: number
   terminalTheme?: MobileTerminalTheme
@@ -35,6 +36,7 @@ type TerminalPaneViewProps = {
 export function TerminalPaneView({
   handle,
   promptStatus,
+  promptClient,
   active,
   keyboardLift,
   terminalTheme,
@@ -76,6 +78,7 @@ export function TerminalPaneView({
       <TerminalWebView
         ref={setRef}
         promptStatus={promptStatus}
+        promptClient={promptClient}
         style={styles.terminalWebView}
         terminalTheme={terminalTheme}
         textScale={textScale}

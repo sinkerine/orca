@@ -12,10 +12,16 @@ export function findTerminalPromptRow(
   after = -1,
   before = buffer.length
 ): number | null {
-  const needle = prompt.replace(/\s+/g, ' ').trim()
-  if (!needle || needle.length > MAX_PROMPT_CHARACTERS) {
-    return null
-  }
+  return terminalPromptWindow(buffer, near, after, before)(prompt)
+}
+
+/** One buffer walk serves every candidate prompt for a viewport refresh. */
+export function terminalPromptWindow(
+  buffer: IBuffer,
+  near: number,
+  after = -1,
+  before = buffer.length
+): (prompt: string) => number | null {
   const first = Math.max(0, after + 1, near - SEARCH_RADIUS)
   const last = Math.min(buffer.length - 1, before - 1, near + SEARCH_RADIUS)
   let text = ''
@@ -43,19 +49,25 @@ export function findTerminalPromptRow(
       }
     }
     if (text.length > MAX_SEARCH_CHARACTERS) {
-      return null
+      return () => null
     }
   }
-  const index = text.indexOf(needle)
-  if (index === -1 || text.includes(needle, index + 1)) {
-    return null
+  return (prompt) => {
+    const needle = prompt.replace(/\s+/g, ' ').trim()
+    if (!needle || needle.length > MAX_PROMPT_CHARACTERS) {
+      return null
+    }
+    const index = text.indexOf(needle)
+    if (index === -1 || text.includes(needle, index + 1)) {
+      return null
+    }
+    // A partial word in an answer is not evidence of the submitted prompt.
+    if (
+      (index > 0 && /[\p{L}\p{N}_]/u.test(text[index - 1])) ||
+      /[\p{L}\p{N}_]/u.test(text[index + needle.length] ?? '')
+    ) {
+      return null
+    }
+    return rows[index] ?? null
   }
-  // A partial word in an answer is not evidence of the submitted prompt.
-  if (
-    (index > 0 && /[\p{L}\p{N}_]/u.test(text[index - 1])) ||
-    /[\p{L}\p{N}_]/u.test(text[index + needle.length] ?? '')
-  ) {
-    return null
-  }
-  return rows[index] ?? null
 }
