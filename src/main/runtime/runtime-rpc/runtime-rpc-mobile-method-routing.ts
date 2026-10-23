@@ -148,6 +148,7 @@ export const EXECUTION_HOST_METHODS = [
   'orchestration.workerTerminalUserInput',
   'projectGroup.list',
   'repo.baseRefDefault',
+  'repo.create',
   'repo.gitAvailable',
   'repo.hooks',
   'repo.list',

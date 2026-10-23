@@ -20,8 +20,24 @@
       devShells = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs {
+            inherit system;
+            config.android_sdk.accept_license = true;
+            config.allowUnfree = true;
+          };
           node = pkgs.nodejs_24;
+          androidSdk =
+            (pkgs.androidenv.composeAndroidPackages {
+              platformVersions = [ "36" ];
+              buildToolsVersions = [ "36.0.0" ];
+              cmakeVersions = [ "3.30.5" ];
+              includeNDK = true;
+              ndkVersions = [ "27.1.12297006" ];
+              includeEmulator = true;
+              includeSystemImages = true;
+              systemImageTypes = [ "google_apis" ];
+              abiVersions = [ (if pkgs.stdenv.hostPlatform.isAarch64 then "arm64-v8a" else "x86_64") ];
+            }).androidsdk;
           pnpm = pkgs.writeShellScriptBin "pnpm" ''
             exec ${node}/bin/corepack pnpm "$@"
           '';
@@ -79,7 +95,10 @@
               pkgs.python3
               pkgs.ripgrep
               pkgs.stdenv.cc
-            ] ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux linuxRuntimeLibraries;
+              pkgs.jdk17
+              androidSdk
+            ]
+            ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux linuxRuntimeLibraries;
 
             shellHook =
               pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
@@ -87,6 +106,9 @@
               ''
               + ''
                 export npm_config_node_gyp="${pkgs.node-gyp}/bin/node-gyp"
+                export JAVA_HOME="${pkgs.jdk17}"
+                export ANDROID_HOME="${androidSdk}/libexec/android-sdk"
+                export ANDROID_SDK_ROOT="$ANDROID_HOME"
               '';
           };
         }

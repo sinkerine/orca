@@ -122,6 +122,16 @@ export function HostScreenHeader({ controller }: { controller: HostScreenControl
             />
           </Pressable>
         ) : null}
+        <Pressable
+          style={[styles.searchToggle, connState !== 'connected' && styles.toolbarIconDisabled]}
+          onPress={() => controller.setShowNewProject(true)}
+          disabled={connState !== 'connected'}
+          accessibilityRole="button"
+          accessibilityLabel="New project"
+          hitSlop={8}
+        >
+          <Text style={styles.filterChipText}>New project</Text>
+        </Pressable>
         {embedded && onHideSidebar ? (
           <Pressable
             style={styles.sidebarCollapseButton}
