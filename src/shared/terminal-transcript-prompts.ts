@@ -1,3 +1,9 @@
+import { isNativeChatSupportedAgent } from './native-chat-agent-support'
+
+export function hasTerminalPromptTranscript(agent: string): boolean {
+  return agent === 'pi' || isNativeChatSupportedAgent(agent)
+}
+
 /** Only checked transcript user prose can supply historical prompt text. */
 export function terminalTranscriptPrompts(
   messages: readonly unknown[]
