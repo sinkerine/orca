@@ -116,6 +116,44 @@ it('gives static/search no agent actions while loading, retaining settings and g
   model.mockRestore()
 })
 
+it('renders saved variants in the static menu and selects the saved command', () => {
+  cleanup()
+  const variant = {
+    agent: 'pi' as const,
+    label: 'Pi: Pi luna fast',
+    aliases: [],
+    variantId: 'luna-fast',
+    command: 'pi-luna-fast'
+  }
+  const onLaunchVariant = vi.fn()
+  render(
+    <ProjectedAgentMenuItems
+      runLaunch={vi.fn()}
+      variantOptions={[variant]}
+      onLaunchVariant={onLaunchVariant}
+      model={{
+        state: 'settled',
+        rows: [{ kind: 'terminal', agent: 'pi' }],
+        detection: {
+          detectedIds: ['pi'],
+          detectionFailed: false,
+          needsServerUpdate: false,
+          isLoading: false,
+          isRefreshing: false,
+          refresh: async () => []
+        }
+      }}
+    />
+  )
+  const label = document.querySelectorAll('span')
+  const variantLabel = [...label].find((element) => element.textContent === variant.label)
+  expect(variantLabel).toBeDefined()
+  fireEvent.click(variantLabel!)
+  expect(document.body.textContent).toContain('Pi: Pi luna fast')
+  expect(onLaunchVariant).toHaveBeenCalledWith(variant)
+  cleanup()
+})
+
 it('shows the existing inventory failure alongside truthful disabled chat rows', () => {
   render(
     <ProjectedAgentMenuItems
