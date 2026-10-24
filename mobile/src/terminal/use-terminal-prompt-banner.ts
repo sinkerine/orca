@@ -5,10 +5,12 @@ import {
   TerminalPromptHistory,
   terminalPromptHistory
 } from '../../../src/shared/terminal-prompt-history'
-import { terminalTranscriptPrompts } from '../../../src/shared/terminal-transcript-prompts'
+import {
+  hasTerminalPromptTranscript,
+  terminalTranscriptPrompts
+} from '../../../src/shared/terminal-transcript-prompts'
 import type { RpcClient } from '../transport/rpc-client'
 import { nativeChatSessionPageRead } from '../session/mobile-session-read-operations'
-import { isNativeChatSupportedAgent } from '../../../src/shared/native-chat-agent-support'
 
 type PromptTerminal = Pick<
   Terminal,
@@ -71,7 +73,7 @@ export function useTerminalPromptBanner(
   const transcriptPath = status?.providerSession?.transcriptPath
   useEffect(() => {
     seededRef.current = []
-    if (!client || !agent || !sessionId || !isNativeChatSupportedAgent(agent)) {
+    if (!client || !agent || !sessionId || !hasTerminalPromptTranscript(agent)) {
       return
     }
     let cancelled = false

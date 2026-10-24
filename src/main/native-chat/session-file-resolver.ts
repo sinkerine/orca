@@ -164,7 +164,7 @@ async function resolveSessionFileById(
   options: ResolveSessionFileOptions,
   signal?: AbortSignal
 ): Promise<string | null> {
-  if (transcriptAgent === 'opencode') {
+  if (transcriptAgent === 'opencode' || transcriptAgent === 'pi') {
     return null
   }
   const trimmedId = sessionId.trim()
