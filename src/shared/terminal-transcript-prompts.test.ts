@@ -1,5 +1,14 @@
 import { expect, it } from 'vitest'
-import { terminalTranscriptPrompts } from './terminal-transcript-prompts'
+import {
+  hasTerminalPromptTranscript,
+  terminalTranscriptPrompts
+} from './terminal-transcript-prompts'
+
+it('loads Pi prompt history without enabling legacy Pi Chat UI', () => {
+  expect(hasTerminalPromptTranscript('pi')).toBe(true)
+  expect(hasTerminalPromptTranscript('claude')).toBe(true)
+  expect(hasTerminalPromptTranscript('unknown')).toBe(false)
+})
 
 it('extracts user text only and checks untrusted transcript shapes', () => {
   expect(

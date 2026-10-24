@@ -50,6 +50,25 @@ describe('viewport prompt context', () => {
     expect(history.currentLine()).toBe(16)
   })
 
+  it('recovers earlier prompt markers after a TUI clears and redraws its history', async () => {
+    const { terminal, history, write } = fixture()
+    const transcript = `> Earlier prompt\r\n${'old response\r\n'.repeat(15)}> Newest prompt\r\n${'new response\r\n'.repeat(15)}`
+    await write(transcript)
+    history.acceptStatus({ prompt: 'Newest prompt' }, false)
+    history.seedPrompts([{ id: 'old', text: 'Earlier prompt' }])
+    terminal.scrollToLine(5)
+    history.refreshPositions()
+    expect(history.current()).toBe('Earlier prompt')
+    await write('\u001b[2J\u001b[3J\u001b[H')
+    await write(transcript)
+    terminal.scrollToLine(5)
+    history.refreshPositions()
+    expect(history.current()).toBe('Earlier prompt')
+    expect(history.currentLine()).toBe(0)
+    terminal.scrollToBottom()
+    expect(history.current()).toBe('Newest prompt')
+  })
+
   it('retains history across banner remounts for the same terminal only', () => {
     const a = fixture()
     const b = fixture()
