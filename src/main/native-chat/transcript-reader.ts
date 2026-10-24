@@ -75,7 +75,7 @@ export async function readNativeChatTranscript(
     if (transcriptAgent === 'grok') {
       return { messages: await readTranscript(filePath, decodeGrokTranscriptLine) }
     }
-    if (transcriptAgent === 'omp') {
+    if (transcriptAgent === 'omp' || transcriptAgent === 'pi') {
       return { messages: await readTranscript(filePath, decodeOmpTranscriptLine) }
     }
     return { error: `Unsupported agent for Chat UI transcript: ${agent}` }

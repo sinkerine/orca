@@ -47,7 +47,7 @@ export function nativeChatLineDecoderForAgent(agent: AgentType): NativeChatLineD
   if (transcriptAgent === 'grok') {
     return decodeGrokTranscriptLine
   }
-  if (transcriptAgent === 'omp') {
+  if (transcriptAgent === 'omp' || transcriptAgent === 'pi') {
     return decodeOmpTranscriptLine
   }
   return null

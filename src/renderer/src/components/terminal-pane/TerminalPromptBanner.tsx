@@ -7,10 +7,12 @@ import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { useReservePaneTopSpace } from './PaneTopWarningBanner'
 import type { TerminalPromptHistory } from '../../../../shared/terminal-prompt-history'
 import { terminalPromptHistory } from '../../../../shared/terminal-prompt-history'
-import { terminalTranscriptPrompts } from '../../../../shared/terminal-transcript-prompts'
+import {
+  hasTerminalPromptTranscript,
+  terminalTranscriptPrompts
+} from '../../../../shared/terminal-transcript-prompts'
 import { getNativeChatSessionTransport } from '../native-chat/native-chat-session-transport'
 import { runtimeEnvironmentIdWithLegacyFallbackUnlessTwin } from '@/lib/worktree-runtime-owner'
-import { isNativeChatSupportedAgent } from '../../../../shared/native-chat-agent-support'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -108,7 +110,7 @@ export function TerminalPromptBanner({
       if (
         provider?.id &&
         agent &&
-        isNativeChatSupportedAgent(agent) &&
+        hasTerminalPromptTranscript(agent) &&
         identity !== transcriptIdentity
       ) {
         transcriptIdentity = identity

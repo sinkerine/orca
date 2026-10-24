@@ -191,6 +191,8 @@ export class TerminalPromptHistory {
     for (const anchor of this.anchors) {
       if (anchor.marker?.isDisposed) {
         anchor.marker = undefined
+        anchor.positioned = false
+        this.scanKey = ''
       }
     }
   }
