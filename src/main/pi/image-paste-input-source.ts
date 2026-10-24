@@ -1,0 +1,36 @@
+// Runs on the execution host, where clipboard uploads were saved.
+export function getPiImagePasteInputSourceLines(): string[] {
+  return [
+    "  pi.on('input', async (event, ctx) => {",
+    "    if (!process.env.ORCA_PANE_KEY || isOmpRuntime() || event.source === 'extension') return",
+    "    const fs = require('fs')",
+    "    const path = require('path')",
+    '    const images = [...(event.images ?? [])]',
+    '    let matched = false',
+    '    let failure = false',
+    '    const text = event.text.replace(/@?"([^"\\r\\n]+)"|@?\'([^\'\\r\\n]+)\'|@?([^\\s"\']+)/g, (token, doubleQuoted, singleQuoted, bare) => {',
+    "      const filePath = (doubleQuoted ?? singleQuoted ?? bare).replace(/^@/, '')",
+    '      if (!path.isAbsolute(filePath) || !/^orca-paste-[\\w-]+\\.png$/i.test(path.basename(filePath))) return token',
+    '      matched = true',
+    '      try {',
+    '        const size = fs.statSync(filePath).size',
+    "        if (size < 8 || size > 18 * 1024 * 1024) throw new Error('Invalid pasted image size')",
+    '        const data = fs.readFileSync(filePath)',
+    "        if (data.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') throw new Error('Invalid pasted PNG')",
+    "        images.push({ type: 'image', data: data.toString('base64'), mimeType: 'image/png' })",
+    "        return ''",
+    '      } catch {',
+    '        failure = true',
+    '        return token',
+    '      }',
+    '    })',
+    '    if (!matched) return',
+    '    if (failure) {',
+    '      ctx.ui?.setEditorText?.(event.text)',
+    "      ctx.ui?.notify?.('Pasted image could not be read on the agent host. Paste it again.', 'error')",
+    "      return { action: 'handled' }",
+    '    }',
+    "    return { action: 'transform', text: text.trim(), images }",
+    '  })'
+  ]
+}

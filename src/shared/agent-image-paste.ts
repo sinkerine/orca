@@ -16,6 +16,7 @@ const IMAGE_ATTACHMENT_AGENTS: ReadonlySet<string> = new Set<string>([
   'cursor',
   'copilot',
   'droid',
+  'pi',
   // Why: Grok CLI pastes images via bracketed path / image chips (see xAI
   // terminal docs + pager paste.rs). Keep it on the same attachment path as
   // Claude/Codex rather than treating path paste as unsupported text.
@@ -45,6 +46,9 @@ export function formatNativeChatFileReference(filePath: string): string {
 }
 
 export function formatAgentImagePath(agent: string | null | undefined, filePath: string): string {
+  if (agent === 'pi') {
+    return formatNativeChatFileReference(filePath)
+  }
   if (
     agent === 'omp' &&
     /[\s@]/.test(filePath) &&
