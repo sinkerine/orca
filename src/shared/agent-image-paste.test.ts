@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { fileURLToPath } from 'node:url'
-import { formatAgentImagePath } from './agent-image-paste'
+import { formatAgentImagePath, getAgentImageHandling } from './agent-image-paste'
+
+it('Pi uses quoted file references that its managed input handler attaches', () => {
+  expect(getAgentImageHandling('pi')).toBe('attachment')
+  expect(formatAgentImagePath('pi', '/tmp/screen shot/orca-paste-1-abc.png')).toBe(
+    '@"/tmp/screen shot/orca-paste-1-abc.png"'
+  )
+})
 
 describe('OMP image references', () => {
   it.each([
