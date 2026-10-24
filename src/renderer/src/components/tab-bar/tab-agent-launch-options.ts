@@ -102,9 +102,10 @@ export function buildTabAgentLaunchOptions(
 
 export function buildTabAgentLaunchOptionsFromRows(
   rows: readonly NewTabAgentMenuRow[],
-  commandOverrides: Partial<Record<TuiAgent, string>> = {}
+  commandOverrides: Partial<Record<TuiAgent, string>> = {},
+  variants: readonly AgentLaunchVariant[] = []
 ): TabAgentLaunchOption[] {
-  return rows.map((row) => {
+  const baseOptions = rows.map((row) => {
     const base = buildTabAgentLaunchOptions([row.agent], commandOverrides)[0]
     return {
       ...base,
@@ -117,7 +118,15 @@ export function buildTabAgentLaunchOptionsFromRows(
       id: row.kind === 'terminal' ? `agent:${row.agent}` : rowId(row)
     }
   })
-
+  const installedAgents = [
+    ...new Set(rows.filter((row) => row.kind !== 'chat-unavailable').map((row) => row.agent))
+  ]
+  const variantOptions = buildTabAgentLaunchOptions(
+    installedAgents,
+    commandOverrides,
+    variants
+  ).filter((option) => option.variantId)
+  return [...baseOptions, ...variantOptions]
 }
 
 // Scores how well a query matches an agent. Exact alias equality is the

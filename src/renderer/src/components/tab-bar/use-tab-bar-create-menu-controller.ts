@@ -1,11 +1,10 @@
-import { newAgentLaunchRequestId } from '@/lib/agent-launch-request-id'
-import { launchAgentInNewTab } from '@/lib/launch-agent-in-new-tab'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { focusTerminalTabSurface } from '@/lib/focus-terminal-tab-surface'
+import { focusNewActiveTerminalAfterDelay } from './tab-new-terminal-focus'
 import type { WindowsTerminalCapabilities } from '@/lib/windows-terminal-capabilities'
 import type { TabAgentLaunchOption } from './tab-agent-launch-options'
 import { useAppStore } from '../../store'
-import { useTabAgentMenuLaunch } from './QuickLaunchButton'
+import { launchTabAgentVariant, useTabAgentMenuLaunch } from './QuickLaunchButton'
 import { requestNativeChatComposerFocus } from '@/components/native-chat/use-native-chat-composer-reveal-focus'
 import { useNewTabAgentMenuRows, type NewTabAgentMenuModel } from './use-new-tab-agent-menu-rows'
 import type { AgentDetectionTarget } from '@/hooks/useDetectedAgents'
@@ -20,8 +19,6 @@ import type {
   getProjectRuntimeShellMenuMode,
   resolveWindowsPowerShellImplementationSetting
 } from './use-tab-bar-runtime-model'
-const NEW_TAB_MENU_TERMINAL_FOCUS_RETRY_MS = 50
-const NEW_TAB_MENU_TERMINAL_FOCUS_TIMEOUT_MS = 5000
 export type TabBarCreateMenuController = {
   agentMenu: NewTabAgentMenuModel
   agentLaunchOptions: TabAgentLaunchOption[]
@@ -94,9 +91,11 @@ export function useTabBarCreateMenuController({
     agentDetectionTarget
   )
   const commandOverrides = useAppStore((state) => state.settings?.agentCmdOverrides)
+  const launchVariants = useAppStore((state) => state.settings?.agentLaunchVariants)
   const agentLaunchOptions = buildTabAgentLaunchOptionsFromRows(
     agentMenu.state === 'settled' ? agentMenu.rows : [],
-    commandOverrides
+    commandOverrides,
+    launchVariants
   )
   const pendingNewTabMenuFocusRef = useRef<{ focus: () => void; synchronous?: true } | null>(null)
   const pendingNewTabMenuFocusAnimationRef = useRef<number | null>(null)
@@ -113,37 +112,16 @@ export function useTabBarCreateMenuController({
       pendingNewTabMenuFocusRetryRef.current = null
     }
   }
-  const focusNewActiveTerminalWhenReady = (
-    previousActiveTabId: string | null,
-    expiresAt: number,
-    now: number
-  ): void => {
-    const state = useAppStore.getState()
-    if (
-      (state.activeTabType === 'terminal' || state.activeTabType === 'simulator') &&
-      state.activeTabId &&
-      state.activeTabId !== previousActiveTabId
-    ) {
-      focusTerminalTabSurface(state.activeTabId)
-      return
-    }
-    if (now >= expiresAt) {
-      return
-    }
-    pendingNewTabMenuFocusRetryRef.current = window.setTimeout(() => {
-      pendingNewTabMenuFocusRetryRef.current = null
-      focusNewActiveTerminalWhenReady(previousActiveTabId, expiresAt, Date.now())
-    }, NEW_TAB_MENU_TERMINAL_FOCUS_RETRY_MS)
-  }
   const queueNewActiveTerminalFocusAfterNewTabMenuClose = (): void => {
     const previousActiveTabId = useAppStore.getState().activeTabId
     queueFocusAfterNewTabMenuClose(() => {
       // Why: paired web/SSH tab creation is async; await the host snapshot's new terminal instead of the pre-existing active tab.
-      focusNewActiveTerminalWhenReady(
-        previousActiveTabId,
-        Date.now() + NEW_TAB_MENU_TERMINAL_FOCUS_TIMEOUT_MS,
-        Date.now()
-      )
+      focusNewActiveTerminalAfterDelay(previousActiveTabId, (callback, delay) => {
+        pendingNewTabMenuFocusRetryRef.current = window.setTimeout(() => {
+          pendingNewTabMenuFocusRetryRef.current = null
+          callback()
+        }, delay)
+      })
     })
   }
   const queueTerminalTabFocusAfterNewTabMenuClose = (tabId: string): void =>
@@ -241,10 +219,8 @@ export function useTabBarCreateMenuController({
   })
   const launchAgentFromNewTabEntry = (option: TabAgentLaunchOption): void => {
     if (option.variantId) {
-      launchAgentInNewTab({ requestId: newAgentLaunchRequestId(), agent: option.agent, worktreeId, groupId: resolvedGroupId, launchCommandOverride: option.command, agentArgs: '', forceTerminal: true, launchSource: 'tab_bar_quick_launch' })
-      return
-    }
-    if (option.row) {
+      launchTabAgentVariant(option, worktreeId, resolvedGroupId)
+    } else if (option.row) {
       launchAgentRow(option.row)
     }
   }

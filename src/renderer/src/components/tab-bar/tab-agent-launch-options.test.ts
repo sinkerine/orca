@@ -137,6 +137,26 @@ describe('tab agent launch options', () => {
   })
 })
 
+it('keeps saved Pi variants in the row-based menu and search exactly once', () => {
+  const variants = [
+    { id: 'luna-fast', name: 'Pi luna fast', agent: 'pi' as const, command: 'pi-luna-fast' },
+    { id: 'missing', name: 'Missing Codex', agent: 'codex' as const, command: 'codex' }
+  ]
+  const options = buildTabAgentLaunchOptionsFromRows(
+    [
+      { kind: 'chat', agent: 'pi' },
+      { kind: 'cli', agent: 'pi' },
+      { kind: 'chat-unavailable', agent: 'codex', reason: 'not-installed' }
+    ],
+    {},
+    variants
+  )
+  expect(options.filter((option) => option.variantId)).toEqual([
+    expect.objectContaining({ variantId: 'luna-fast', agent: 'pi', command: 'pi-luna-fast' })
+  ])
+  expect(findMatchingTabAgentLaunchOptions('luna fast', options)[0]?.variantId).toBe('luna-fast')
+})
+
 it('projects the same CLI label, unavailable reason and stable chat ID as static rows', () => {
   const unavailable = buildTabAgentLaunchOptionsFromRows([
     { kind: 'chat-unavailable', agent: 'claude', reason: 'ssh' },

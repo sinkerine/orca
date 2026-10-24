@@ -1,3 +1,4 @@
+import type { TabAgentLaunchOption } from './tab-agent-launch-options'
 import React, { useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { launchAgentInNewTab } from '@/lib/launch-agent-in-new-tab'
@@ -165,14 +166,38 @@ function QuickLaunchAgentMenuItemsInner(props: QuickLaunchAgentMenuItemsProps): 
   return <ProjectedAgentMenuItems {...props} model={model} runLaunch={runLaunch} />
 }
 
+export function launchTabAgentVariant(
+  option: TabAgentLaunchOption,
+  worktreeId: string,
+  groupId: string
+): void {
+  if (!option.variantId) {
+    return
+  }
+  launchAgentInNewTab({
+    requestId: newAgentLaunchRequestId(),
+    agent: option.agent,
+    worktreeId,
+    groupId,
+    launchCommandOverride: option.command,
+    agentArgs: '',
+    forceTerminal: true,
+    launchSource: 'tab_bar_quick_launch'
+  })
+}
+
 export function ProjectedAgentMenuItems({
   disabled = false,
   model,
-  runLaunch
+  runLaunch,
+  variantOptions,
+  onLaunchVariant
 }: {
   disabled?: boolean
   model: NewTabAgentMenuModel
   runLaunch: (row: NewTabAgentMenuRow) => void
+  variantOptions?: readonly TabAgentLaunchOption[]
+  onLaunchVariant?: (option: TabAgentLaunchOption) => void
 }): React.JSX.Element {
   const defaultAgent = useAppStore((s) => s.settings?.defaultTuiAgent)
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
@@ -284,6 +309,17 @@ export function ProjectedAgentMenuItems({
           </React.Fragment>
         )
       })}
+      {variantOptions?.map((option) => (
+        <DropdownMenuItem
+          key={option.variantId}
+          variant="launch"
+          disabled={disabled}
+          onSelect={() => onLaunchVariant?.(option)}
+        >
+          <AgentIcon agent={option.agent} size={14} />
+          <span className="flex-1">{option.label}</span>
+        </DropdownMenuItem>
+      ))}
       <AgentSettingsMenuItem onSelect={openAgentSettings} />
     </>
   )
