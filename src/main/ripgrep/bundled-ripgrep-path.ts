@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync } from 'node:fs'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import { getAppEnvironment, hasAppEnvironment } from '../../shared/app-environment'
 import { quotePosixShell } from '../../shared/shell-argument-quoting'
 import {
@@ -81,6 +81,14 @@ export function resolveBundledRipgrepPath(platform: BundledRipgrepPlatform): str
  * spawn is routed into WSL. Falls back to PATH `rg` only in unpackaged dev/test hosts.
  */
 export function bundledRipgrepCommand(options: { wsl?: boolean } = {}): string {
+  // Distribution packages can supply a system tool without changing remote upload binaries.
+  const systemRipgrep = process.env.ORCA_RIPGREP_PATH
+  if (!options.wsl && systemRipgrep) {
+    if (!isAbsolute(systemRipgrep)) {
+      throw new Error('ORCA_RIPGREP_PATH must be an absolute executable path')
+    }
+    return systemRipgrep
+  }
   const os = options.wsl ? 'linux' : process.platform
   const platform = toBundledRipgrepPlatform(os, process.arch)
   const resolved = platform ? resolveBundledRipgrepPath(platform) : null

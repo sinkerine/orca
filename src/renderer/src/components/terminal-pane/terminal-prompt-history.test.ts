@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Terminal } from '@xterm/headless'
 import {
   TerminalPromptHistory,
@@ -30,6 +30,23 @@ describe('viewport prompt context', () => {
     terminal.scrollToLine(20)
     history.refreshPositions()
     expect(history.current()).toBe('Seeded later prompt')
+  })
+
+  it('skips the buffer scan at the live bottom and positions prompts once scrolled back', async () => {
+    const { terminal, history, write } = fixture()
+    history.acceptStatus({ prompt: 'Newest prompt' }, false)
+    history.seedPrompts([{ id: 'old', text: 'Earlier prompt' }])
+    await write(
+      `> Earlier prompt\r\n${'old\r\n'.repeat(15)}> Newest prompt\r\n${'new\r\n'.repeat(15)}`
+    )
+    const getLine = vi.spyOn(terminal.buffer.active, 'getLine')
+    history.refreshPositions()
+    expect(getLine).not.toHaveBeenCalled()
+    expect(history.current()).toBe('Newest prompt')
+    terminal.scrollToLine(5)
+    history.refreshPositions()
+    expect(getLine).toHaveBeenCalled()
+    expect(history.current()).toBe('Earlier prompt')
   })
 
   it('updates scroll context from prompts loaded after mount and replay', async () => {

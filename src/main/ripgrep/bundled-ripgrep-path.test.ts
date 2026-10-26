@@ -9,7 +9,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { runProcess } from '@orca/process-host'
 import { toBundledRipgrepPlatform } from '../../shared/bundled-ripgrep'
 import {
@@ -29,7 +29,22 @@ function setResourcesPath(value: string | undefined): void {
 describe('bundled ripgrep path', () => {
   afterEach(() => {
     setResourcesPath(originalResourcesPath)
+    vi.unstubAllEnvs()
     resetBundledRipgrepPathCacheForTests()
+  })
+
+  it('uses an absolute system executable for local search without changing WSL or uploads', () => {
+    const systemRipgrep = join(tmpdir(), 'system-tools', 'rg')
+    vi.stubEnv('ORCA_RIPGREP_PATH', systemRipgrep)
+    expect(bundledRipgrepCommand()).toBe(systemRipgrep)
+    expect(bundledRipgrepCommand({ wsl: true })).not.toBe(systemRipgrep)
+    const platform = toBundledRipgrepPlatform(process.platform, process.arch)!
+    expect(resolveBundledRipgrepPath(platform)).not.toBe(systemRipgrep)
+  })
+
+  it('rejects a relative system override instead of executing from the workspace', () => {
+    vi.stubEnv('ORCA_RIPGREP_PATH', 'rg')
+    expect(() => bundledRipgrepCommand()).toThrow('must be an absolute executable path')
   })
 
   it('resolves the checkout binary for this host in development', () => {

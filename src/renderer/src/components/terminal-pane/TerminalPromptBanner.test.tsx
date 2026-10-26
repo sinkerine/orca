@@ -17,6 +17,21 @@ vi.mock('@/lib/worktree-runtime-owner', () => ({
   runtimeEnvironmentIdWithLegacyFallbackUnlessTwin: () => null
 }))
 vi.mock('@/store', () => ({ useAppStore }))
+const idleQueue = vi.hoisted(() => new Set<() => void>())
+vi.mock('@/lib/input-quiet-scheduler', () => ({
+  scheduleAfterInputQuiet: (callback: () => void) => {
+    idleQueue.add(callback)
+    return () => idleQueue.delete(callback)
+  }
+}))
+const runIdle = (): void =>
+  act(() => {
+    const pending = [...idleQueue]
+    idleQueue.clear()
+    for (const callback of pending) {
+      callback()
+    }
+  })
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const cleanup: (() => void)[] = []
 afterEach(() => {
@@ -24,6 +39,7 @@ afterEach(() => {
     dispose()
   }
   subscribeTranscript.mockReset()
+  idleQueue.clear()
   useAppStore.subscribe.mockClear()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
@@ -58,7 +74,7 @@ it('keeps its reserved row above unknown history and releases listeners on unmou
   await act(async () => {
     root.render(
       <TooltipProvider>
-        <TerminalPromptBanner pane={{ leafId, terminal, container }} tabId="tab" visible />
+        <TerminalPromptBanner pane={{ leafId, terminal, container }} tabId="tab" visible active />
       </TooltipProvider>
     )
   })
@@ -73,8 +89,10 @@ it('keeps its reserved row above unknown history and releases listeners on unmou
     listener(state, { agentStatusByPaneKey: {} })
     await new Promise<void>((resolve) => terminal.write('output\r\n'.repeat(20), resolve))
   })
-  // Per-line scroll events coalesce: one refresh for the status, one for the output burst.
-  expect(refreshes).toHaveBeenCalledTimes(2)
+  // Status and per-line output events share one idle refresh; none runs inline.
+  expect(refreshes).not.toHaveBeenCalled()
+  runIdle()
+  expect(refreshes).toHaveBeenCalledOnce()
   const banner = container.querySelector('[data-terminal-prompt-banner]')
   const scroll = vi.spyOn(terminal, 'scrollToLine')
   act(() => container.querySelector('button')?.click())
@@ -85,11 +103,65 @@ it('keeps its reserved row above unknown history and releases listeners on unmou
     await new Promise<void>((resolve) => terminal.write('\u001b[3J', resolve))
     terminal.scrollToLine(0)
   })
+  runIdle()
   expect(container.querySelector('[data-terminal-prompt-banner]')).toBe(banner)
   expect(container.style.getPropertyValue('--orca-pane-top-banner-height')).toBe('28px')
   act(() => root.unmount())
   expect(unsubscribe).toHaveBeenCalledOnce()
   expect(container.style.getPropertyValue('--orca-pane-top-banner-height')).toBe('')
+})
+
+it('does no banner upkeep while its tab is hidden and catches up once shown', async () => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe(): void {}
+      disconnect(): void {}
+    }
+  )
+  const leafId = '327e0194-4617-4b8b-aa67-05abe97c93bc'
+  if (!isTerminalLeafId(leafId)) {
+    throw new Error('Invalid fixture leaf')
+  }
+  const state = { agentStatusByPaneKey: { [`tab:${leafId}`]: { prompt: 'Hidden prompt' } } }
+  useAppStore.getState.mockReturnValue(state)
+  useAppStore.subscribe.mockReturnValue(vi.fn())
+  const terminal = new Terminal({ cols: 80, rows: 5, allowProposedApi: true })
+  const host = document.createElement('div')
+  const container = document.createElement('div')
+  document.body.append(host, container)
+  const root = createRoot(host)
+  cleanup.push(() => {
+    act(() => root.unmount())
+    terminal.dispose()
+    host.remove()
+    container.remove()
+  })
+  const render = (active: boolean): void =>
+    root.render(
+      <TooltipProvider>
+        <TerminalPromptBanner
+          pane={{ leafId, terminal, container }}
+          tabId="tab"
+          visible
+          active={active}
+        />
+      </TooltipProvider>
+    )
+  const refreshes = vi.spyOn(TerminalPromptHistory.prototype, 'refreshPositions')
+  await act(async () => {
+    render(false)
+    await new Promise<void>((resolve) => terminal.write('output\r\n'.repeat(20), resolve))
+  })
+  runIdle()
+  expect(refreshes).not.toHaveBeenCalled()
+  expect(container.querySelector('[data-terminal-prompt-banner]')).toBeNull()
+  act(() => render(true))
+  runIdle()
+  expect(refreshes).toHaveBeenCalledOnce()
+  expect(container.querySelector('[data-terminal-prompt-banner]')?.textContent).toContain(
+    'Hidden prompt'
+  )
 })
 
 it.each(['pi', 'claude', 'codex'])(
@@ -145,10 +217,11 @@ it.each(['pi', 'claude', 'codex'])(
       )
       root.render(
         <TooltipProvider>
-          <TerminalPromptBanner pane={{ leafId, terminal, container }} tabId="tab" visible />
+          <TerminalPromptBanner pane={{ leafId, terminal, container }} tabId="tab" visible active />
         </TooltipProvider>
       )
     })
+    runIdle()
     act(() => {
       subscribeTranscript.mock.calls[0][1]({
         type: 'snapshot',
@@ -158,6 +231,7 @@ it.each(['pi', 'claude', 'codex'])(
         ]
       })
     })
+    runIdle()
     const banner = container.querySelector('[data-terminal-prompt-banner]')
     expect(subscribeTranscript).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -169,15 +243,19 @@ it.each(['pi', 'claude', 'codex'])(
       expect.any(Function)
     )
     expect(banner?.textContent).toContain('Newest prompt')
-    await act(async () => terminal.scrollToLine(5))
+    act(() => terminal.scrollToLine(5))
+    runIdle()
     expect(banner?.textContent).toContain('Earlier prompt')
-    await act(async () => terminal.scrollToLine(20))
+    act(() => terminal.scrollToLine(20))
+    runIdle()
     expect(banner?.textContent).toContain('Newest prompt')
-    await act(async () => terminal.scrollToLine(5))
+    act(() => terminal.scrollToLine(5))
+    runIdle()
     act(() => container.querySelector('button')?.click())
     expect(terminal.buffer.active.viewportY).toBe(0)
     expect(banner?.textContent).toContain('Earlier prompt')
-    await act(async () => terminal.scrollToBottom())
+    act(() => terminal.scrollToBottom())
+    runIdle()
     expect(banner?.textContent).toContain('Newest prompt')
     await act(async () => {
       await new Promise<void>((resolve) =>
@@ -194,6 +272,7 @@ it.each(['pi', 'claude', 'codex'])(
         ]
       })
     })
+    runIdle()
     expect(banner?.textContent).toContain('Prompt arriving after session start')
     act(() => root.unmount())
     expect(unsubscribeTranscript).toHaveBeenCalledOnce()

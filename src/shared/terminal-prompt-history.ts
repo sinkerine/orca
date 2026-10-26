@@ -95,7 +95,8 @@ export class TerminalPromptHistory {
   refreshPositions(): void {
     this.prune()
     const buffer = this.terminal.buffer.active
-    if (buffer.type !== 'normal') {
+    // At the live bottom the newest prompt is shown, so positions are only needed in history.
+    if (buffer.type !== 'normal' || buffer.viewportY >= buffer.baseY) {
       return
     }
     const key = `${buffer.viewportY}:${buffer.baseY}:${buffer.cursorY}:${this.anchors.length}`

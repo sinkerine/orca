@@ -6,6 +6,7 @@ import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { createBootstrapFatalExitBanner } from './config/build-plugins/bootstrap-fatal-exit-banner'
+import { createAppResourcesBanner } from './config/build-plugins/app-resources-banner'
 import { createPdfjsViewerAssetsPlugin } from './config/build-plugins/pdfjs-viewer-assets'
 import { createProcessHostDevRebuildPlugin } from './config/build-plugins/process-host-dev-rebuild'
 import { createViteCacheRetentionPlugin } from './config/build-plugins/vite-cache-retention'
@@ -205,6 +206,7 @@ function createMainBootstrapPlugin() {
       // prelude, too late to handle a missing bootstrap dependency.
       mainChunk.code =
         createBootstrapFatalExitBanner() +
+        createAppResourcesBanner() +
         createStartupDiagnosticsBanner(mainChunk.fileName) +
         mainChunk.code
     }

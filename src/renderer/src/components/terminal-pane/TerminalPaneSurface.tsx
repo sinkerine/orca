@@ -194,6 +194,7 @@ export function TerminalPaneSurface({
           pane={pane}
           tabId={tabId}
           visible={!(effectiveChatViewMode && activePaneIsChatLeaf && pane.id === activePane?.id)}
+          active={isActive}
         />
       ))}
       <TerminalPaneCodexRestartPortals controller={controller} />

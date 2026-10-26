@@ -14,11 +14,14 @@ import {
 import { getNativeChatSessionTransport } from '../native-chat/native-chat-session-transport'
 import { runtimeEnvironmentIdWithLegacyFallbackUnlessTwin } from '@/lib/worktree-runtime-owner'
 import { createUuidV4 } from '../../../../shared/uuid-v4'
+import { scheduleAfterInputQuiet } from '@/lib/input-quiet-scheduler'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 type PromptContext = { text: string | null; known: boolean; jumpable: boolean }
+// The banner is advisory; its upkeep waits for idle time so it never competes with output or paint.
+const REFRESH_SCHEDULE = { delayMs: 0, quietMs: 0, idleTimeoutMs: 250 }
 
 function PromptStrip({
   context,
@@ -64,7 +67,8 @@ function PromptStrip({
 export function TerminalPromptBanner({
   pane,
   tabId,
-  visible
+  visible,
+  active
 }: {
   pane: {
     terminal: Pick<
@@ -76,8 +80,12 @@ export function TerminalPromptBanner({
   }
   tabId: string
   visible: boolean
+  /** Hidden tabs defer all banner upkeep until they are shown again. */
+  active: boolean
 }): React.JSX.Element | null {
   const historyRef = useRef<TerminalPromptHistory | null>(null)
+  const activeRef = useRef(active)
+  const scheduleRefreshRef = useRef<(() => void) | null>(null)
   const [context, setContext] = useState<PromptContext>({
     text: null,
     known: false,
@@ -106,7 +114,7 @@ export function TerminalPromptBanner({
       const state = useAppStore.getState()
       const status = state.agentStatusByPaneKey[paneKey]
       history.acceptStatus(status, live)
-      refresh()
+      scheduleRefresh()
       const provider = status?.providerSession
       const agent = status?.agentType
       const identity = JSON.stringify([agent, provider?.id, provider?.transcriptPath])
@@ -134,38 +142,40 @@ export function TerminalPromptBanner({
               const prompts = terminalTranscriptPrompts(frame.messages)
               if (prompts.length > 0) {
                 history.seedPrompts(prompts, frame.type === 'appended')
-                refresh()
+                scheduleRefresh()
               }
             }
           }
         )
       }
     }
+    let cancelRefresh: (() => void) | null = null
+    // Output fires onScroll per line feed; listeners only arm one idle refresh.
+    const scheduleRefresh = (): void => {
+      if (cancelRefresh || !activeRef.current) {
+        return
+      }
+      cancelRefresh = scheduleAfterInputQuiet(() => {
+        cancelRefresh = null
+        if (!disposed) {
+          refresh()
+        }
+      }, REFRESH_SCHEDULE)
+    }
+    scheduleRefreshRef.current = scheduleRefresh
     acceptStatus(false)
     const unsubscribe = useAppStore.subscribe((state, previous) => {
       if (state.agentStatusByPaneKey[paneKey] !== previous.agentStatusByPaneKey[paneKey]) {
         acceptStatus(true)
       }
     })
-    // Output fires onScroll per line feed; one refresh per parsed burst is enough.
-    let refreshQueued = false
-    const queueRefresh = (): void => {
-      if (refreshQueued) {
-        return
-      }
-      refreshQueued = true
-      queueMicrotask(() => {
-        refreshQueued = false
-        if (!disposed) {
-          refresh()
-        }
-      })
-    }
-    const scroll = pane.terminal.onScroll(queueRefresh)
-    const parsed = pane.terminal.onWriteParsed(queueRefresh)
-    const buffer = pane.terminal.buffer.onBufferChange(queueRefresh)
+    const scroll = pane.terminal.onScroll(scheduleRefresh)
+    const parsed = pane.terminal.onWriteParsed(scheduleRefresh)
+    const buffer = pane.terminal.buffer.onBufferChange(scheduleRefresh)
     return () => {
       disposed = true
+      cancelRefresh?.()
+      scheduleRefreshRef.current = null
       unsubscribe()
       unsubscribeTranscript?.()
       scroll.dispose()
@@ -174,6 +184,12 @@ export function TerminalPromptBanner({
       historyRef.current = null
     }
   }, [pane.terminal, pane.leafId, tabId])
+  useEffect(() => {
+    activeRef.current = active
+    if (active) {
+      scheduleRefreshRef.current?.()
+    }
+  }, [active])
   const jump = (): void => {
     const line = historyRef.current?.currentLine(true)
     if (line !== null && line !== undefined) {
