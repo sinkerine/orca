@@ -15,6 +15,7 @@ import { routeTerminalQueryReply } from './terminal-webview-query-reply-routing'
 import { useTerminalWebViewReadyPromises } from './terminal-webview-ready-promises'
 import { createTerminalWriteCoalescer } from './terminal-write-coalescer'
 import { isTerminalGestureInput } from './terminal-gesture-input'
+import { useTerminalPromptBanner } from './use-terminal-prompt-banner'
 
 /**
  * Everything `TerminalWebView` does that is not about `react-native-webview`.
@@ -114,6 +115,13 @@ export function useTerminalWebViewController(
     [pendingMessages, sendToDocument]
   )
 
+  const prompt = useTerminalPromptBanner(
+    props.promptStatus,
+    props.promptClient,
+    props.promptActive ?? true,
+    postMessage
+  )
+
   // Why: a busy PTY delivers ~200 stream frames/s; coalescing here collapses the
   // per-frame bridge + WebKit IPC + paint cost that runs the phone hot (#9302).
   const writeCoalescer = useMemo(
@@ -139,6 +147,7 @@ export function useTerminalWebViewController(
       // Why: reload clears queued commands, so readiness must always restore the
       // native-selected theme even when its value did not change in React.
       sendToDocument({ type: 'set-theme', terminalTheme })
+      prompt.replay(sendToDocument)
       flushPendingMessages()
     },
     [
@@ -146,6 +155,7 @@ export function useTerminalWebViewController(
       clearWebReadyWatchdog,
       flushPendingMessages,
       onWebReady,
+      prompt.replay,
       sendToDocument,
       terminalTheme
     ]
@@ -163,6 +173,9 @@ export function useTerminalWebViewController(
         writeCoalescer.markInteractive()
       }
 
+      if (prompt.receive(msg)) {
+        return
+      }
       if (msg.type === 'web-ready') {
         // Why: nothing subscribes before ready, so a ready's box only sizes the subscribe after it.
         cellBoxRef.current = readTerminalCellBox(msg)
@@ -217,6 +230,7 @@ export function useTerminalWebViewController(
       onOpenUrl,
       onTextScaleChange,
       onCellBoxChange,
+      prompt.receive,
       writeCoalescer
     ]
   )
@@ -334,6 +348,7 @@ export function useTerminalWebViewController(
   return {
     armWebReadyWatchdog,
     clearEngineError,
+    prompt: { ...prompt.context, jump: prompt.jump },
     confirmWebReady,
     engineError,
     handle,

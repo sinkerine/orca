@@ -15,6 +15,7 @@ import { stopTerminalInit } from './terminal-init'
 import { startTextScaling } from './text-scaling'
 import { stopViewportTransform } from './viewport-transform'
 import { startWebglRecovery, stopWebglRecovery } from './webgl-recovery'
+import { stopPromptBanner } from './prompt-banner'
 import type { TerminalDocumentScope } from './document-scope'
 import type { TerminalDocument, TerminalDocumentHost } from './document-host-seams'
 
@@ -82,6 +83,7 @@ export function stopTerminalDocument(scope: TerminalDocumentScope) {
   stopSelectionOverlay(scope)
   stopNormalBufferSmoothScroll(scope)
   stopHostNotify(scope)
+  stopPromptBanner(scope)
   stopTerminalInit(scope)
   stopWebglRecovery(scope)
   stopFitScale(scope)

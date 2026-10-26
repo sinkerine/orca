@@ -24,6 +24,7 @@ import type {
   TerminalInitialOscLink
 } from './document-terminal-shape'
 import type { TerminalMouseGesture } from './mouse-click-drag'
+import type { TerminalPromptBannerState } from './prompt-banner'
 import type { TerminalTouchState } from './surface-touch-gestures'
 import type { TerminalTouchDispatch } from './tap-dispatch'
 import type { TerminalDocumentThemeMessage } from './terminal-theme'
@@ -118,6 +119,8 @@ export type TerminalDocumentState = {
   afterDrainCallbacks: (() => void)[]
   /** `terminal-init`: whether the terminal has been initialised. */
   ready: boolean
+  /** `prompt-banner`: built on the first prompt input or terminal; the history lives with the terminal. */
+  promptBanner: TerminalPromptBannerState | null
   /** `normal-buffer-smooth-scroll`: sub-row scroll travel not yet committed to xterm. */
   smoothScrollOffsetY: number
   /** `normal-buffer-smooth-scroll`: scroll travel waiting for the next frame. */
@@ -271,6 +274,7 @@ function createTerminalDocumentState(): TerminalDocumentState {
     sgrMousePixelsMode: false,
     scrollIndicatorHideTimer: null,
     handledMessageIds: [],
+    promptBanner: null,
     currentTextScale: 1,
     terminalFontFamily: '',
     firstDataPending: false,

@@ -1,5 +1,6 @@
 import type { RuntimeMobileTerminalTheme } from '../../../src/shared/runtime-types'
 import type { TerminalOscLinkRange } from '../../../src/shared/terminal-osc-link-ranges'
+import type { TerminalPromptStatus } from '../../../src/shared/terminal-prompt-history'
 
 /** The frame React Native laid out, sent with each grid so the document fits a text-size change to it. */
 export type TerminalFrame = { width: number; height: number }
@@ -29,3 +30,13 @@ export type TerminalWebViewCommand =
   | { type: 'cancel-select'; id?: number }
   | { type: 'do-select-all'; id?: number }
   | { type: 'set-theme'; id?: number; terminalTheme?: RuntimeMobileTerminalTheme }
+  // The prompt banner's inputs; the document owns the history because it owns the terminal.
+  | { type: 'prompt-status'; id?: number; status: TerminalPromptStatus | null }
+  | {
+      type: 'prompt-seeds'
+      id?: number
+      prompts: readonly { id: string; text: string }[]
+      appended?: boolean
+    }
+  | { type: 'prompt-active'; id?: number; active: boolean }
+  | { type: 'prompt-jump'; id?: number }

@@ -1,102 +1,70 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Terminal } from '@xterm/xterm'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AgentStatusEntry } from '../../../src/shared/agent-status-types'
-import {
-  TerminalPromptHistory,
-  terminalPromptHistory
-} from '../../../src/shared/terminal-prompt-history'
+import type { TerminalPromptStatus } from '../../../src/shared/terminal-prompt-history'
 import {
   hasTerminalPromptTranscript,
   terminalTranscriptPrompts
 } from '../../../src/shared/terminal-transcript-prompts'
-import {
-  createTerminalPromptRefreshGate,
-  type TerminalPromptRefreshScheduler
-} from '../../../src/shared/terminal-prompt-refresh-gate'
 import type { RpcClient } from '../transport/rpc-client'
 import { nativeChatSessionPageRead } from '../session/mobile-session-read-operations'
+import type { TerminalWebViewCommand } from './terminal-webview-messages'
 
-// Safari has no requestIdleCallback, so a short timer stands in for idle time there.
-const scheduleIdleRefresh: TerminalPromptRefreshScheduler = (run) => {
-  if (typeof requestIdleCallback === 'function') {
-    const id = requestIdleCallback(run, { timeout: 250 })
-    return () => cancelIdleCallback(id)
-  }
-  const id = setTimeout(run, 50)
-  return () => clearTimeout(id)
-}
+export type TerminalPromptContext = { text: string; known: boolean; jumpable: boolean }
 
-type PromptTerminal = Pick<
-  Terminal,
-  'buffer' | 'registerMarker' | 'onScroll' | 'onWriteParsed' | 'scrollToLine'
->
+const EMPTY_CONTEXT: TerminalPromptContext = { text: '', known: false, jumpable: false }
 
+/**
+ * The banner's host half. The terminal document owns the prompt history, because it owns the
+ * terminal (inside the WebView on a phone); this feeds it status and transcript prompts and keeps
+ * the context it reports back.
+ */
 export function useTerminalPromptBanner(
   status: AgentStatusEntry | null | undefined,
-  client?: RpcClient | null,
-  active = true
+  client: RpcClient | null | undefined,
+  active: boolean,
+  post: (command: TerminalWebViewCommand) => void
 ) {
-  const current = useRef<{
-    terminal: PromptTerminal
-    history: TerminalPromptHistory
-    dispose: () => void
-  } | null>(null)
-  const statusRef = useRef(status)
-  const seededRef = useRef<ReturnType<typeof terminalTranscriptPrompts>>([])
-  const [context, setContext] = useState({ text: '', known: false, jumpable: false })
-  const update = useCallback(() => {
-    const history = current.current?.history
-    history?.refreshPositions()
-    const text = history?.current() ?? ''
-    const known = history?.hasPrompts() ?? false
-    const jumpable = history?.canAttemptJump() ?? false
-    setContext((previous) =>
-      previous.text === text && previous.known === known && previous.jumpable === jumpable
-        ? previous
-        : { text, known, jumpable }
-    )
-  }, [])
-  const [gate] = useState(() =>
-    createTerminalPromptRefreshGate(update, scheduleIdleRefresh, active)
+  const [context, setContext] = useState(EMPTY_CONTEXT)
+  // Only what the banner reads crosses the bridge, and only when one of those fields changes.
+  const hasStatus = status !== null && status !== undefined
+  const prompt = status?.prompt
+  const promptInteractionKey = status?.promptInteractionKey
+  const turnStartedAt = status?.turnStartedAt
+  const restoredUnconfirmed = status?.restoredUnconfirmed
+  const sessionBoundary = status?.sessionBoundary
+  const promptStatus = useMemo<TerminalPromptStatus | null>(
+    () =>
+      hasStatus
+        ? {
+            prompt: prompt ?? '',
+            promptInteractionKey,
+            turnStartedAt,
+            restoredUnconfirmed,
+            sessionBoundary
+          }
+        : null,
+    [hasStatus, prompt, promptInteractionKey, turnStartedAt, restoredUnconfirmed, sessionBoundary]
   )
-  const refresh = gate.request
+  const seedsRef = useRef<ReturnType<typeof terminalTranscriptPrompts>>([])
+  const latestRef = useRef<{ status: TerminalPromptStatus | null; active: boolean }>({
+    status: null,
+    active
+  })
+
   useEffect(() => {
-    gate.setActive(active)
-    // Pausing rather than disposing survives StrictMode's effect replay on the same instance.
-    return () => gate.setActive(false)
-  }, [gate, active])
-  const attach = useCallback(
-    (terminal: PromptTerminal) => {
-      current.current?.dispose()
-      const history = terminalPromptHistory(terminal)
-      history.acceptStatus(statusRef.current ?? undefined, false)
-      history.seedPrompts(seededRef.current)
-      const scroll = terminal.onScroll(refresh)
-      const parsed = terminal.onWriteParsed(refresh)
-      const buffer = terminal.buffer.onBufferChange(refresh)
-      current.current = {
-        terminal,
-        history,
-        dispose: () => {
-          scroll.dispose()
-          parsed.dispose()
-          buffer.dispose()
-        }
-      }
-      refresh()
-    },
-    [refresh]
-  )
+    latestRef.current.status = promptStatus
+    post({ type: 'prompt-status', status: promptStatus })
+  }, [post, promptStatus])
   useEffect(() => {
-    statusRef.current = status
-    current.current?.history.acceptStatus(status ?? undefined)
-    refresh()
-  }, [status, refresh])
+    latestRef.current.active = active
+    post({ type: 'prompt-active', active })
+  }, [post, active])
+
   const agent = status?.agentType
   const sessionId = status?.providerSession?.id
   const transcriptPath = status?.providerSession?.transcriptPath
   useEffect(() => {
-    seededRef.current = []
+    seedsRef.current = []
     if (!client || !agent || !sessionId || !hasTerminalPromptTranscript(agent)) {
       return
     }
@@ -113,28 +81,47 @@ export function useTerminalPromptBanner(
           'messages' in value &&
           Array.isArray(value.messages)
         ) {
-          seededRef.current = terminalTranscriptPrompts(value.messages)
-          current.current?.history.seedPrompts(seededRef.current)
-          refresh()
+          seedsRef.current = terminalTranscriptPrompts(value.messages)
+          post({ type: 'prompt-seeds', prompts: seedsRef.current })
         }
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
-  }, [client, agent, sessionId, transcriptPath, refresh])
-  const detach = useCallback(() => {
-    current.current?.dispose()
-    current.current = null
-  }, [])
-  useEffect(() => detach, [detach])
-  const jump = useCallback(() => {
-    const active = current.current
-    const line = active?.history.currentLine(true)
-    if (active && line !== null && line !== undefined) {
-      active.terminal.scrollToLine(line)
-      update()
+  }, [client, agent, sessionId, transcriptPath, post])
+
+  /** A fresh document knows nothing; readiness hands it everything again. */
+  const replay = useCallback((send: (command: TerminalWebViewCommand) => void) => {
+    const latest = latestRef.current
+    send({ type: 'prompt-status', status: latest.status })
+    if (seedsRef.current.length > 0) {
+      send({ type: 'prompt-seeds', prompts: seedsRef.current })
     }
-  }, [update])
-  return { ...context, attach, detach, jump }
+    send({ type: 'prompt-active', active: latest.active })
+  }, [])
+
+  /** Takes the document's `prompt-context` notify; answers whether it was one. */
+  const receive = useCallback((msg: Record<string, unknown>) => {
+    if (msg.type !== 'prompt-context') {
+      return false
+    }
+    const next = {
+      text: typeof msg.text === 'string' ? msg.text : '',
+      known: msg.known === true,
+      jumpable: msg.jumpable === true
+    }
+    setContext((previous) =>
+      previous.text === next.text &&
+      previous.known === next.known &&
+      previous.jumpable === next.jumpable
+        ? previous
+        : next
+    )
+    return true
+  }, [])
+
+  const jump = useCallback(() => post({ type: 'prompt-jump' }), [post])
+
+  return { context, replay, receive, jump }
 }

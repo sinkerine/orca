@@ -102,14 +102,13 @@ function createPageWebglAddon(onFallback: (reason: string) => void) {
 export function mountTerminalWebDocument(
   host: HTMLElement,
   receive: (message: Record<string, unknown>) => void,
-  start: TerminalDocumentStart = { textScale: 1, shown: true },
-  onTerminal?: (terminal: Terminal) => void
+  start: TerminalDocumentStart = { textScale: 1, shown: true }
 ): TerminalWebDocument {
   ensureDocumentStyle()
   host.classList.add(HOST_CLASS)
   host.innerHTML = TERMINAL_DOCUMENT_MARKUP
   const viewport = pageViewport(host)
-  const started = startDocumentOrGiveTheHostBack(host, receive, start, viewport, onTerminal)
+  const started = startDocumentOrGiveTheHostBack(host, receive, start, viewport)
 
   return {
     send: (command) => {
@@ -138,11 +137,10 @@ function startDocumentOrGiveTheHostBack(
   host: HTMLElement,
   receive: (message: Record<string, unknown>) => void,
   start: TerminalDocumentStart,
-  viewport: PageViewport,
-  onTerminal?: (terminal: Terminal) => void
+  viewport: PageViewport
 ) {
   try {
-    return startPageDocument(host, receive, start, viewport, onTerminal)
+    return startPageDocument(host, receive, start, viewport)
   } catch (error) {
     host.innerHTML = ''
     host.classList.remove(HOST_CLASS)
@@ -195,8 +193,7 @@ function startPageDocument(
   host: HTMLElement,
   receive: (message: Record<string, unknown>) => void,
   start: TerminalDocumentStart,
-  viewport: PageViewport,
-  onTerminal?: (terminal: Terminal) => void
+  viewport: PageViewport
 ) {
   // Written by this document's own reporter: `startHostNotify` installs it through the seam below,
   // which here is a `window` error listener, and every error it forwards is appended before the
@@ -259,7 +256,6 @@ function startPageDocument(
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the shape is xterm's own, except that `getCell` takes back the cell xterm allocated and the document declares only the members it reads on one.
     createTerminal: (options) => {
       const terminal = new Terminal(options)
-      onTerminal?.(terminal)
       // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: xterm implements the document's narrowed terminal interface.
       return terminal as unknown as TerminalDocumentTerminal
     },

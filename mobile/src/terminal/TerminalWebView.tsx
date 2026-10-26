@@ -2,6 +2,7 @@ import { useRef, useCallback, useState, forwardRef, useImperativeHandle } from '
 import { Platform, View } from 'react-native'
 import { WebView, type WebViewMessageEvent } from 'react-native-webview'
 import type { TerminalWebViewHandle, TerminalWebViewProps } from './terminal-webview-contract'
+import { TerminalPromptBannerStrip } from './TerminalPromptBannerStrip'
 import { TerminalWebViewEngineErrorOverlay } from './terminal-webview-engine-error-state'
 import { TERMINAL_WEBVIEW_FRAME_STYLES } from './terminal-webview-frame-styles'
 import { xtermWebViewSource } from './terminal-webview-html'
@@ -24,6 +25,7 @@ export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
       clearEngineError,
       engineError,
       handle,
+      prompt,
       receive,
       reportNativeEngineError,
       resetReadiness
@@ -70,6 +72,7 @@ export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
 
     return (
       <View style={[TERMINAL_WEBVIEW_FRAME_STYLES.container, props.style]}>
+        <TerminalPromptBannerStrip context={prompt} onJump={prompt.jump} />
         <WebView
           ref={webViewRef}
           source={source}

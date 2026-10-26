@@ -11,6 +11,7 @@ import { resetEvictionCounter } from './selection-state-and-eviction'
 import { applyTerminalTheme } from './terminal-theme'
 import { init, resize, write } from './terminal-init'
 import { applyTextScale } from './text-scaling'
+import { jumpToPrompt, seedPrompts, setPromptActive, setPromptStatus } from './prompt-banner'
 import { resetWriteQueue } from './write-queue'
 
 /** One message from the host. Every field is optional because the router reads them by type. */
@@ -26,6 +27,10 @@ export type TerminalHostMessage = {
   oscLinks?: unknown
   data?: string
   frame?: { width: number; height: number } | null
+  status?: unknown
+  prompts?: unknown
+  appended?: boolean
+  active?: boolean
 }
 
 /** The frame React Native laid out, sent with every grid; null when absent or without a size. */
@@ -113,6 +118,14 @@ export function handleMsg(scope: TerminalDocumentScope, msg: TerminalHostMessage
       notify(scope, { type: 'selection-evicted' })
       cancelSelect(scope)
     }
+  } else if (msg.type === 'prompt-status') {
+    setPromptStatus(scope, msg.status)
+  } else if (msg.type === 'prompt-seeds') {
+    seedPrompts(scope, msg.prompts, msg.appended === true)
+  } else if (msg.type === 'prompt-active') {
+    setPromptActive(scope, msg.active !== false)
+  } else if (msg.type === 'prompt-jump') {
+    jumpToPrompt(scope)
   } else if (msg.type === 'reset-zoom') {
     applyFitScale(scope, 'reset-zoom-msg')
   } else if (msg.type === 'set-theme') {

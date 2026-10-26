@@ -17,6 +17,7 @@ import { attachTerminalQueryReplyBridge, resetTerminalDataReplyAuthority } from 
 import { cancelSelect } from './selection-mode'
 import { resetEvictionCounter } from './selection-state-and-eviction'
 import { beginTerminalSurfaceSwap, commitTerminalSurfaceSwap } from './surface-swap'
+import { attachPromptBanner } from './prompt-banner'
 import { attachTermObservers } from './term-observers'
 import { applyTerminalTheme } from './terminal-theme'
 import { attachWebglAddon, cancelWebglContextRecovery } from './webgl-recovery'
@@ -47,6 +48,7 @@ function openTerminal(scope: TerminalDocumentScope, cols: number, rows: number) 
     allowProposedApi: true
   })
   scope.term = term
+  attachPromptBanner(scope, term)
   term.open(scope.surface!)
   attachWebglAddon(scope, true)
   try {

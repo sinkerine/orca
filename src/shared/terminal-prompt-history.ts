@@ -2,7 +2,8 @@ import type { IMarker, Terminal } from '@xterm/xterm'
 import type { AgentStatusEntry } from './agent-status-types'
 import { findTerminalPromptRow, terminalPromptWindow } from './terminal-prompt-position'
 
-type PromptStatus = Pick<
+/** The status fields the banner reads; mobile sends only these across its WebView bridge. */
+export type TerminalPromptStatus = Pick<
   AgentStatusEntry,
   'prompt' | 'promptInteractionKey' | 'turnStartedAt' | 'restoredUnconfirmed' | 'sessionBoundary'
 >
@@ -29,7 +30,7 @@ export class TerminalPromptHistory {
 
   constructor(private terminal: Pick<Terminal, 'buffer' | 'registerMarker'>) {}
 
-  acceptStatus(status: PromptStatus | undefined, live = true): void {
+  acceptStatus(status: TerminalPromptStatus | undefined, live = true): void {
     // Feed loss is not a session boundary, especially over SSH.
     if (!status) {
       return

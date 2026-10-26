@@ -31,10 +31,15 @@ export function bundleDigestBuiltFrom(cwd: string, generator: string, member: st
  * Every line of a bundle that names a directory only the machine that built it has.
  *
  * Both shapes esbuild can emit when the working directory is not the one the sources live under: a
- * comment that is an absolute path, and one that climbs out with `../`.
+ * comment that is an absolute path, and one that climbs out with `../`. The repo's own `src/shared`,
+ * one level above `mobile/`, is the exception: relative to the pinned working directory, it is the
+ * same text on every machine.
  */
 export function machinePathCommentsIn(script: string): string[] {
   return script
     .split('\n')
-    .filter((line) => /^\s*\/\/ (\/|\.\.\/)/.test(line) || line.includes('/Users/'))
+    .filter(
+      (line) =>
+        /^\s*\/\/ (\/|\.\.\/(?!src\/shared\/[\w./-]+\.ts$))/.test(line) || line.includes('/Users/')
+    )
 }

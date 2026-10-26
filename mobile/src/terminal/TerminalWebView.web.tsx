@@ -1,7 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { Pressable, Text, View } from 'react-native'
-import { colors } from '../theme/mobile-theme'
-import { useTerminalPromptBanner } from './use-terminal-prompt-banner'
+import { View } from 'react-native'
+import { TerminalPromptBannerStrip } from './TerminalPromptBannerStrip'
 import type { TerminalWebViewHandle, TerminalWebViewProps } from './terminal-webview-contract'
 import { TerminalWebViewEngineErrorOverlay } from './terminal-webview-engine-error-state'
 import { TERMINAL_WEBVIEW_FRAME_STYLES } from './terminal-webview-frame-styles'
@@ -10,7 +9,6 @@ import { mountTerminalWebDocument, type TerminalWebDocument } from './terminal-w
 import { useTerminalWebViewController } from './use-terminal-webview-controller'
 
 type Props = TerminalWebViewProps
-const UNKNOWN_PROMPT = 'No prompt recorded at this position'
 
 export type { TerminalWebViewHandle } from './terminal-webview-contract'
 
@@ -29,11 +27,6 @@ export type { TerminalWebViewHandle } from './terminal-webview-contract'
  */
 export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
   function TerminalWebView(props, ref) {
-    const prompt = useTerminalPromptBanner(
-      props.promptStatus,
-      props.promptClient,
-      props.promptActive ?? true
-    )
     const hostRef = useRef<View>(null)
     const documentRef = useRef<TerminalWebDocument | null>(null)
     // The document reports itself ready from inside the mount call, through the seam below, so the
@@ -58,7 +51,7 @@ export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
       // were gone so was the component holding this handle.
       pingsOnForegroundRecovery: () => false
     })
-    const { clearEngineError, engineError, handle, receive, resetReadiness } = controller
+    const { clearEngineError, engineError, handle, prompt, receive, resetReadiness } = controller
     // The page's answer to the WebView's reload: drop the document and build another one. The host
     // element is keyed on it so React replaces the div rather than handing back one xterm left in.
     const [generation, setGeneration] = useState(0)
@@ -84,14 +77,8 @@ export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
       }
       let live
       try {
-        live = mountTerminalWebDocument(
-          host,
-          (message) => receiveRef.current?.(message),
-          atMount,
-          prompt.attach
-        )
+        live = mountTerminalWebDocument(host, (message) => receiveRef.current?.(message), atMount)
       } catch (error) {
-        prompt.detach()
         // A start that throws is the document's own failure and the factory has already unwound
         // it, so there is no handle and no engine ran: no `error` notify is coming. It goes down
         // the document's own reporting path, which names the cause in the overlay instead of
@@ -116,12 +103,11 @@ export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
       beforeMountRef.current = []
       return () => {
         documentRef.current = null
-        prompt.detach()
         live.dispose()
       }
       // Mounted once per generation: re-running this would throw away a live terminal and its
       // scrollback, and the controller's identity changes with every callback prop.
-    }, [atMount, generation, prompt.attach, prompt.detach])
+    }, [atMount, generation])
 
     const handleHostLayout = useCallback(() => {
       documentRef.current?.notifyViewport()
@@ -136,24 +122,7 @@ export const TerminalWebView = forwardRef<TerminalWebViewHandle, Props>(
 
     return (
       <View style={[TERMINAL_WEBVIEW_FRAME_STYLES.container, props.style]}>
-        {prompt.known && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={prompt.text || UNKNOWN_PROMPT}
-            accessibilityState={{ disabled: !prompt.jumpable }}
-            onPress={prompt.jump}
-            style={{
-              minHeight: 44,
-              paddingHorizontal: 12,
-              justifyContent: 'center',
-              backgroundColor: colors.bgPanel
-            }}
-          >
-            <Text numberOfLines={1} style={{ color: colors.textPrimary, fontSize: 12 }}>
-              {prompt.text || UNKNOWN_PROMPT}
-            </Text>
-          </Pressable>
-        )}
+        <TerminalPromptBannerStrip context={prompt} onJump={prompt.jump} />
         {/* Why: mounted with onLayout, so react-native-web observes it; the document sizes to this box. */}
         <View
           key={generation}
