@@ -13,6 +13,7 @@ import {
 } from '../../../../shared/terminal-transcript-prompts'
 import { getNativeChatSessionTransport } from '../native-chat/native-chat-session-transport'
 import { runtimeEnvironmentIdWithLegacyFallbackUnlessTwin } from '@/lib/worktree-runtime-owner'
+import { createUuidV4 } from '../../../../shared/uuid-v4'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -82,10 +83,12 @@ export function TerminalPromptBanner({
     known: false,
     jumpable: false
   })
+  // oxlint-disable-next-line react-doctor/effect-needs-cleanup -- Both subscriptions are disposed below; transcript ownership changes inside acceptStatus.
   useEffect(() => {
     const history = terminalPromptHistory(pane.terminal)
     let disposed = false
     let transcriptIdentity = ''
+    let unsubscribeTranscript: (() => void) | undefined
     historyRef.current = history
     const paneKey = makePaneKey(tabId, pane.leafId)
     const refresh = (): void => {
@@ -113,19 +116,29 @@ export function TerminalPromptBanner({
         hasTerminalPromptTranscript(agent) &&
         identity !== transcriptIdentity
       ) {
+        unsubscribeTranscript?.()
         transcriptIdentity = identity
         const transport = getNativeChatSessionTransport(
           runtimeEnvironmentIdWithLegacyFallbackUnlessTwin(state, status.worktreeId)
         )
-        void transport
-          .readSession(agent, provider.id, 200, provider.transcriptPath)
-          .then((result) => {
-            if (!disposed && transcriptIdentity === identity && 'messages' in result) {
-              history.seedPrompts(terminalTranscriptPrompts(result.messages))
-              refresh()
+        unsubscribeTranscript = transport.subscribe(
+          {
+            subscriptionId: `terminal-prompts:${createUuidV4()}`,
+            agent,
+            sessionId: provider.id,
+            limit: 200,
+            transcriptPath: provider.transcriptPath
+          },
+          (frame) => {
+            if (!disposed && transcriptIdentity === identity) {
+              const prompts = terminalTranscriptPrompts(frame.messages)
+              if (prompts.length > 0) {
+                history.seedPrompts(prompts, frame.type === 'appended')
+                refresh()
+              }
             }
-          })
-          .catch(() => {})
+          }
+        )
       }
     }
     acceptStatus(false)
@@ -134,12 +147,27 @@ export function TerminalPromptBanner({
         acceptStatus(true)
       }
     })
-    const scroll = pane.terminal.onScroll(refresh)
-    const parsed = pane.terminal.onWriteParsed(refresh)
-    const buffer = pane.terminal.buffer.onBufferChange(refresh)
+    // Output fires onScroll per line feed; one refresh per parsed burst is enough.
+    let refreshQueued = false
+    const queueRefresh = (): void => {
+      if (refreshQueued) {
+        return
+      }
+      refreshQueued = true
+      queueMicrotask(() => {
+        refreshQueued = false
+        if (!disposed) {
+          refresh()
+        }
+      })
+    }
+    const scroll = pane.terminal.onScroll(queueRefresh)
+    const parsed = pane.terminal.onWriteParsed(queueRefresh)
+    const buffer = pane.terminal.buffer.onBufferChange(queueRefresh)
     return () => {
       disposed = true
       unsubscribe()
+      unsubscribeTranscript?.()
       scroll.dispose()
       parsed.dispose()
       buffer.dispose()

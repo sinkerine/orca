@@ -66,7 +66,7 @@ export class TerminalPromptHistory {
     }
   }
 
-  seedPrompts(prompts: readonly { id: string; text: string }[]): void {
+  seedPrompts(prompts: readonly { id: string; text: string }[], appended = false): void {
     const existing = new Set(this.anchors.map((anchor) => anchor.key))
     const latestText = this.anchors.at(-1)?.text
     const restored = prompts
@@ -83,7 +83,7 @@ export class TerminalPromptHistory {
         marker: undefined,
         positioned: false
       }))
-    const combined = [...restored, ...this.anchors]
+    const combined = appended ? [...this.anchors, ...restored] : [...restored, ...this.anchors]
     for (const anchor of combined.slice(0, Math.max(0, combined.length - MAX_PROMPTS))) {
       anchor.marker?.dispose()
     }
@@ -103,6 +103,9 @@ export class TerminalPromptHistory {
       return
     }
     this.scanKey = key
+    if (this.anchors.every((anchor) => anchor.positioned)) {
+      return
+    }
     const find = terminalPromptWindow(buffer, buffer.viewportY)
     for (const anchor of this.anchors) {
       if (!anchor.positioned) {

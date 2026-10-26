@@ -7,6 +7,7 @@ import {
 it('loads Pi prompt history without enabling legacy Pi Chat UI', () => {
   expect(hasTerminalPromptTranscript('pi')).toBe(true)
   expect(hasTerminalPromptTranscript('claude')).toBe(true)
+  expect(hasTerminalPromptTranscript('codex')).toBe(true)
   expect(hasTerminalPromptTranscript('unknown')).toBe(false)
 })
 

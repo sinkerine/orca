@@ -6,11 +6,12 @@ import { Terminal } from '@xterm/headless'
 import { TerminalPromptBanner } from './TerminalPromptBanner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { isTerminalLeafId } from '../../../../shared/stable-pane-id'
+import { TerminalPromptHistory } from '../../../../shared/terminal-prompt-history'
 
 const useAppStore = vi.hoisted(() => ({ getState: vi.fn(), subscribe: vi.fn() }))
-const readSession = vi.hoisted(() => vi.fn())
+const subscribeTranscript = vi.hoisted(() => vi.fn())
 vi.mock('../native-chat/native-chat-session-transport', () => ({
-  getNativeChatSessionTransport: () => ({ readSession })
+  getNativeChatSessionTransport: () => ({ subscribe: subscribeTranscript })
 }))
 vi.mock('@/lib/worktree-runtime-owner', () => ({
   runtimeEnvironmentIdWithLegacyFallbackUnlessTwin: () => null
@@ -22,7 +23,7 @@ afterEach(() => {
   for (const dispose of cleanup.splice(0)) {
     dispose()
   }
-  readSession.mockReset()
+  subscribeTranscript.mockReset()
   useAppStore.subscribe.mockClear()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
@@ -66,11 +67,14 @@ it('keeps its reserved row above unknown history and releases listeners on unmou
     agentStatusByPaneKey: { 'tab:327e0194-4617-4b8b-aa67-05abe97c93bc': { prompt: 'Known prompt' } }
   }
   vi.mocked(useAppStore.getState).mockReturnValue(state)
+  const refreshes = vi.spyOn(TerminalPromptHistory.prototype, 'refreshPositions')
   await act(async () => {
     const listener = vi.mocked(useAppStore.subscribe).mock.calls[0][0]
     listener(state, { agentStatusByPaneKey: {} })
     await new Promise<void>((resolve) => terminal.write('output\r\n'.repeat(20), resolve))
   })
+  // Per-line scroll events coalesce: one refresh for the status, one for the output burst.
+  expect(refreshes).toHaveBeenCalledTimes(2)
   const banner = container.querySelector('[data-terminal-prompt-banner]')
   const scroll = vi.spyOn(terminal, 'scrollToLine')
   act(() => container.querySelector('button')?.click())
@@ -88,70 +92,114 @@ it('keeps its reserved row above unknown history and releases listeners on unmou
   expect(container.style.getPropertyValue('--orca-pane-top-banner-height')).toBe('')
 })
 
-it('loads Pi transcript prompts and changes the banner when scrolling through earlier turns', async () => {
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      observe(): void {}
-      disconnect(): void {}
-    }
-  )
-  const leafId = '327e0194-4617-4b8b-aa67-05abe97c93bc'
-  if (!isTerminalLeafId(leafId)) {
-    throw new Error('Invalid fixture leaf')
-  }
-  useAppStore.getState.mockReturnValue({
-    agentStatusByPaneKey: {
-      [`tab:${leafId}`]: {
-        agentType: 'pi',
-        prompt: 'Newest prompt',
-        worktreeId: 'workspace',
-        providerSession: { id: 'pi-session', transcriptPath: '/host/pi-session.jsonl' }
+it.each(['pi', 'claude', 'codex'])(
+  'loads %s transcript prompts and changes the banner when scrolling through earlier turns',
+  async (agent) => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
       }
+    )
+    const leafId = '327e0194-4617-4b8b-aa67-05abe97c93bc'
+    if (!isTerminalLeafId(leafId)) {
+      throw new Error('Invalid fixture leaf')
     }
-  })
-  useAppStore.subscribe.mockReturnValue(vi.fn())
-  readSession.mockResolvedValue({
-    messages: [
-      { id: 'old', role: 'user', blocks: [{ type: 'text', text: 'Earlier prompt' }] },
-      { id: 'new', role: 'user', blocks: [{ type: 'text', text: 'Newest prompt' }] }
-    ]
-  })
-  const terminal = new Terminal({ cols: 80, rows: 5, allowProposedApi: true })
-  const host = document.createElement('div')
-  const container = document.createElement('div')
-  document.body.append(host, container)
-  const root = createRoot(host)
-  cleanup.push(() => {
+    useAppStore.getState.mockReturnValue({
+      agentStatusByPaneKey: {
+        [`tab:${leafId}`]: {
+          agentType: agent,
+          prompt: 'Newest prompt',
+          worktreeId: 'workspace',
+          providerSession: {
+            id: `${agent}-session`,
+            transcriptPath: `/host/${agent}-session.jsonl`
+          }
+        }
+      }
+    })
+    useAppStore.subscribe.mockReturnValue(vi.fn())
+    const unsubscribeTranscript = vi.fn()
+    subscribeTranscript.mockImplementation((_args, onFrame) => {
+      onFrame({ type: 'snapshot', messages: [], pending: true })
+      return unsubscribeTranscript
+    })
+    const terminal = new Terminal({ cols: 80, rows: 5, allowProposedApi: true })
+    const host = document.createElement('div')
+    const container = document.createElement('div')
+    document.body.append(host, container)
+    const root = createRoot(host)
+    cleanup.push(() => {
+      act(() => root.unmount())
+      terminal.dispose()
+      host.remove()
+      container.remove()
+    })
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        terminal.write(
+          `> Earlier prompt\r\n${'old output\r\n'.repeat(15)}> Newest prompt\r\n${'new output\r\n'.repeat(15)}`,
+          resolve
+        )
+      )
+      root.render(
+        <TooltipProvider>
+          <TerminalPromptBanner pane={{ leafId, terminal, container }} tabId="tab" visible />
+        </TooltipProvider>
+      )
+    })
+    act(() => {
+      subscribeTranscript.mock.calls[0][1]({
+        type: 'snapshot',
+        messages: [
+          { id: 'old', role: 'user', blocks: [{ type: 'text', text: 'Earlier prompt' }] },
+          { id: 'new', role: 'user', blocks: [{ type: 'text', text: 'Newest prompt' }] }
+        ]
+      })
+    })
+    const banner = container.querySelector('[data-terminal-prompt-banner]')
+    expect(subscribeTranscript).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agent,
+        sessionId: `${agent}-session`,
+        limit: 200,
+        transcriptPath: `/host/${agent}-session.jsonl`
+      }),
+      expect.any(Function)
+    )
+    expect(banner?.textContent).toContain('Newest prompt')
+    await act(async () => terminal.scrollToLine(5))
+    expect(banner?.textContent).toContain('Earlier prompt')
+    await act(async () => terminal.scrollToLine(20))
+    expect(banner?.textContent).toContain('Newest prompt')
+    await act(async () => terminal.scrollToLine(5))
+    act(() => container.querySelector('button')?.click())
+    expect(terminal.buffer.active.viewportY).toBe(0)
+    expect(banner?.textContent).toContain('Earlier prompt')
+    await act(async () => terminal.scrollToBottom())
+    expect(banner?.textContent).toContain('Newest prompt')
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        terminal.write('❯ Prompt arriving after session start\r\n', resolve)
+      )
+      subscribeTranscript.mock.calls[0][1]({
+        type: 'appended',
+        messages: [
+          {
+            id: 'late',
+            role: 'user',
+            blocks: [{ type: 'text', text: 'Prompt arriving after session start' }]
+          }
+        ]
+      })
+    })
+    expect(banner?.textContent).toContain('Prompt arriving after session start')
     act(() => root.unmount())
+    expect(unsubscribeTranscript).toHaveBeenCalledOnce()
+    cleanup.pop()
     terminal.dispose()
     host.remove()
     container.remove()
-  })
-  await act(async () => {
-    await new Promise<void>((resolve) =>
-      terminal.write(
-        `> Earlier prompt\r\n${'old output\r\n'.repeat(15)}> Newest prompt\r\n${'new output\r\n'.repeat(15)}`,
-        resolve
-      )
-    )
-    root.render(
-      <TooltipProvider>
-        <TerminalPromptBanner pane={{ leafId, terminal, container }} tabId="tab" visible />
-      </TooltipProvider>
-    )
-  })
-  const banner = container.querySelector('[data-terminal-prompt-banner]')
-  expect(readSession).toHaveBeenCalledWith('pi', 'pi-session', 200, '/host/pi-session.jsonl')
-  expect(banner?.textContent).toContain('Newest prompt')
-  act(() => terminal.scrollToLine(5))
-  expect(banner?.textContent).toContain('Earlier prompt')
-  act(() => terminal.scrollToLine(20))
-  expect(banner?.textContent).toContain('Newest prompt')
-  act(() => terminal.scrollToLine(5))
-  act(() => container.querySelector('button')?.click())
-  expect(terminal.buffer.active.viewportY).toBe(0)
-  expect(banner?.textContent).toContain('Earlier prompt')
-  act(() => terminal.scrollToBottom())
-  expect(banner?.textContent).toContain('Newest prompt')
-})
+  }
+)
