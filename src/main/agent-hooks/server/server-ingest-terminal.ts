@@ -102,7 +102,6 @@ export abstract class AgentHookServerIngestTerminal extends AgentHookServerInges
     connectionId?: string | null
     terminalHandle?: string
     payload: ParsedAgentStatusPayload
-    providerSession?: AgentProviderSessionMetadata
     /** `process`: derived from the pane's foreground process rather than parsed from its bytes. */
     origin?: 'process'
     /** Drop this write when a hook has reported the pane since then (the hook owns that command). */
@@ -268,12 +267,6 @@ export abstract class AgentHookServerIngestTerminal extends AgentHookServerInges
       // Why in the unchanged gate: the handle is a join key readers match on, so a pane that
       // only just acquired one (or moved to another) must still refresh the row it is stamped on.
       previous.terminalHandle === (terminalHandle ?? previous.terminalHandle) &&
-      (!event.providerSession ||
-        agentProviderSessionsEqual(
-          event.payload.agentType ?? 'unknown',
-          previous.providerSession,
-          event.providerSession
-        )) &&
       terminalStatusPayloadMatchesHook(previous.payload, event.payload, preserveActiveTurnStamp) &&
       // OSC 7501 does carry children, so a child-only change is news (absent means none left).
       (event.fromProgramStatus !== true ||
@@ -326,9 +319,7 @@ export abstract class AgentHookServerIngestTerminal extends AgentHookServerInges
         tabId,
         worktreeId,
         connectionId,
-        ...((event.providerSession ?? preservedProviderSession)
-          ? { providerSession: event.providerSession ?? preservedProviderSession }
-          : {}),
+        ...(preservedProviderSession ? { providerSession: preservedProviderSession } : {}),
         ...(terminalHandle ? { terminalHandle } : {}),
         payload: preservedMainAgent
           ? { ...event.payload, mainAgent: preservedMainAgent }

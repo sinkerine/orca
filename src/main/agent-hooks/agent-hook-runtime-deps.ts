@@ -2,7 +2,6 @@ import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import type { AgentStatusObservedPaneIdentities } from '../runtime/agent-status-observed-pane-identity'
 import type { AgentHookServer } from './server'
 import { isAgentStatusHooksEnabled } from '../../shared/agent-status-hooks-setting'
-import { createTerminalStatusSessionRecovery } from './claude-terminal-session-recovery'
 
 type RuntimeDeps = NonNullable<ConstructorParameters<typeof OrcaRuntimeService>[2]>
 
@@ -15,7 +14,7 @@ export function agentHookRuntimeDeps(
   return {
     // Why: main's OSC parse is the only producer for a PTY agent, and this store is the only
     // place `worktree.ps` and the mobile projection read from.
-    onTerminalAgentStatus: createTerminalStatusSessionRecovery(server),
+    onTerminalAgentStatus: (event) => server.ingestTerminalStatus(event),
     onTerminalProgramStatusFacet: (event) => server.ingestProgramStatusFacet(event),
     onClaudeTerminalEvidence: (paneKey, evidence) =>
       server.observeClaudeTerminalEvidence(paneKey, evidence),
