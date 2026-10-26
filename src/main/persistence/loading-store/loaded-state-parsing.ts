@@ -1,4 +1,5 @@
 import { homedir } from 'node:os'
+import { mergeSettingsFile } from './settings-file'
 import { normalizeProxyUrl } from '../../../shared/network-proxy'
 import { normalizeKagiSessionLink } from '../../../shared/browser-url'
 import type { PersistedState } from '../../../shared/persisted-state-types'
@@ -197,6 +198,12 @@ export class LoadedStateParsingOperations {
 
     if (result === null) {
       result = getDefaultPersistedState(homedir())
+    }
+
+    const settings = mergeSettingsFile(result.settings)
+    if (settings !== result.settings) {
+      result = { ...result, settings }
+      this.runtime.loadNeedsSave = true
     }
 
     const workspaceSession = pruneWorkspaceSessionBrowserHistory(

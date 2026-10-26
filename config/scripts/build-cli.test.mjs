@@ -99,6 +99,21 @@ it('checks the emit project first, retains all CPU cores and preserves the TypeS
   )
 })
 
+it('supports native checking without resolving Bun', async () => {
+  const check = vi.fn(async () => [])
+  const resolveBunExecutable = vi.fn(() => {
+    throw new Error('Bun unavailable')
+  })
+  await buildCli({
+    compiler: 'native',
+    check,
+    execute: async () => ({ code: 0 }),
+    resolveBunExecutable
+  })
+  expect(check).toHaveBeenCalledWith(expect.objectContaining({ compiler: 'native' }))
+  expect(resolveBunExecutable).not.toHaveBeenCalled()
+})
+
 it('does not emit when checking fails or the pinned Bun is missing', async () => {
   const execute = vi.fn()
   await expect(

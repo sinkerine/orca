@@ -16,11 +16,12 @@ const CONFIG = 'config/tsconfig.build.cli.json'
 export async function buildCli({
   root = ROOT,
   outDir = 'out',
+  compiler = process.env.ORCA_TYPECHECK_COMPILER ?? 'bun',
   check = runTypecheckProjects,
   execute = runProcess,
   resolveBunExecutable = (directory) => resolvePinnedBunExecutable(directory, runProcessSync)
 } = {}) {
-  const selection = selectTypecheckCompiler('bun', { root, resolveBunExecutable })
+  const selection = selectTypecheckCompiler(compiler, { root, resolveBunExecutable })
   const failures = await check({
     ...selection,
     root,
@@ -31,7 +32,7 @@ export async function buildCli({
     throw failures[0]
   }
 
-  // Bun has checked this exact project; retain TypeScript's emitter without checking it twice.
+  // Retain TypeScript's emitter without checking the same project twice.
   const result = await execute({
     program: process.execPath,
     args: [
