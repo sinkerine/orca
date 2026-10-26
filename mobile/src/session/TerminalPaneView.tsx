@@ -79,6 +79,7 @@ export function TerminalPaneView({
         ref={setRef}
         promptStatus={promptStatus}
         promptClient={promptClient}
+        promptActive={active}
         style={styles.terminalWebView}
         terminalTheme={terminalTheme}
         textScale={textScale}

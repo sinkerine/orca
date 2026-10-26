@@ -9,8 +9,22 @@ import {
   hasTerminalPromptTranscript,
   terminalTranscriptPrompts
 } from '../../../src/shared/terminal-transcript-prompts'
+import {
+  createTerminalPromptRefreshGate,
+  type TerminalPromptRefreshScheduler
+} from '../../../src/shared/terminal-prompt-refresh-gate'
 import type { RpcClient } from '../transport/rpc-client'
 import { nativeChatSessionPageRead } from '../session/mobile-session-read-operations'
+
+// Safari has no requestIdleCallback, so a short timer stands in for idle time there.
+const scheduleIdleRefresh: TerminalPromptRefreshScheduler = (run) => {
+  if (typeof requestIdleCallback === 'function') {
+    const id = requestIdleCallback(run, { timeout: 250 })
+    return () => cancelIdleCallback(id)
+  }
+  const id = setTimeout(run, 50)
+  return () => clearTimeout(id)
+}
 
 type PromptTerminal = Pick<
   Terminal,
@@ -19,7 +33,8 @@ type PromptTerminal = Pick<
 
 export function useTerminalPromptBanner(
   status: AgentStatusEntry | null | undefined,
-  client?: RpcClient | null
+  client?: RpcClient | null,
+  active = true
 ) {
   const current = useRef<{
     terminal: PromptTerminal
@@ -29,7 +44,7 @@ export function useTerminalPromptBanner(
   const statusRef = useRef(status)
   const seededRef = useRef<ReturnType<typeof terminalTranscriptPrompts>>([])
   const [context, setContext] = useState({ text: '', known: false, jumpable: false })
-  const refresh = useCallback(() => {
+  const update = useCallback(() => {
     const history = current.current?.history
     history?.refreshPositions()
     const text = history?.current() ?? ''
@@ -41,6 +56,15 @@ export function useTerminalPromptBanner(
         : { text, known, jumpable }
     )
   }, [])
+  const [gate] = useState(() =>
+    createTerminalPromptRefreshGate(update, scheduleIdleRefresh, active)
+  )
+  const refresh = gate.request
+  useEffect(() => {
+    gate.setActive(active)
+    // Pausing rather than disposing survives StrictMode's effect replay on the same instance.
+    return () => gate.setActive(false)
+  }, [gate, active])
   const attach = useCallback(
     (terminal: PromptTerminal) => {
       current.current?.dispose()
@@ -109,8 +133,8 @@ export function useTerminalPromptBanner(
     const line = active?.history.currentLine(true)
     if (active && line !== null && line !== undefined) {
       active.terminal.scrollToLine(line)
-      refresh()
+      update()
     }
-  }, [refresh])
+  }, [update])
   return { ...context, attach, detach, jump }
 }

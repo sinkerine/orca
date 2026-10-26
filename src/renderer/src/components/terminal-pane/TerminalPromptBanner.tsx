@@ -15,6 +15,10 @@ import { getNativeChatSessionTransport } from '../native-chat/native-chat-sessio
 import { runtimeEnvironmentIdWithLegacyFallbackUnlessTwin } from '@/lib/worktree-runtime-owner'
 import { createUuidV4 } from '../../../../shared/uuid-v4'
 import { scheduleAfterInputQuiet } from '@/lib/input-quiet-scheduler'
+import {
+  createTerminalPromptRefreshGate,
+  type TerminalPromptRefreshGate
+} from '../../../../shared/terminal-prompt-refresh-gate'
 import { translate } from '@/i18n/i18n'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -85,7 +89,7 @@ export function TerminalPromptBanner({
 }): React.JSX.Element | null {
   const historyRef = useRef<TerminalPromptHistory | null>(null)
   const activeRef = useRef(active)
-  const scheduleRefreshRef = useRef<(() => void) | null>(null)
+  const gateRef = useRef<TerminalPromptRefreshGate | null>(null)
   const [context, setContext] = useState<PromptContext>({
     text: null,
     known: false,
@@ -149,20 +153,13 @@ export function TerminalPromptBanner({
         )
       }
     }
-    let cancelRefresh: (() => void) | null = null
-    // Output fires onScroll per line feed; listeners only arm one idle refresh.
-    const scheduleRefresh = (): void => {
-      if (cancelRefresh || !activeRef.current) {
-        return
-      }
-      cancelRefresh = scheduleAfterInputQuiet(() => {
-        cancelRefresh = null
-        if (!disposed) {
-          refresh()
-        }
-      }, REFRESH_SCHEDULE)
-    }
-    scheduleRefreshRef.current = scheduleRefresh
+    const gate = createTerminalPromptRefreshGate(
+      refresh,
+      (run) => scheduleAfterInputQuiet(run, REFRESH_SCHEDULE),
+      activeRef.current
+    )
+    gateRef.current = gate
+    const scheduleRefresh = gate.request
     acceptStatus(false)
     const unsubscribe = useAppStore.subscribe((state, previous) => {
       if (state.agentStatusByPaneKey[paneKey] !== previous.agentStatusByPaneKey[paneKey]) {
@@ -174,8 +171,8 @@ export function TerminalPromptBanner({
     const buffer = pane.terminal.buffer.onBufferChange(scheduleRefresh)
     return () => {
       disposed = true
-      cancelRefresh?.()
-      scheduleRefreshRef.current = null
+      gate.dispose()
+      gateRef.current = null
       unsubscribe()
       unsubscribeTranscript?.()
       scroll.dispose()
@@ -186,9 +183,7 @@ export function TerminalPromptBanner({
   }, [pane.terminal, pane.leafId, tabId])
   useEffect(() => {
     activeRef.current = active
-    if (active) {
-      scheduleRefreshRef.current?.()
-    }
+    gateRef.current?.setActive(active)
   }, [active])
   const jump = (): void => {
     const line = historyRef.current?.currentLine(true)

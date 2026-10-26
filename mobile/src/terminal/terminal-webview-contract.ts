@@ -86,6 +86,8 @@ export type TerminalSelectionEvents = {
 export type TerminalWebViewProps = {
   promptStatus?: import('../../../src/shared/agent-status-types').AgentStatusEntry | null
   promptClient?: import('../transport/rpc-client').RpcClient | null
+  // Why: hidden panes stay mounted; their prompt banner defers all upkeep until shown.
+  promptActive?: boolean
   style?: StyleProp<ViewStyle>
   terminalTheme?: MobileTerminalTheme
   // Why: baseline zoom multiplier applied on top of fit-to-width scale; raw

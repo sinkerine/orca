@@ -36,8 +36,10 @@ function hideCliCreatedPrimary(notifyHiddenWorkspaces: boolean): void {
     hideDetachedHeadWorkspaces: false,
     hideWorkspacesFromOtherDevices: false,
     filterRepoIds: [],
+    filterGroupIds: [],
     worktreeLineageById: {},
     folderWorkspaces: [],
+    projects: [],
     worktreesByRepo: {
       repo1: [
         { ...primary, isArchived: false, cliProvenance: { kind: 'created-by-cli', createdAt: 0 } },
