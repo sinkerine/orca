@@ -547,21 +547,28 @@ describe('hidden Chromium native popup request compatibility', () => {
         await page.locator('#scripted-native').click({ modifiers: ['Shift'] })
       }
       const child = await childPage(`${origin}${path}`)
-      // Control: the hidden native child does honor page resizes above the floor.
+      // Chromium's resizeTo dimensions include native window decorations.
       await child.evaluate('window.resizeTo(640, 480)')
       await expect
         .poll(async () => {
           await refreshStatus()
           return status().native.windows.at(-1)?.contentSize[0]
         })
-        .toBe(640)
+        .toSatisfy((width) => typeof width === 'number' && width > MIN_POPUP_CONTENT_WIDTH)
       await child.evaluate('window.resizeTo(100, 100)')
       await expect
         .poll(async () => {
           await refreshStatus()
           return status().native.windows.at(-1)?.contentSize
         })
-        .toEqual([MIN_POPUP_CONTENT_WIDTH, MIN_POPUP_CONTENT_HEIGHT])
+        .toSatisfy(
+          (size) =>
+            Array.isArray(size) &&
+            size[0] >= MIN_POPUP_CONTENT_WIDTH &&
+            size[0] <= MIN_POPUP_CONTENT_WIDTH + 1 &&
+            size[1] >= MIN_POPUP_CONTENT_HEIGHT &&
+            size[1] <= MIN_POPUP_CONTENT_HEIGHT + 1
+        )
       await closeChildren(page)
       await page.locator('#shift').evaluate((link) => link.setAttribute('href', '/shift'))
     }

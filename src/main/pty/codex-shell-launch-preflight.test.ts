@@ -93,7 +93,7 @@ function writeExecutable(path: string, content: string): void {
 function runAliasLaunch(
   root: string,
   wrapper: string,
-  shell = '/bin/bash',
+  shell = 'bash',
   preflightSucceeds = true
 ): string {
   const home = join(root, 'managed-home')
@@ -227,7 +227,7 @@ describe.skipIf(process.platform === 'win32')('Codex shell launch preflight', ()
     const root = mkdtempSync(join(tmpdir(), 'orca-codex-preflight-failure-'))
     roots.push(root)
 
-    expect(runAliasLaunch(root, getPosixCodexShellLaunchPreflight(), '/bin/bash', false)).toBe(
+    expect(runAliasLaunch(root, getPosixCodexShellLaunchPreflight(), 'bash', false)).toBe(
       'hooks-review'
     )
   })
@@ -242,7 +242,7 @@ describe.skipIf(process.platform === 'win32')('Codex shell launch preflight', ()
     writeExecutable(join(bin, 'orca-test'), `#!/bin/sh\nprintf ran > ${JSON.stringify(marker)}\n`)
 
     const output = execFileSync(
-      '/bin/bash',
+      'bash',
       ['--noprofile', '--norc', '-c', `${getPosixCodexShellLaunchPreflight()}\ncodex`],
       {
         encoding: 'utf-8',
@@ -522,7 +522,7 @@ describe.skipIf(process.platform === 'win32')('Codex preflight paths containing 
     const { preflightPath, markerPath } = writeSpacedPreflight(root)
 
     execFileSync(
-      '/bin/bash',
+      'bash',
       ['--noprofile', '--norc', '-c', `${getPosixCodexShellLaunchPreflight()}\ncodex`],
       {
         env: {

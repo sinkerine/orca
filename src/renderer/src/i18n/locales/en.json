@@ -15122,7 +15122,7 @@
             "viewLog": "View Log"
           },
           "CreateHostedReviewBasePicker": {
-            "205ef284fa": "Base branch",
+            "205ef284fa": "Base repository and branch",
             "5a9315b61a": "No branches match “{{value0}}”. Press Enter to use it anyway.",
             "bb4b41d563": "from {{value0}}",
             "da4d57c9c2": "Leave empty to use {{value0}}."

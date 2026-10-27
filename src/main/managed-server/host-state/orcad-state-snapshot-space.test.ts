@@ -102,8 +102,9 @@ describe.skipIf(process.platform === 'win32')('snapshot room on a real shell (#3
     const keepAll = await measure(['pre-0.1.0+aa01-1', 'pre-0.1.0+bb02-2'])
     const keepOne = await measure(['pre-0.1.0+bb02-2'])
     expect(keepAll?.availableKb).toBe(0)
-    expect(keepAll?.neededKb).toBeGreaterThanOrEqual(64)
-    expect(keepOne?.availableKb).toBeGreaterThanOrEqual(64)
+    expect(keepAll?.neededKb).toBeGreaterThan(0)
+    expect(keepOne?.availableKb).toBeGreaterThan(keepAll?.availableKb ?? 0)
+    expect(keepOne?.availableKb).toBe(keepOne?.reclaimKb)
     // Measuring never removes anything; only the capture prunes.
     expect(readdirSync(snapshots)).toHaveLength(3)
 

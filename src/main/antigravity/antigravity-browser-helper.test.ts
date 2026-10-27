@@ -33,7 +33,7 @@ assert webbrowser.open(sys.argv[1])
       const result = await runProcess({
         program: 'python3',
         args: ['-c', script, link],
-        env: { BROWSER: helper.ANTIGRAVITY_BROWSER_COMMAND },
+        env: { ...process.env, BROWSER: helper.ANTIGRAVITY_BROWSER_COMMAND },
         timeoutMs: 5_000,
         maxOutputBytes: 4_096
       })

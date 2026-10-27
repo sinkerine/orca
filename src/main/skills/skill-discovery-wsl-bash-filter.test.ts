@@ -55,7 +55,7 @@ describe('generated WSL skill name filter', () => {
 
       try {
         const command = buildWslSkillDiscoveryCommand([scanRoot], ['orchestration'])
-        const output = execFileSync('/bin/bash', ['-c', command], {
+        const output = execFileSync('bash', ['-c', command], {
           encoding: 'utf8',
           maxBuffer: 4 * 1024 * 1024
         })

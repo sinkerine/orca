@@ -33,6 +33,7 @@ export function makeWorktree(
     isPinned: false,
     sortOrder: 0,
     lastActivityAt: 0,
+    ownerHostId: overrides.hostId?.startsWith('ssh:') ? overrides.hostId : 'local',
     ...overrides
   }
 }

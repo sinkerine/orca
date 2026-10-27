@@ -172,7 +172,7 @@ describe.skipIf(process.platform === 'win32')('statusline curl throttle (posix b
     mkdirSync(binDir, { recursive: true })
     writeFileSync(
       join(binDir, 'curl'),
-      `#!/bin/sh\n/bin/cat > "${payloadLog}"\nprintf 'x\\n' >> "${curlLog}"\nexit 0\n`,
+      `#!/bin/sh\nPATH=${JSON.stringify(process.env.PATH ?? '')} cat > "${payloadLog}"\nprintf 'x\\n' >> "${curlLog}"\nexit 0\n`,
       { mode: 0o755 }
     )
     writeFileSync(
@@ -180,9 +180,13 @@ describe.skipIf(process.platform === 'win32')('statusline curl throttle (posix b
       `#!/bin/sh\nprintf 'x\\n' >> "${dateLog}"\nprintf '2000000000\\n'\n`,
       { mode: 0o755 }
     )
-    writeFileSync(join(binDir, 'cat'), `#!/bin/sh\nprintf 'x\\n' >> "${catLog}"\n/bin/cat "$@"\n`, {
-      mode: 0o755
-    })
+    writeFileSync(
+      join(binDir, 'cat'),
+      `#!/bin/sh\nprintf 'x\\n' >> "${catLog}"\nPATH=${JSON.stringify(process.env.PATH ?? '')} cat "$@"\n`,
+      {
+        mode: 0o755
+      }
+    )
     return { scriptPath, dir, curlLog, payloadLog, dateLog, catLog }
   }
 

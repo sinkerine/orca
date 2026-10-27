@@ -15,7 +15,10 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { installDrainInterferenceShims } from './legacy-wsl-runtime-auth-drain-script-interference-shims'
+import {
+  installDrainInterferenceShims,
+  resolveDrainUtility
+} from './legacy-wsl-runtime-auth-drain-script-interference-shims'
 import { DRAIN_APPLY_INTERRUPTION_JS } from './legacy-wsl-runtime-auth-drain-interruption-source'
 import {
   INTRUDER_AUTH,
@@ -74,7 +77,7 @@ const { spawnSync } = require('node:child_process')
 const fs = require('node:fs')
 ${DRAIN_APPLY_INTERRUPTION_JS}
 const args = process.argv.slice(2)
-const result = spawnSync('/bin/rm', args, { stdio: 'inherit' })
+const result = spawnSync(${JSON.stringify(resolveDrainUtility('rm'))}, args, { stdio: 'inherit' })
 const target = args.at(-1) ?? ''
 if (
   result.status === 0 &&
@@ -120,7 +123,7 @@ if (
 ) {
   process.exit(1)
 }
-const result = spawnSync('/bin/ln', args, { stdio: 'inherit' })
+const result = spawnSync(${JSON.stringify(resolveDrainUtility('ln'))}, args, { stdio: 'inherit' })
 if (
   result.status === 0 &&
   args.at(-1)?.includes('/account/sessions/') &&

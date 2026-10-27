@@ -256,7 +256,7 @@ function wrappedEnv(home: string): Record<string, string> {
   // otherwise leak the developer's own ZDOTDIR into the run.
   const { ORCA_ORIG_ZDOTDIR: _dropped, ...env } = launch.env
   return {
-    PATH: '/usr/bin:/bin',
+    PATH: process.env.PATH ?? '/usr/bin:/bin',
     HOME: home,
     ORCA_HISTFILE: join(home, 'scoped_history'),
     ...env
@@ -280,7 +280,7 @@ describe.skipIf(process.platform === 'win32')(
 
           const wrapped = await runZshPty({ env: wrappedEnv(home), report: REPORTED })
           const unwrapped = await runZshPty({
-            env: { PATH: '/usr/bin:/bin', HOME: home },
+            env: { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: home },
             report: REPORTED
           })
 
@@ -412,7 +412,10 @@ describe.skipIf(process.platform === 'win32')('the fixes the old wrapper was bui
     try {
       const report = ['ORCA_TEST_IN_ZSHRC', 'ORCA_TEST_IN_ZPROFILE']
       const wrapped = await runZshPty({ env: wrappedEnv(home), report })
-      const unwrapped = await runZshPty({ env: { PATH: '/usr/bin:/bin', HOME: home }, report })
+      const unwrapped = await runZshPty({
+        env: { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: home },
+        report
+      })
 
       expect(wrapped.values.ORCA_TEST_IN_ZSHRC).toBe(xdg)
       expect(wrapped.values.ORCA_TEST_IN_ZPROFILE).toBe(xdg)
@@ -484,7 +487,10 @@ describe.skipIf(process.platform === 'win32')('the fixes the old wrapper was bui
     try {
       const report = ['ORCA_TEST_MARK', 'ORCA_TEST_FROM_ZSHRC', 'ZDOTDIR']
       const wrapped = await runZshPty({ env: wrappedEnv(home), report })
-      const unwrapped = await runZshPty({ env: { PATH: '/usr/bin:/bin', HOME: home }, report })
+      const unwrapped = await runZshPty({
+        env: { PATH: process.env.PATH ?? '/usr/bin:/bin', HOME: home },
+        report
+      })
 
       expect(wrapped.values).toEqual(unwrapped.values)
       expect(wrapped.values.ORCA_TEST_FROM_ZSHRC).toBe('1')

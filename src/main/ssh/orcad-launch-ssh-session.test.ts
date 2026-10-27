@@ -50,7 +50,7 @@ function sh(script: string, env: Record<string, string> = {}): string {
   const result = spawnSync('/bin/sh', ['-c', script], {
     encoding: 'utf8',
     env: {
-      PATH: `${join(dir, 'bin')}:/usr/bin:/bin`,
+      PATH: `${join(dir, 'bin')}:${process.env.PATH ?? '/usr/bin:/bin'}`,
       FAKE_PS_TABLE: join(dir, 'ps-table'),
       FAKE_PS_SHELL_PARENT: '500',
       ...env

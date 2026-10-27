@@ -143,7 +143,7 @@ describe('CliSkillRuntimeSetup runtime helpers', () => {
             input: 'terminal-input\n',
             env: {
               ...process.env,
-              PATH: `${tools}:/usr/bin:/bin`,
+              PATH: `${tools}:${process.env.PATH ?? '/usr/bin:/bin'}`,
               ORCA_TEST_LOGIN_SHELL: loginShell,
               ORCA_TEST_NPX_BIN: npxBin
             }

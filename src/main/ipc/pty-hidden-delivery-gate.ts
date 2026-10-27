@@ -72,12 +72,17 @@ export function markHiddenRendererPty(id: string, windowId = IMPLICIT_RENDERER_W
 /** Clears the hidden bit. Returns whether bytes were dropped while hidden so
  *  the caller can emit a restore marker. Reads the latch without spending it:
  *  the marker may reach no handler (see droppedSinceHiddenPtys). */
-export function unmarkHiddenRendererPty(id: string, windowId = IMPLICIT_RENDERER_WINDOW_ID): {
+export function unmarkHiddenRendererPty(
+  id: string,
+  windowId = IMPLICIT_RENDERER_WINDOW_ID
+): {
   droppedWhileHidden: boolean
   hiddenDropEpisode?: number
 } {
   recordHiddenRendererPtyWindowClaim(windowId, id, false)
-  runtimeOwnedHiddenRendererPtys.delete(id)
+  if (runtimeOwnedHiddenRendererPtys.delete(id)) {
+    recordHiddenRendererPtyWindowClaim(IMPLICIT_RENDERER_WINDOW_ID, id, false)
+  }
   const latch = droppedSinceHiddenPtys.get(id)
   if (!latch) {
     return { droppedWhileHidden: false }

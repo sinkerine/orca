@@ -179,7 +179,15 @@ test('preload observes the CJS process-host export imported by production ESM co
         program
       ],
       cwd: join(import.meta.dirname, '../..'),
-      env: { ...process.env, ORCA_BACKGROUND_LAUNCH: '1', ORCA_NATIVE_BENCHMARK_TRACE: trace }
+      env: {
+        ...Object.fromEntries(
+          new Map(
+            Object.entries(process.env).map(([key, value]) => [key.toLowerCase(), [key, value]])
+          ).values()
+        ),
+        ORCA_BACKGROUND_LAUNCH: '1',
+        ORCA_NATIVE_BENCHMARK_TRACE: trace
+      }
     })
     assert.equal(result.code, 0, result.stderr)
     const value = JSON.parse(readFileSync(trace, 'utf8'))

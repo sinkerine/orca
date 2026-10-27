@@ -103,7 +103,7 @@ describe('fetchAllWorktrees hydration-time purge (design §4.4)', () => {
       await store.getState().fetchAllWorktrees()
 
       expect(store.getState().worktreesByRepo[sshRepo.id]).toEqual([
-        { ...queued, hostId: 'ssh:ssh-1' }
+        { ...queued, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
       ])
       expect(listKnownForExecutionHostMock).toHaveBeenCalledWith({
         repoId: sshRepo.id,

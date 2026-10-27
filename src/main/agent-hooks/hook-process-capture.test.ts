@@ -28,7 +28,7 @@ describe('Claude outer hook process capture', () => {
           args: [
             '-i',
             `HOME=${home}`,
-            'PATH=/usr/bin:/bin',
+            `PATH=${process.env.PATH ?? '/usr/bin:/bin'}`,
             'ORCA_PANE_KEY=presence-test-pane',
             // Why: the agent's shell zone may differ from Orca's; the identity must not.
             ...(timeZone ? [`TZ=${timeZone}`] : []),

@@ -399,7 +399,7 @@ for (const engine of ['chromium', 'webkit']) {
           signal: ctx.signal,
           expectNavigation: 'main-frame',
           act: async ({ frame }) => {
-            await frame?.click('#rootlink', { timeout: 2000 })
+            await frame?.click('#rootlink', { timeout: 2000, delay: 50 })
           }
         })
         expect(root.pixelBefore).toBe(ARTIFACT_RGB)
@@ -592,7 +592,7 @@ for (const engine of ['chromium', 'webkit']) {
         // nowhere to go.
         const tall = { body: '<div style="height:1600px">spacer</div>' }
         const tapFragment = async ({ frame }) => {
-          await frame?.click('#fraglink', { timeout: 2000 })
+          await frame?.click('#fraglink', { timeout: 2000, noWaitAfter: true })
         }
 
         const shown = await open(browser(), {
@@ -631,8 +631,15 @@ for (const engine of ['chromium', 'webkit']) {
         const read = await open(browser(), {
           signal: ctx.signal,
           expectNavigation: 'main-frame',
-          act: async ({ frame }) => {
-            await frame?.click('#toplink', { timeout: 2000 })
+          act: async ({ page, frame }) => {
+            await frame?.locator('#toplink').scrollIntoViewIfNeeded()
+            const bounds = await frame?.locator('#toplink').boundingBox()
+            if (!bounds) {
+              throw new Error('Missing rendered preview link')
+            }
+            await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, {
+              delay: 50
+            })
           }
         })
         expect(read.pixelBefore).toBe(ARTIFACT_RGB)

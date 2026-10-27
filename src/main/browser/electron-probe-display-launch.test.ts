@@ -15,7 +15,12 @@ describe('electron probe launch resolution', () => {
       })
     ).toEqual({
       executable: electronBinary,
-      args: ['/tmp/main.cjs', '--user-data-dir=/tmp/profile', '--no-sandbox']
+      args: [
+        '/tmp/main.cjs',
+        '--user-data-dir=/tmp/profile',
+        '--no-sandbox',
+        '--ozone-platform=x11'
+      ]
     })
   })
 
@@ -34,7 +39,8 @@ describe('electron probe launch resolution', () => {
         electronBinary,
         '/tmp/main.cjs',
         '--user-data-dir=/tmp/profile',
-        '--no-sandbox'
+        '--no-sandbox',
+        '--ozone-platform=x11'
       ]
     })
   })

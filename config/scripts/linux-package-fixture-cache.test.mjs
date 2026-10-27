@@ -37,7 +37,7 @@ function exercise({
   const docker = join(bin, 'docker')
   writeFileSync(
     docker,
-    '#!/bin/bash\n' +
+    '#!/usr/bin/env bash\n' +
       'echo "$*" >> "$COMMAND_LOG"\n' +
       'if [[ "$1" == load && "$LOAD_FAILS" == true ]]; then exit 1; fi\n' +
       'if [[ "$1 $2" == "image inspect" ]]; then\n' +

@@ -10,7 +10,7 @@ function interruptDrainApply(ancestorDepth) {
   let ancestor = process.pid
   for (let depth = 0; depth < ancestorDepth; depth++) {
     const result = require('node:child_process').spawnSync(
-      '/bin/ps', ['-o', 'ppid=', '-p', String(ancestor)], { encoding: 'utf8' }
+      'ps', ['-o', 'ppid=', '-p', String(ancestor)], { encoding: 'utf8' }
     )
     const text = typeof result.stdout === 'string' ? result.stdout.trim() : ''
     if (result.status !== 0 || result.signal || result.error || !/^[1-9][0-9]*$/.test(text)) {

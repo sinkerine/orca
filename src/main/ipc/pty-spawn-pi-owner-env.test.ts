@@ -79,6 +79,7 @@ describe('Pi ownership deletion requests for persistent daemons', () => {
   it('also sends deletion requests through the headless runtime spawn route', async () => {
     const daemonSpawn = setupDaemonAdapter()
     const runtime = {
+      registerPtyOwnerWindow: vi.fn(),
       setPtyController: vi.fn(),
       registerPty: vi.fn(),
       noteTerminalSpawnCommand: vi.fn(),

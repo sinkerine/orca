@@ -108,7 +108,7 @@ function getHookShell(): string | undefined {
     return process.env.ComSpec || 'cmd.exe'
   }
 
-  return '/bin/bash'
+  return existsSync('/bin/bash') ? '/bin/bash' : 'bash'
 }
 
 export { parseOrcaYaml }

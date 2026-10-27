@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { copyFile, mkdir, rename } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { selectLatestStableReleaseTag } from '../../../config/scripts/stable-release-tags.mjs'
@@ -122,10 +123,17 @@ function checkoutModulePath(root: string, rootRelativePath: string): string {
 export function importReleaseCheckoutModule(
   checkout: ReleaseCheckout,
   rootRelativePath: string,
-  importModule: (specifier: string) => Promise<Record<string, unknown>> = (specifier) =>
-    import(/* @vite-ignore */ specifier) as Promise<Record<string, unknown>>
+  importModule?: (specifier: string) => Promise<Record<string, unknown>>
 ): Promise<Record<string, unknown>> {
-  return importModule(checkoutModulePath(checkout.root, rootRelativePath))
+  const modulePath = checkoutModulePath(checkout.root, rootRelativePath)
+  if (!importModule && !existsSync(modulePath)) {
+    return Promise.reject(new Error(`Release ${checkout.ref} does not contain ${rootRelativePath}`))
+  }
+  if (importModule) {
+    return importModule(modulePath)
+  }
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: callers narrow the exports of the imported module namespace.
+  return import(/* @vite-ignore */ modulePath) as Promise<Record<string, unknown>>
 }
 
 /**

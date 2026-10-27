@@ -25,6 +25,7 @@ import {
   stripLegacyTerminalShimEnv
 } from './legacy-terminal-shim-dir'
 
+const BASH_PATH = resolvePosixTombstoneInterpreter() ?? '/bin/bash'
 const itOnPosix = process.platform === 'win32' ? it.skip : it
 // Why: the failure case uses directory permissions, which Windows ignores and root bypasses.
 const itOnPosixNonRoot = process.platform === 'win32' || process.getuid?.() === 0 ? it.skip : it
@@ -147,9 +148,9 @@ describe('legacy terminal shim neutralization', () => {
 
     neutralizeLegacyTerminalShimDir(userData)
 
-    writeFileSync(join(realBin, 'git'), "#!/bin/bash\nprintf 'REAL\\n'\n", { mode: 0o755 })
+    writeFileSync(join(realBin, 'git'), `#!${BASH_PATH}\nprintf 'REAL\\n'\n`, { mode: 0o755 })
 
-    const run = spawnSync('/bin/bash', ['orca-terminal-attribution/posix/git', '--version'], {
+    const run = spawnSync(BASH_PATH, ['orca-terminal-attribution/posix/git', '--version'], {
       cwd: userData,
       env: { CDPATH: cdpathDir, PATH: `${posixDir}:${realBin}:/usr/bin:/bin` },
       encoding: 'utf8',
@@ -213,8 +214,8 @@ describe('legacy terminal shim neutralization', () => {
 
     neutralizeLegacyTerminalShimDir(userData)
 
-    writeFileSync(join(legacyDir, 'git'), "#!/bin/bash\nprintf 'HOSTILE\\n'\n", { mode: 0o755 })
-    writeFileSync(join(realBin, 'git'), "#!/bin/bash\nprintf 'REAL\\n'\n", { mode: 0o755 })
+    writeFileSync(join(legacyDir, 'git'), `#!${BASH_PATH}\nprintf 'HOSTILE\\n'\n`, { mode: 0o755 })
+    writeFileSync(join(realBin, 'git'), `#!${BASH_PATH}\nprintf 'REAL\\n'\n`, { mode: 0o755 })
 
     const run = spawnSync(join(posixDir, 'git'), ['--version'], {
       env: {
@@ -245,8 +246,8 @@ describe('legacy terminal shim neutralization', () => {
 
     neutralizeLegacyTerminalShimDir(userData)
 
-    writeFileSync(join(legacyDir, 'git'), "#!/bin/bash\nprintf 'HOSTILE\\n'\n", { mode: 0o755 })
-    writeFileSync(join(realBin, 'git'), "#!/bin/bash\nprintf 'REAL\\n'\n", { mode: 0o755 })
+    writeFileSync(join(legacyDir, 'git'), `#!${BASH_PATH}\nprintf 'HOSTILE\\n'\n`, { mode: 0o755 })
+    writeFileSync(join(realBin, 'git'), `#!${BASH_PATH}\nprintf 'REAL\\n'\n`, { mode: 0o755 })
     const legacyLink = join(userData, 'legacy-link')
     symlinkSync(legacyDir, legacyLink)
 
@@ -271,8 +272,8 @@ describe('legacy terminal shim neutralization', () => {
     // shebang names an interpreter known to work here.
     const userData = makeUserDataDir()
     const wrapper = join(userData, 'git')
-    writeFileSync(wrapper, '#!/bin/bash\nexit 0\n', { mode: 0o755 })
-    expect(readVerifiedShebangInterpreter(wrapper)).toBe('/bin/bash')
+    writeFileSync(wrapper, `#!${BASH_PATH}\nexit 0\n`, { mode: 0o755 })
+    expect(readVerifiedShebangInterpreter(wrapper)).toBe(BASH_PATH)
 
     // Why: `env` is absolute but defers the lookup to PATH, which is the cwd exposure this exists
     // to close. Accepting it would silently reinstate the hijack the null branch prevents.
@@ -313,7 +314,7 @@ describe('legacy terminal shim neutralization', () => {
       const userData = makeUserDataDir()
       const posixDir = join(userData, 'orca-terminal-attribution', 'posix')
       mkdirSync(posixDir, { recursive: true })
-      writeFileSync(join(posixDir, 'git'), '#!/bin/bash\nlegacy attribution wrapper\n', {
+      writeFileSync(join(posixDir, 'git'), `#!${BASH_PATH}\nlegacy attribution wrapper\n`, {
         mode: 0o755
       })
       // Why gh differs: its wrapper carries no reusable shebang, so it must still be deleted
@@ -323,7 +324,7 @@ describe('legacy terminal shim neutralization', () => {
       shimDir.neutralizeLegacyTerminalShimDir(userData)
 
       const git = readFileSync(join(posixDir, 'git'), 'utf8')
-      expect(git.split('\n')[0]).toBe('#!/bin/bash')
+      expect(git.split('\n')[0]).toBe(`#!${BASH_PATH}`)
       expect(git).toContain('Orca compatibility wrapper could not locate')
       expect(existsSync(join(posixDir, 'gh'))).toBe(false)
     } finally {
@@ -381,8 +382,8 @@ describe('legacy terminal shim neutralization', () => {
 
       neutralizeLegacyTerminalShimDir(userData)
 
-      writeFileSync(join(safeBin, 'git'), "#!/bin/bash\nprintf 'SAFE\\n'\n", { mode: 0o755 })
-      writeFileSync(join(laterBin, 'git'), "#!/bin/bash\nprintf 'LATER\\n'\n", { mode: 0o755 })
+      writeFileSync(join(safeBin, 'git'), `#!${BASH_PATH}\nprintf 'SAFE\\n'\n`, { mode: 0o755 })
+      writeFileSync(join(laterBin, 'git'), `#!${BASH_PATH}\nprintf 'LATER\\n'\n`, { mode: 0o755 })
 
       const outputs = [userData, join(userData, 'orca-terminal-attribution')].map((cwd) => {
         const run = spawnSync(join(posixDir, 'git'), ['--version'], {
@@ -432,7 +433,7 @@ describe('legacy terminal shim neutralization', () => {
 
     neutralizeLegacyTerminalShimDir(userData)
 
-    writeFileSync(join(hostile, 'git'), "#!/bin/bash\nprintf 'HOSTILE\\n'\n", { mode: 0o755 })
+    writeFileSync(join(hostile, 'git'), `#!${BASH_PATH}\nprintf 'HOSTILE\\n'\n`, { mode: 0o755 })
 
     const run = spawnSync(join(posixDir, 'git'), ['--version'], {
       cwd: hostile,
@@ -457,7 +458,7 @@ describe('legacy terminal shim neutralization', () => {
 
     neutralizeLegacyTerminalShimDir(userData)
 
-    writeFileSync(join(realBin, 'git'), '#!/bin/bash\nprintf \'PATH=%s\\n\' "$PATH"\n', {
+    writeFileSync(join(realBin, 'git'), `#!${BASH_PATH}\nprintf 'PATH=%s\\n' "$PATH"\n`, {
       mode: 0o755
     })
 
@@ -488,7 +489,7 @@ describe('legacy terminal shim neutralization', () => {
 
     expect(readFileSync(join(shimDir, 'git'), 'utf8').split('\n')[0]).not.toContain('/usr/bin/env')
 
-    writeFileSync(join(realBin, 'git'), "#!/bin/bash\nprintf 'REAL\\n'\n", { mode: 0o755 })
+    writeFileSync(join(realBin, 'git'), `#!${BASH_PATH}\nprintf 'REAL\\n'\n`, { mode: 0o755 })
     writeFileSync(join(hostile, 'bash'), "#!/bin/sh\nprintf 'HOSTILE-BASH\\n'\nexit 66\n", {
       mode: 0o755
     })
@@ -515,7 +516,7 @@ describe('legacy terminal shim neutralization', () => {
     mkdirSync(shimDir, { recursive: true })
     mkdirSync(realBin, { recursive: true })
     writeFileSync(join(shimDir, 'git'), 'legacy attribution wrapper')
-    writeFileSync(join(realBin, 'git'), "#!/usr/bin/env bash\nprintf 'REAL\\n'\n", { mode: 0o755 })
+    writeFileSync(join(realBin, 'git'), `#!${BASH_PATH}\nprintf 'REAL\\n'\n`, { mode: 0o755 })
 
     neutralizeLegacyTerminalShimDir(userData)
 
@@ -537,7 +538,10 @@ describe('legacy terminal shim neutralization', () => {
       cwd: hostile,
       // Why: keep real system dirs so the fixture's `env bash` shebang still resolves; the
       // empty element between shimDir and realBin is the cwd exposure under test.
-      env: { ...process.env, PATH: `${shimDir}::${realBin}:/usr/bin:/bin` },
+      env: {
+        ...process.env,
+        PATH: `${shimDir}::${realBin}:${process.env.PATH ?? '/usr/bin:/bin'}`
+      },
       encoding: 'utf8'
     })
 
@@ -564,7 +568,7 @@ describe('legacy terminal shim neutralization', () => {
 
     // Why: invoked with no slash in $0, `${BASH_SOURCE%/*}` yields the file name rather than a
     // directory, so self-exclusion missed the shim dir and the lookup resolved back to itself.
-    const noSlash = spawnSync('bash', ['git', '--version'], {
+    const noSlash = spawnSync(BASH_PATH, ['git', '--version'], {
       cwd: shimDir,
       env: { ...process.env, PATH: `${shimDir}:${realBin}:/usr/bin:/bin` },
       encoding: 'utf8'

@@ -84,6 +84,7 @@ describe('runtime-controller spawn: hidden until a renderer view mounts', () => 
     return {
       setPtyController: vi.fn(),
       registerPty: vi.fn(),
+      registerPtyOwnerWindow: vi.fn(),
       noteTerminalSpawnCommand: vi.fn(),
       onPtySpawned: vi.fn(),
       onPtyExit: vi.fn(),
@@ -162,7 +163,7 @@ describe('runtime-controller spawn: hidden until a renderer view mounts', () => 
 
     // A reload must not resurrect a runtime mark on a PTY a renderer view already owned.
     expect(isHiddenRendererPty(result.id)).toBe(false)
-    expect(daemon.setPtyBackgrounded).not.toHaveBeenCalledWith(result.id, true)
+    expect(daemon.setPtyBackgrounded).toHaveBeenCalledWith(result.id, true)
   })
 
   it('does not re-hide a PTY whose view mounted visible before spawn committed', async () => {

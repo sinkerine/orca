@@ -76,7 +76,7 @@ describePosix('daemon shell-ready bash wrapper', () => {
     const env: Record<string, string> = {
       HOME: userDataPath,
       USERPROFILE: userDataPath,
-      PATH: `${ambientBin}:/usr/bin:/bin`,
+      PATH: `${ambientBin}:${process.env.PATH ?? '/usr/bin:/bin'}`,
       ORCA_BACKGROUND_LAUNCH: '1'
     }
     const expectedLauncher = prependOrcaCliDirToChildPath(env, {

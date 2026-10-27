@@ -6,6 +6,7 @@ import { createPtyWriteInput } from './write-input'
 export function installPtyWriteIpcHandlers(deps: {
   mainWindow?: PtyRendererDelivery
   runtime?: OrcaRuntimeService
+  headless?: boolean
 }): void {
   const ipcMain = getPtyIpc()
   const { runtime } = deps
@@ -16,6 +17,12 @@ export function installPtyWriteIpcHandlers(deps: {
     isPtyViewportClaimPayload,
     isPtyWriteEventFromMainWindow
   } = createPtyWriteInput(deps)
+  if (deps.headless) {
+    ipcMain.on('pty:write', () => {})
+    ipcMain.handle('pty:writeAccepted', () => false)
+    ipcMain.removeAllListeners('pty:claimViewport')
+    return
+  }
 
   const hostViewportClaimTails = new Map<string, Promise<boolean>>()
 

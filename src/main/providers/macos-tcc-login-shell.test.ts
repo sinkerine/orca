@@ -437,7 +437,7 @@ describe('wrapShellSpawnForMacosTccAttribution', () => {
 
   itOnPosixHost('ignores inherited BASH_ENV before evaluating the trampoline', () => {
     const result = spawnSync(
-      '/bin/bash',
+      'bash',
       ['--noprofile', '--norc', '-p', '-c', 'printf "TRAMPOLINE_OK\\n"'],
       {
         encoding: 'utf8',

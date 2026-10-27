@@ -368,14 +368,14 @@ else
   __orca_test_pwd_state=set
 fi
 builtin cd -- "$ORCA_LOGICAL_PROJECT_LINK"
-/bin/rm -- "$ORCA_LOGICAL_PROJECT_LINK"
+rm -- "$ORCA_LOGICAL_PROJECT_LINK"
 ORCA_CAPTURE_FILE="$ORCA_DELETED_LINK_CAPTURE_FILE"
 omp
 __orca_test_deleted_link_status=$?
 builtin cd -P -- "$ORCA_STALE_PROJECT_DIR"
 ORCA_CAPTURE_FILE="$ORCA_STALE_CAPTURE_FILE"
-/bin/rm -rf -- "$ORCA_STALE_PROJECT_DIR"
-/bin/mkdir -p -- "$ORCA_STALE_PROJECT_DIR"
+rm -rf -- "$ORCA_STALE_PROJECT_DIR"
+mkdir -p -- "$ORCA_STALE_PROJECT_DIR"
 omp
 __orca_test_first_status=$?
 ORCA_CAPTURE_FILE="$ORCA_SKIP_CAPTURE_FILE"
@@ -395,7 +395,7 @@ ORCA_CAPTURE_FILE="$ORCA_NO_LOGICAL_CAPTURE_FILE"
 omp
 __orca_test_no_logical_status=$?
 PWD="$ORCA_STALE_PROJECT_DIR"
-/bin/rm -rf -- "$ORCA_STALE_PROJECT_DIR"
+rm -rf -- "$ORCA_STALE_PROJECT_DIR"
 omp
 __orca_test_missing_status=$?
 {
@@ -415,7 +415,8 @@ exit 0
     const output = await runInteractivePosixPty({
       shell,
       cwd: projectDir,
-      rcfileContent: `cd() { return 97; }
+      rcfileContent: `export PATH=${JSON.stringify(binDir)}:"$PATH"
+cd() { return 97; }
 ${getPosixOmpShellWrapper()}`,
       env: {
         INPUTRC: '/dev/null',
@@ -430,7 +431,7 @@ ${getPosixOmpShellWrapper()}`,
         ORCA_NO_LOGICAL_CAPTURE_FILE: noLogicalCaptureFile,
         ORCA_WORKTREE_PATH: workspaceDir,
         HOME: homeDir,
-        PATH: `${binDir}:/usr/bin:/bin:/usr/sbin:/sbin`,
+        PATH: `${binDir}:${process.env.PATH ?? '/usr/bin:/bin:/usr/sbin:/sbin'}`,
         ORCA_OMP_STATUS_EXTENSION: statusExtension,
         ORCA_CAPTURE_FILE: staleCaptureFile,
         ORCA_RESULT_FILE: resultFile,
@@ -441,6 +442,7 @@ ${getPosixOmpShellWrapper()}`,
       input: 'source "$ORCA_SCENARIO_FILE"\n'
     })
 
+    expect(existsSync(unsetPwdCaptureFile), output).toBe(true)
     const unsetPwdCapture = readFileSync(unsetPwdCaptureFile, 'utf8')
     expect(unsetPwdCapture).toContain(`CWD=${expectedProjectDir}`)
     const deletedLinkCapture = readFileSync(deletedLinkCaptureFile, 'utf8')

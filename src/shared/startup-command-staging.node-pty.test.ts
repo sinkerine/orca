@@ -98,7 +98,7 @@ async function launchInRealShell(shell: LiveShell, prompt: string): Promise<Agen
     rows: 30,
     cwd: caseDir,
     env: {
-      PATH: '/usr/bin:/bin:/usr/sbin:/sbin',
+      PATH: process.env.PATH ?? '/usr/bin:/bin:/usr/sbin:/sbin',
       HOME: caseDir,
       TERM: 'xterm-256color',
       XDG_CONFIG_HOME: join(caseDir, 'config'),

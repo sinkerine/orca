@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -13,6 +14,12 @@ import { quotePosixShell } from '../../shared/shell-argument-quoting'
 
 const COMMAND = 'orca-22975-gh'
 const BROKEN_SHIM = 'echo broken-shim >&2\nexit 126\n'
+const sleepCommand =
+  process.platform === 'win32'
+    ? ''
+    : quotePosixShell(
+        execFileSync('/bin/sh', ['-c', 'command -v sleep'], { encoding: 'utf8' }).trim()
+      )
 let root = ''
 
 async function cliInDirectory(label: string, body = 'echo gh-version-fixture\n'): Promise<string> {
@@ -83,7 +90,10 @@ describe.skipIf(process.platform === 'win32')(
     })
 
     it('keeps the full timeout for a healthy first copy when other copies exist', async () => {
-      const first = await cliInDirectory('slow-first', '/bin/sleep 2\necho gh-version-fixture\n')
+      const first = await cliInDirectory(
+        'slow-first',
+        `${sleepCommand} 2\necho gh-version-fixture\n`
+      )
       const second = await cliInDirectory('broken-second', BROKEN_SHIM)
       const third = await cliInDirectory('broken-third', BROKEN_SHIM)
       vi.stubEnv('PATH', [first, second, third].join(path.delimiter))
@@ -188,7 +198,7 @@ describe.skipIf(process.platform === 'win32')(
 
     it('recovers a working copy after a real launcher timeout', async () => {
       const marker = path.join(root, 'descendant-terminated')
-      const childScript = `trap ${quotePosixShell(`printf terminated > ${quotePosixShell(marker)}; exit 0`)} TERM\n/bin/sleep 30 &\nwait\n`
+      const childScript = `trap ${quotePosixShell(`printf terminated > ${quotePosixShell(marker)}; exit 0`)} TERM\n${sleepCommand} 30 &\nwait\n`
       const hung = await cliInDirectory(
         'hung',
         `/bin/sh -c ${quotePosixShell(childScript)} &\nwait\n`

@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { registerMainWindow } from '../../window/main-window-registry'
 import type { Mock } from 'vitest'
 import { registerSshHandlers, resetSshHandlerStateForTests } from './ssh'
 import type { SshIpcMocks } from './ssh-ipc-module-mocks'
@@ -48,6 +49,10 @@ export function createSshIpcHarness(mocks: SshIpcMocks): SshIpcHarness {
     removeSshRemotePtyLeases: vi.fn()
   }
   const mockWindow = {
+    id: 1,
+    on: vi.fn(),
+    once: vi.fn(),
+    removeListener: vi.fn(),
     isDestroyed: () => false,
     webContents: { send: vi.fn() }
   }
@@ -132,6 +137,8 @@ export function createSshIpcHarness(mocks: SshIpcMocks): SshIpcHarness {
     powerMonitorOnMock.mockReset()
     powerMonitorOffMock.mockReset()
 
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: broadcast only reads this live window's id and webContents sender.
+    registerMainWindow(mockWindow as never)
     registerSshHandlers(mockStore as never, () => mockWindow as never)
   }
 

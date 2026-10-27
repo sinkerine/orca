@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import {
-  loginPreflightExecFileMock,
-  spawnMock,
-  openCodeBuildPtyEnvMock
-} from './pty-ipc-mock-registry'
+import { spawnMock, openCodeBuildPtyEnvMock } from './pty-ipc-mock-registry'
 import { posixOnlyIt } from './pty-ipc-test-constants'
 import { setupPtyIpcSuite } from './pty-ipc-test-harness'
 import { userInfo } from 'node:os'
@@ -14,8 +10,23 @@ import { POSIX_SHELL_STARTUP_COMMAND_ENV } from '../pty/posix-shell-startup-comm
 // Why resolved rather than hardcoded: the wrapper tree is content-addressed.
 import { getShellReadyWrapperRoot } from '../providers/local-pty-shell-ready-wrapper-root'
 
+vi.mock('@orca/process-host', async (importOriginal) => {
+  const original = await importOriginal<Record<string, unknown>>()
+  return {
+    ...original,
+    runProcess: vi.fn(async () => ({
+      code: 0,
+      signal: null,
+      stdout: 'ORCA_LOGIN_PREFLIGHT_OK',
+      stderr: '',
+      timedOut: false
+    }))
+  }
+})
+
 vi.mock('electron', () => import('./pty-ipc-mock-registry').then((m) => m.electronModuleMock()))
 vi.mock('fs', () => import('./pty-ipc-mock-registry').then((m) => m.fsModuleMock()))
+vi.mock('node:fs', () => import('./pty-ipc-mock-registry').then((m) => m.fsModuleMock()))
 vi.mock('node-pty', () => import('./pty-ipc-mock-registry').then((m) => m.nodePtyModuleMock()))
 vi.mock('node:child_process', async (importOriginal) =>
   (await import('./pty-ipc-mock-registry')).childProcessModuleMock(await importOriginal())
@@ -66,17 +77,6 @@ describe('registerPtyHandlers', () => {
     // Re-enable the TCC login wrapper the suite-level beforeEach disables.
     delete process.env.ORCA_DISABLE_MACOS_LOGIN_SHELL
     process.env.SHELL = '/bin/zsh'
-    loginPreflightExecFileMock.mockImplementation(
-      (
-        _file: string,
-        _args: string[],
-        _options: unknown,
-        callback: (error: Error | null, stdout: string, stderr: string) => void
-      ) => {
-        callback(null, 'ORCA_LOGIN_PREFLIGHT_OK', '')
-        return { stdin: { end: vi.fn() } }
-      }
-    )
     resetMacosLoginShellPreflightForTests()
 
     try {

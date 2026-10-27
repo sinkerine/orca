@@ -37,8 +37,6 @@ export function createPtySpawnCommitDependencies(
     sendPtyExitToRenderer: unexpectedPreflight,
     finishPtyShutdown: unexpectedPreflight,
     retiredRejectedPtyIds: new Map(),
-    get mainWindow() {
-      return unexpectedPreflight()
-    }
+    mainWindow: undefined
   }
 }

@@ -94,13 +94,15 @@ export async function runZshPty(options: ZshPtyOptions): Promise<ZshPtyRun> {
   const resultPath = join(workDir, 'probe.txt')
   const timeoutMs = options.timeoutMs ?? 20_000
 
-  const proc = pty.spawn(ZSH_PATH, ['-l', '-i'], {
+  const proc = pty.spawn(ZSH_PATH, ['-o', 'noglobalrcs', '-l', '-i'], {
     name: 'xterm-256color',
     cols: 200,
     rows: 40,
     cwd: options.cwd ?? workDir,
     env: {
       ...options.env,
+      // The fixtures supply their own startup files and PATH; NixOS must not replace them.
+      __ETC_ZSHENV_SOURCED: '1',
       // Why the sentinel is env-borne: the prompt is overwritten from the PTY
       // below, and it has to survive whatever prompt the user's config installs.
       ORCA_PTY_SENTINEL: sentinel

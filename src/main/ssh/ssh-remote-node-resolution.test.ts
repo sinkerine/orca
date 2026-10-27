@@ -193,7 +193,7 @@ describe('resolveRemoteNodePath', () => {
 
       const output = execFileSync('/bin/sh', ['-c', callScript], {
         encoding: 'utf8',
-        env: { HOME: home, PATH: '/usr/bin:/bin' }
+        env: { HOME: home, PATH: process.env.PATH ?? '/usr/bin:/bin' }
       })
 
       const lines = output.split('\n')
@@ -222,7 +222,7 @@ describe('resolveRemoteNodePath', () => {
 
       const output = execFileSync('/bin/sh', ['-c', callScript], {
         encoding: 'utf8',
-        env: { HOME: home, MISE_DATA_DIR: miseDataDir, PATH: '/usr/bin:/bin' }
+        env: { HOME: home, MISE_DATA_DIR: miseDataDir, PATH: process.env.PATH ?? '/usr/bin:/bin' }
       })
 
       expect(output.split('\n')).toContain(installPath)
@@ -249,7 +249,7 @@ describe('resolveRemoteNodePath', () => {
 
       const output = execFileSync('/bin/sh', ['-c', callScript], {
         encoding: 'utf8',
-        env: { HOME: home, XDG_DATA_HOME: xdgDataHome, PATH: '/usr/bin:/bin' }
+        env: { HOME: home, XDG_DATA_HOME: xdgDataHome, PATH: process.env.PATH ?? '/usr/bin:/bin' }
       })
 
       expect(output.split('\n')).toContain(installPath)
@@ -324,7 +324,7 @@ describe('resolveRemoteNodePath', () => {
 
       const output = execFileSync('/bin/sh', ['-c', callScript], {
         encoding: 'utf8',
-        env: { HOME: home, PATH: '/usr/bin:/bin' }
+        env: { HOME: home, PATH: process.env.PATH ?? '/usr/bin:/bin' }
       })
 
       expect(output.split('\n')).toContain(nodePath)
@@ -355,7 +355,7 @@ describe('resolveRemoteNodePath', () => {
         encoding: 'utf8',
         env: {
           HOME: home,
-          PATH: '/usr/bin:/bin',
+          PATH: process.env.PATH ?? '/usr/bin:/bin',
           XDG_DATA_HOME: path.join(home, 'xdg-data')
         }
       })
@@ -385,7 +385,7 @@ describe('resolveRemoteNodePath', () => {
 
       const output = execFileSync('/bin/sh', ['-c', callScript], {
         encoding: 'utf8',
-        env: { HOME: home, PATH: '/usr/bin:/bin' }
+        env: { HOME: home, PATH: process.env.PATH ?? '/usr/bin:/bin' }
       })
 
       expect(output.split('\n')).toContain(nodePath)

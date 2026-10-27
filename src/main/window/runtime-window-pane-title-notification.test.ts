@@ -4,6 +4,10 @@ import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 import type { RuntimeNotifier } from '../runtime/runtime-notifier-contract'
 
 vi.mock('electron', () => ({ ipcMain: { on: vi.fn(), removeListener: vi.fn() } }))
+vi.mock('./main-window-registry', () => ({
+  getMainWindowById: () => ({ id: 1 }),
+  getFocusedOrLastActiveMainWindow: () => null
+}))
 vi.mock('../ipc/worktree-change-invalidators', () => ({ runWorktreeChangeInvalidators: vi.fn() }))
 vi.mock('./mobile-markdown-request-relay', () => ({ requestMobileMarkdownFromRenderer: vi.fn() }))
 vi.mock('./renderer-document-navigation', () => ({ registerRendererDocumentNavigation: vi.fn() }))
@@ -25,10 +29,12 @@ function attachNotifier() {
     id: 1,
     isDestroyed: () => windowState.destroyed,
     on: vi.fn(),
+    once: vi.fn(),
     webContents: { isDestroyed: () => false, send, on: vi.fn() }
   }
   const runtime = {
     attachWindow: vi.fn(),
+    resolveOwnerWindowIdForTabId: () => mainWindow.id,
     markGraphReloadFailed,
     setNotifier: (next: RuntimeNotifier | null) => {
       attached.notifier = next

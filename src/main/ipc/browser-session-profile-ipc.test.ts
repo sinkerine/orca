@@ -16,6 +16,10 @@ const {
   setBrowserIdentityModeMock: vi.fn(async () => ({ ok: true }))
 }))
 
+vi.mock('../window/main-window-registry', () => ({
+  getMainWindowForWebContents: () => ({ id: 1 })
+}))
+
 vi.mock('../browser/browser-identity-mode-store', () => ({
   setBrowserIdentityMode: setBrowserIdentityModeMock,
   getBrowserIdentityModeStatus: vi.fn(() => ({ identity: {}, migrationNotice: null }))

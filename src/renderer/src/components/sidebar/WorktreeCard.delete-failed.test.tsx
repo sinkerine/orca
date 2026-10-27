@@ -49,10 +49,13 @@ vi.mock('@/store', () => {
     worktreeCardProperties
   })
   return {
-    useAppStore: Object.assign((selector: (state: unknown) => unknown) => selector(getState()), {
-      getState,
-      subscribe: () => () => {}
-    })
+    useAppStore: Object.assign(
+      (selector: (state: unknown) => unknown) => selector({ projects: [], ...getState() }),
+      {
+        getState,
+        subscribe: () => () => {}
+      }
+    )
   }
 })
 

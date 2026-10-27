@@ -25,6 +25,7 @@ export type MainWindowStub = {
 
 type RuntimeStub = {
   attachWindow: MockFn
+  registerPtyOwnerWindow: MockFn
   setNotifier: ReturnType<typeof vi.fn<(notifier: RuntimeNotifier | null) => void>>
   markRendererReloading: MockFn
   markRendererReloadCancelled: MockFn
@@ -63,6 +64,7 @@ export function createMainWindowServiceStub(
 export function createRuntime(): RuntimeStub {
   return {
     attachWindow: vi.fn(),
+    registerPtyOwnerWindow: vi.fn(),
     setNotifier: vi.fn<(notifier: RuntimeNotifier | null) => void>(),
     markRendererReloading: vi.fn(),
     markRendererReloadCancelled: vi.fn(),

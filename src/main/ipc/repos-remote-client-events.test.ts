@@ -48,7 +48,17 @@ const mainWindow = { isDestroyed: () => false, webContents: { send: vi.fn() } }
 async function registerHandlersWithoutNotifier(): Promise<typeof ReposChangedNotificationModule> {
   vi.resetModules()
   const repos = await import('./repos')
-  repos.registerRepoHandlers(mainWindow as never, mockStore as never, {} as never)
+  repos.registerRepoHandlers(
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: these handlers only send renderer notifications.
+    mainWindow as never,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fixture implements the catalog operations exercised here.
+    mockStore as never,
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the fixture supplies the removal guard used by these handlers.
+    {
+      guardPrimaryProjectRemoval: (_repoId: string, _hostId: string, operation: () => unknown) =>
+        operation()
+    } as never
+  )
   return import('./repos/repos-changed-notification')
 }
 

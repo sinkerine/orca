@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -132,7 +132,10 @@ describe.runIf(platform === 'linux')('orcad process incarnation on a real /proc'
   it('reads ticks and the boot id, even for a command name with spaces and parens', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'orcad-incarnation-'))
     const odd = join(dir, 'x) y (z')
-    symlinkSync('/bin/sleep', odd)
+    symlinkSync(
+      execFileSync('/bin/sh', ['-c', 'command -v sleep'], { encoding: 'utf8' }).trim(),
+      odd
+    )
     const child = spawn(odd, ['30'], { stdio: 'ignore' })
     try {
       await new Promise<void>((resolve, reject) => {

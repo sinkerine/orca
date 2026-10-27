@@ -128,7 +128,7 @@ function machine(name: string, hostname = name, options: MachineOptions = {}) {
       [
         'for last; do :; done',
         `case "$last" in */${ORCAD_MACHINE_CLAIM_FILENAME}) echo "mv: ${options.claimMoveError}" >&2; exit 1;; esac`,
-        'exec /bin/mv "$@"'
+        `PATH=${JSON.stringify(process.env.PATH ?? '')} exec mv "$@"`
       ].join('\n')
     )
   }
@@ -147,7 +147,7 @@ function machine(name: string, hostname = name, options: MachineOptions = {}) {
         `  while [ "$(ls '${barrier}' | wc -l)" -lt 2 ] && [ $i -lt 40 ]; do sleep 0.05; i=$((i + 1)); done`,
         `  sleep ${options.claimWriteDelay};;`,
         'esac',
-        'exec /bin/mv "$@"'
+        `PATH=${JSON.stringify(process.env.PATH ?? '')} exec mv "$@"`
       ].join('\n')
     )
   }
@@ -155,7 +155,7 @@ function machine(name: string, hostname = name, options: MachineOptions = {}) {
     // Before and right after the claim, which ends with no newline.
     tool(
       'cat',
-      `echo '${options.catStderrNoise}' >&2; /bin/cat "$@"; s=$?; printf '%s' '${options.catStderrNoise}' >&2; exit $s`
+      `echo '${options.catStderrNoise}' >&2; PATH=${JSON.stringify(process.env.PATH ?? '')} cat "$@"; s=$?; printf '%s' '${options.catStderrNoise}' >&2; exit $s`
     )
   }
   const env = {

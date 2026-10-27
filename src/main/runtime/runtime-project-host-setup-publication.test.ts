@@ -47,6 +47,8 @@ function makeController(): {
     invalidateResolvedWorktrees,
     invalidateWorktreeScan: vi.fn(),
     notifyReposChanged,
+    flushPrimaryPersistence: async () => {},
+    guardSetupRemoval: async (_setupId, operation) => operation(),
     countLiveTerminalsForRepo: () => 0
   })
   return { controller, notifyReposChanged, invalidateResolvedWorktrees, retired }
@@ -78,9 +80,9 @@ describe('RuntimeProjectHostSetupController publication', () => {
     }
   )
 
-  it('retires cached worktree scans and publishes a deleted setup', () => {
+  it('retires cached worktree scans and publishes a deleted setup', async () => {
     const { controller, notifyReposChanged, retired } = makeController()
-    controller.deleteSetup({ setupId: setup.id })
+    await controller.deleteSetup({ setupId: setup.id })
     expect(retired).toEqual(['repo-1'])
     expect(notifyReposChanged).toHaveBeenCalledTimes(1)
   })

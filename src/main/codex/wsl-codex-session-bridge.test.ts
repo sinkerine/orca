@@ -205,7 +205,7 @@ describe('buildWslCodexSessionBridgeShellCommand', () => {
 if [ "$2" = "$BRIDGE_SOURCE" ] && [ "$3" = "$BRIDGE_TARGET" ]; then
   exit 1
 fi
-exec /bin/ln "$@"
+PATH=${JSON.stringify(process.env.PATH ?? '')} exec ln "$@"
 `
       )
       chmodSync(lnShimPath, 0o755)
@@ -215,7 +215,7 @@ exec /bin/ln "$@"
       })
 
       try {
-        execFileSync('/bin/bash', ['-c', shellCommand], {
+        execFileSync('bash', ['-c', shellCommand], {
           env: {
             ...process.env,
             BRIDGE_SOURCE: sourcePath,
@@ -249,7 +249,7 @@ exec /bin/ln "$@"
       })
 
       try {
-        execFileSync('/bin/bash', ['-c', shellCommand])
+        execFileSync('bash', ['-c', shellCommand])
         expect(readFileSync(targetPath, 'utf-8')).toBe('{"session":"retired"}\n')
       } finally {
         rmSync(root, { recursive: true, force: true })
@@ -276,9 +276,9 @@ exec /bin/ln "$@"
       })
 
       try {
-        expect(() => execFileSync('/bin/bash', ['-c', shellCommand])).toThrow()
+        expect(() => execFileSync('bash', ['-c', shellCommand])).toThrow()
         rmSync(blockingPath)
-        execFileSync('/bin/bash', ['-c', shellCommand])
+        execFileSync('bash', ['-c', shellCommand])
         expect(readFileSync(join(managedSessionsRoot, relativePath), 'utf-8')).toBe(
           '{"session":"retired"}\n'
         )

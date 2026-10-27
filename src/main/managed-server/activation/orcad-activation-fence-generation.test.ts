@@ -124,13 +124,13 @@ describe.skipIf(process.platform === 'win32')('a superseded activation fence hol
     // Stalls the first move of the journal, the release step right after its token check.
     writeFileSync(
       join(bin, 'mv'),
-      `#!/bin/sh\nif [ "$1" = '${journal}' ] && [ ! -f '${ready}' ]; then touch '${ready}'; while [ ! -f '${resume}' ]; do sleep 0.05; done; fi\nexec /bin/mv "$@"\n`
+      `#!/bin/sh\nif [ "$1" = '${journal}' ] && [ ! -f '${ready}' ]; then touch '${ready}'; while [ ! -f '${resume}' ]; do sleep 0.05; done; fi\nPATH=${JSON.stringify(process.env.PATH ?? '')} exec mv "$@"\n`
     )
     chmodSync(join(bin, 'mv'), 0o755)
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: execCommand is mocked to a local shell, so the connection is never used.
     const conn = {} as never
     const options = { conn, host: getRemoteHostPlatform('linux-x64'), remoteHome: home }
-    shell.env = { ...process.env, PATH: `${bin}:/usr/bin:/bin` }
+    shell.env = { ...process.env, PATH: `${bin}:${process.env.PATH ?? '/usr/bin:/bin'}` }
     let finishSuccessor: (() => void) | undefined
     let successor: Promise<unknown> | undefined
     const first = withOrcadActivationLock(

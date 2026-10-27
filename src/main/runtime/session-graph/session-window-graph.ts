@@ -7,7 +7,10 @@ import type {
   RuntimeSyncWindowGraphResult
 } from '../../../shared/runtime-session-contracts'
 import { HEADLESS_RUNTIME_WINDOW_ID } from '../../../shared/runtime-types'
-import { assertUniqueRuntimeGraphTabIds, rebuildRuntimeWindowOwnershipIndex } from '../runtime-window-ownership-index'
+import {
+  assertUniqueRuntimeGraphTabIds,
+  rebuildRuntimeWindowOwnershipIndex
+} from '../runtime-window-ownership-index'
 
 export abstract class OrcaRuntimeWithSyncWindowGraph extends OrcaRuntimeWithAttachWindow {
   declare protected terminalGroupGridSizes?: RuntimeSyncWindowGraph['terminalGroupGridSizes']
@@ -106,7 +109,9 @@ export abstract class OrcaRuntimeWithSyncWindowGraph extends OrcaRuntimeWithAtta
       for (const tab of graph.tabs) {
         allTabs.set(tab.tabId, tab)
       }
-      const allLeaves = new Map<string, RuntimeSyncWindowGraph['leaves'][number]>([...this.leaves].filter(([key]) => survivingLeaves.has(key)))
+      const allLeaves = new Map<string, RuntimeSyncWindowGraph['leaves'][number]>(
+        [...this.leaves].filter(([key]) => survivingLeaves.has(key))
+      )
       for (const leaf of graph.leaves) {
         allLeaves.set(this.getLeafKey(leaf.tabId, leaf.leafId), leaf)
       }
@@ -230,10 +235,51 @@ export abstract class OrcaRuntimeWithSyncWindowGraph extends OrcaRuntimeWithAtta
       }
     }
 
-    // Why: computed BEFORE preserving stale leaves so preservation can refuse a
-    // leaf whose PTY the incoming graph already rebound to a live leaf. Two
-    // leaves on one PTY resolve to the same handle (handles are ptyId-keyed) and
-    // crash paired clients with a duplicate React key.
+    const nextPtyIds = new Set([...nextLeaves.values()].map((leaf) => leaf.ptyId).filter(Boolean))
+    for (const [oldLeafKey, oldLeaf] of previousLeaves) {
+      if (nextLeaves.has(oldLeafKey)) {
+        continue
+      }
+      if (oldLeaf.ptyId && !nextPtyIds.has(oldLeaf.ptyId)) {
+        this.orchestrationMailboxPointerDelivery.markPtyColdParked(oldLeaf.ptyId)
+      }
+      const retainedIncarnation = oldLeaf.ptyId
+        ? this.handleByPtyIncarnation.get(oldLeaf.ptyId)
+        : undefined
+      if (
+        preserveLivePtysDuringReload &&
+        oldLeaf.ptyId &&
+        (this.handleByPtyId.has(oldLeaf.ptyId) ||
+          (retainedIncarnation &&
+            retainedIncarnation.incarnationId ===
+              this.ptysById.get(oldLeaf.ptyId)?.incarnationId)) &&
+        !nextPtyIds.has(oldLeaf.ptyId)
+      ) {
+        nextLeaves.set(oldLeafKey, oldLeaf)
+        nextPtyIds.add(oldLeaf.ptyId)
+      } else if (oldLeaf.ptyId && nextPtyIds.has(oldLeaf.ptyId)) {
+        const oldHandle = this.handleByLeafKey.get(oldLeafKey)
+        if (
+          oldHandle !== undefined &&
+          (oldHandle === this.handleByPtyId.get(oldLeaf.ptyId) ||
+            oldHandle === retainedIncarnation?.handle)
+        ) {
+          this.handleByLeafKey.delete(oldLeafKey)
+        } else {
+          this.invalidateLeafHandle(oldLeafKey)
+        }
+      } else {
+        this.invalidateLeafHandle(oldLeafKey)
+      }
+    }
+    for (const [ptyId, leaf] of this.detachedPreAllocatedLeaves) {
+      if (nextPtyIds.has(ptyId) || !this.handleByPtyId.has(ptyId)) {
+        this.detachedPreAllocatedLeaves.delete(ptyId)
+        continue
+      }
+      nextLeaves.set(this.getLeafKey(leaf.tabId, leaf.leafId), leaf)
+      nextPtyIds.add(ptyId)
+    }
 
     this.leaves = nextLeaves
     this.rebuildLeafPtyIndex()
@@ -349,5 +395,4 @@ export abstract class OrcaRuntimeWithSyncWindowGraph extends OrcaRuntimeWithAtta
       this.onPtyOwnerWindowsChanged?.(indexes.ptyOwnerChanges)
     }
   }
-
 }

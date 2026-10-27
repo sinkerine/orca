@@ -441,6 +441,7 @@ describe('attachMainWindowServices', () => {
     attachMainWindowServices(oldWindow as never, createStore(), createRuntime() as never)
     const oldClosedHandlers = getClosedHandlers(oldWindow.on)
     const newWindow = createMainWindow()
+    newWindow.id = 2
     attachMainWindowServices(newWindow as never, createStore(), createRuntime() as never)
 
     removeHandlerMock.mockClear()
@@ -556,6 +557,7 @@ describe('attachMainWindowServices', () => {
 
     const newWindowOnMock = vi.fn()
     const newWindow = createMainWindow()
+    newWindow.id = 2
     newWindow.on = newWindowOnMock
     attachMainWindowServices(newWindow as never, createStore(), createRuntime() as never)
 
@@ -650,6 +652,7 @@ describe('attachMainWindowServices', () => {
 
     const newWindowOnMock = vi.fn()
     const newWindow = createMainWindow()
+    newWindow.id = 2
     newWindow.on = newWindowOnMock
     attachMainWindowServices(newWindow as never, createStore(), runtime as never)
 

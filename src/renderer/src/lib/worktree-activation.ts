@@ -21,7 +21,6 @@ import {
   getRuntimeEnvironmentIdForFolderWorkspace
 } from './folder-workspace-runtime-owner'
 import { getFolderWorkspaceHostId } from '../../../shared/folder-workspace-execution-host'
-import { clearProjectFilterHidingRepo } from '@/components/sidebar/project-filter-resolution'
 import type { WorktreeStartupPayload } from '@/lib/worktree-startup-payload'
 import {
   ensureFolderWorkspaceInitialTerminal,
@@ -287,7 +286,6 @@ export function activateAndRevealWorktree(
     state.setSidebarBody('workspaces')
   }
   if (opts?.clearSidebarFilters !== false) {
-    clearProjectFilterHidingRepo(state, wt.repoId)
     liftSidebarFiltersHidingWorktree(wt)
   }
 

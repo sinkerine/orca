@@ -227,7 +227,8 @@ export async function openPreviewArm(
       readImageHits,
       assetServer,
       cspReports,
-      nonce
+      nonce,
+      frameNavigated: reportAfterAct === 'frame-src'
     })
     return result
   } finally {

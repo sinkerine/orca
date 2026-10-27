@@ -53,7 +53,9 @@ const testOptions = {
     resolve('config/scripts/vitest-caller-identity-env-setup.ts')
   ],
   include: UNIT_INCLUDE,
-  exclude: balancedShards ? UNIT_EXCLUDE : defaultExclude,
+  exclude: balancedShards
+    ? UNIT_EXCLUDE
+    : [...defaultExclude, 'tests/e2e/.cross-version-checkouts/**'],
   hookTimeout: 60_000,
   testTimeout: 30_000
 }

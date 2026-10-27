@@ -80,6 +80,8 @@ const KNOWN_PREEXISTING_I2_FAILURES: Record<string, number> = {
   'codex-fullscreen-multiline-early-input': 10,
   'codex-fullscreen-startup': 14,
   'claude-dialog-trust-workspace-answered': 13,
+  // Shrink-grow restores the live background on blank cells; identical with the HEAD serializer.
+  'claude-native-model-narrow': 3,
   // DSH-TUI's whale intro paints whole rows of 24-bit background, and every one of this
   // transcript's divergences is the same shape: `visible-grid row=0`, a true-colour
   // background that the round trip does not restore to default. Verified as upstream, not a

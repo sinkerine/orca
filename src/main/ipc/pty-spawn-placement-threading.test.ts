@@ -71,6 +71,7 @@ describe('pty spawn placement threading', () => {
     const store = { persistPtyBinding: vi.fn(async () => true) }
     let controller: RuntimeSpawnController | null = null
     const runtime = {
+      registerPtyOwnerWindow: vi.fn(),
       setPtyController: vi.fn((value) => {
         controller = value
       }),

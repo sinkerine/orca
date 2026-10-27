@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ send: vi.fn(), notify: vi.fn(), getState: vi.fn() }))
 
+vi.mock('../window/main-window-registry', () => ({
+  broadcastToMainWindows: (...args: unknown[]) => mocks.send(...args)
+}))
+
 vi.mock('./ssh/ssh-ipc-context', () => ({
   connectionManager: { getState: mocks.getState },
   currentRuntime: { notifySshStateChanged: mocks.notify },

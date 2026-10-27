@@ -25,7 +25,11 @@
     },
     "components": {
       "CodexRestartChip": {
-        "9263e75f49": "Codex is using the previous account"
+        "3ea91b5c07": "This Codex session is using an outdated configuration",
+        "7b1d20f4c8": "Keep current session",
+        "8f0d5c92a1": "Codex setup changed",
+        "9263e75f49": "Codex is using the previous account",
+        "e6b7139d2a": "Restart this session to load your current Codex configuration."
       },
       "GitHubItemDialog": {
         "04539beb48": "issue",
@@ -74,6 +78,7 @@
         "f5a6b38a14": "sheet"
       },
       "NewWorkspaceComposerCard": {
+        "01d1e8f601": "Agent",
         "0e587e31fb": "yaml",
         "2132b670da": "both",
         "7711ad5122": "Local setup command",
@@ -93,7 +98,11 @@
         "setupHostExistingFolderPlaceholder": "/path/to/project/on/host",
         "setupHostExistingFolderTitle": "Set up {{value0}}",
         "setupKindFolder": "Folder",
-        "setupKindGit": "Git repo"
+        "setupKindGit": "Git repo",
+        "waitForSetupBeforeAgentHelp": "Turn this on when setup installs dependencies, MCP servers, or config files the agent needs during startup."
+      },
+      "NewWorkspaceComposerModal": {
+        "fa90f739a5": "Choose the project, workspace name, and agent before creating the workspace."
       },
       "PullRequestPage": {
         "3450247584": "Comment",
@@ -124,6 +133,9 @@
         "e295a78c11": "Show {{value0}} more lines above",
         "e6996f4024": "· updated",
         "ff84e1f54c": "{{value0}} {{value1}} as viewed"
+      },
+      "QuickOpen": {
+        "344f8a48dd": "on the host running the Quick Open scan to enable fast, gitignore-aware listing:"
       },
       "StarNagCard": {
         "68a41bc3aa": "Could not star with",
@@ -183,6 +195,9 @@
       "Terminal": {
         "cdc9ac4b2d": "editor"
       },
+      "UnexpectedSignoutCard": {
+        "7e1a9c4d2f": "Signing in…"
+      },
       "UpdateCard": {
         "522df222b9": "spinner",
         "7ffc08506e": "check",
@@ -196,7 +211,8 @@
         "ActivityPrototypePage": {
           "770d458144": "Group by",
           "a472a14700": "More options",
-          "beb2c19173": "Unread"
+          "beb2c19173": "Unread",
+          "threadListOptionsFiltered": "Thread list options, filters active"
         },
         "ActivityScopeFilterControls": {
           "hiddenCount": "{{value0}} hidden"
@@ -211,10 +227,14 @@
         }
       },
       "artifacts": {
+        "ArtifactPublishButton": {
+          "signingIn": "Signing in…"
+        },
         "ArtifactsPage": {
           "openArtifact": "Open artifact",
           "signInCopy": "Sign in to view and manage artifacts shared through your account.",
-          "signInHeading": "Sign in to Orca"
+          "signInHeading": "Sign in to Orca",
+          "signingIn": "Signing in…"
         },
         "artifact-publish-flow": {
           "5cb4f5ec36": "Copy link"
@@ -233,7 +253,11 @@
           "ff5db28639": "existing"
         },
         "AutomationEditorDialogHeader": {
-          "4c8e1a72b9": "A recurring agent task"
+          "03142e7721": "Edit Hermes automation",
+          "0a75e5e2fa": "Create Hermes automation",
+          "4c8e1a72b9": "A recurring agent task",
+          "6f309eef8d": "Orca",
+          "7e35393632": "Hermes"
         },
         "AutomationRunHistory": {
           "fdb3caa8fb": "known"
@@ -252,17 +276,21 @@
         "AutomationsPage": {
           "2695883141": "delete",
           "0329f9bef1": "Close · Esc",
+          "08efc3ae12": "Hermes automation updated.",
+          "0ae52dd760": "hermes",
           "3e42a5cc1b": "SSH connection failed.",
           "53f06f0ad5": "Retry source",
           "587a4b205c": "Next",
           "5918020edc": "run",
           "67c7ff795b": "Close automations",
           "761a35834d": "Automation",
+          "77b81bc4ac": "Hermes automation created.",
           "7934ee0d81": "Connect SSH",
           "7b2e285552": "SSH connections are unavailable in this client.",
           "82eb6cb933": "source",
           "8705757e27": "job",
           "8d1afa8269": "Add automation",
+          "97ff587ee3": "Connect this source to check for Hermes automations in the remote profile.",
           "9f2855677c": "SSH connected.",
           "a21f6c33ad": "Automation source refreshed.",
           "aaa007846f": "source unavailable",
@@ -272,6 +300,7 @@
           "dd0bc7a1ba": "new_per_run",
           "destinationProjectUnavailable": "Choose a project owned by the selected automation destination.",
           "e059042585": "Read-only",
+          "e431bb85d4": "Choose a workspace on the same host as this Hermes automation.",
           "f93ed7a6f8": "Connecting...",
           "moveOriginalKept": "Created on {host}, but the original could not be deleted. Remove it on the old host.",
           "moveOriginalUnverified": "Created on {host}, but the original deletion could not be verified. Check the old host before retrying.",
@@ -286,7 +315,32 @@
           "tableProject": "Project"
         },
         "ExternalAutomationManagers": {
-          "330b3c32e8": "available"
+          "1df491fd00": "Edit external automation",
+          "330b3c32e8": "available",
+          "766abf833c": "Hermes",
+          "844f1acb72": "found",
+          "8e9165af08": "run",
+          "bf5f67b590": "hermes",
+          "e66091daf4": "runs"
+        },
+        "ExternalAutomationRunTable": {
+          "0ba9c0a95c": "Next run page",
+          "2d4388a908": "Runs",
+          "52d468a0b8": "Previous run page",
+          "7475c0ce96": "of",
+          "872d032d05": "run",
+          "8ea934cacf": "Loading runs...",
+          "9c080765ff": "No Hermes runs found yet.",
+          "a813df9808": "Preview",
+          "be551397ca": "Status",
+          "d4b34feb66": "Run time",
+          "d5527d8fe7": "runs"
+        },
+        "HermesCronOutputView": {
+          "05affc68e3": "Error",
+          "4557213074": "Response",
+          "88d48157fc": "default",
+          "e27c716b43": "Prompt"
         },
         "createDestination": {
           "stale": "{host} changed while this form was open. Choose it again before saving.",
@@ -313,6 +367,7 @@
             "5f66313863": "annotation",
             "8aec5bc044": "idle",
             "8b6fab9ffa": "Save",
+            "8f87e6c2e5": "Intent",
             "93be92f8d1": "Copy Address",
             "a3508d7e6e": "{{value0}} annotation{{value1}} ready. Select another element or copy all feedback.",
             "a5dcd0fd1d": "confirming",
@@ -381,9 +436,20 @@
           "d07e4b8553": "branch",
           "d16e037f40": "rich"
         },
+        "EditorPanelHeader": {
+          "openContainingFolder": "Open Containing Folder",
+          "revealInFileExplorer": "Reveal in File Explorer",
+          "revealInFinder": "Reveal in Finder"
+        },
         "EditorPanelMarkdownActionsMenu": {
           "10c39d58c1": "Hide front matter",
           "8c8b7f5ff5": "Show front matter"
+        },
+        "IpynbViewer": {
+          "329764e9fc": "BETA",
+          "59b6cd874b": "code",
+          "8c3b21369a": "nbformat",
+          "ba149053d5": "markdown"
         },
         "ReviewNotesSendMenuContent": {
           "50f7e753ea": "Sending notes to active agent...",
@@ -436,6 +502,16 @@
       },
       "emulator": {
         "pane": {
+          "MobileEmulatorAgentSetupGuide": {
+            "72736b051f": "Set up Orca CLI + skill when you want agents to drive this simulator."
+          },
+          "MobileEmulatorAgentSetupGuideSteps": {
+            "3941719a56": "Checking Orca CLI before opening skill setup.",
+            "3be27641c9": "so emulator commands can run from agent shells.",
+            "3d34423e88": "Registering the Orca CLI",
+            "3d8dc52c93": "Registers the orca command for emulator control in agent shells.",
+            "9b49d892e3": "Enable Orca CLI"
+          },
           "emulator": {
             "device": {
               "frame": {
@@ -446,6 +522,27 @@
               "pane": {
                 "b2c268a0b9": "Mobile Emulator is macOS only",
                 "f630b9ca9f": "Mobile Emulator requires a Mac with Xcode and the iOS Simulator runtime. On Linux or Windows, use a physical device or a remote Mac build host."
+              }
+            }
+          },
+          "use": {
+            "mobile": {
+              "emulator": {
+                "agent": {
+                  "setup": {
+                    "state": {
+                      "15986a1080": "Orca CLI is ready. Install the skill to finish setup.",
+                      "2b519eed94": "Registered the Orca CLI in PATH.",
+                      "4c26913def": "Still not set up. Complete both steps to enable agent control.",
+                      "51074ccb05": "Failed to load CLI status.",
+                      "69fb2c2289": "Enabled",
+                      "7c1b6bdb1e": "Enable",
+                      "9dff3a6338": "Skill is installed. Enable the Orca CLI to finish setup.",
+                      "c6705092ba": "Fix PATH",
+                      "fdcca1ec75": "Registering..."
+                    }
+                  }
+                }
               }
             }
           }
@@ -460,6 +557,9 @@
           }
         },
         "wall": {
+          "AgentCapabilitiesSetupAction": {
+            "c89534cbe9": "Install CLI & Skills"
+          },
           "ComputerUseAnimatedVisual": {
             "1719b28a81": "found \"Approve\"",
             "2adb561b44": "Claude Code session started",
@@ -475,7 +575,11 @@
             "d8401975b1": "approved",
             "f27676a92c": "status:"
           },
+          "FeatureWallBrowserAction": {
+            "c2df599513": "Install CLI & Skill"
+          },
           "FeatureWallSetupChecklist": {
+            "0235b268b2": "Not done yet",
             "b1f1981c5e": "See tasks"
           },
           "ReviewAnimatedVisual": {
@@ -484,6 +588,17 @@
           },
           "TasksAnimatedVisual": {
             "72f9e516a3": "pressing"
+          },
+          "agent": {
+            "capability": {
+              "setup": {
+                "status": {
+                  "21d4f79c93": "click Install CLI & Skills to open macOS access settings",
+                  "4c8e1f92a7": "open Orca Desktop on this Mac",
+                  "aae94eeb52": "Click Install CLI & Skills"
+                }
+              }
+            }
           },
           "agents": {
             "orchestration": {
@@ -507,13 +622,58 @@
                 "coordinatorInitial": "Splitting auth rewrite into 2 PRs…"
               }
             }
+          },
+          "feature": {
+            "wall": {
+              "setup": {
+                "checklist": {
+                  "localized": {
+                    "copy": {
+                      "7bcb4097fa": "Register the Orca shell command and install agent skills for browser, computer, and orchestration workflows.",
+                      "ec0a363633": "Multi-task",
+                      "fee5557b02": "Enable Orca CLI"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "review": {
+            "animated": {
+              "visual": {
+                "notes": {
+                  "styles": {
+                    "db6691aa0a": ".ravs-window { position: absolute; inset: 0; --ravs-soft-surface: color-mix(in srgb, var(--foreground) 2%, var(--card)); --ravs-soft-fill: color-mix(in srgb, var(--foreground) 6%, transparent); --ravs-panel-border: color-mix(in srgb, var(--foreground) 18%, var(--border)); --ravs-emphasis-border: color-mix(in srgb, var(--foreground) 44%, var(--border)); --ravs-floating-shadow: 0 14px 30px rgb(0 0 0 / 0.22), 0 2px 6px rgb(0 0 0 / 0.12); background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); } .ravs-difftoolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--border); background: var(--ravs-soft-surface); font-size: 11px; color: var(--muted-foreground); } .ravs-diff-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--foreground); } .ravs-ai-chip { margin-left: auto; display: inline-flex; align-items: stretch; overflow: hidden; border-radius: 6px; border: 1px solid var(--border); background: var(--ravs-soft-surface); opacity: 0; transform: translateY(-2px); transition: opacity 320ms ease, transform 320ms ease; } .ravs-ai-chip.is-visible { opacity: 1; transform: none; } .ravs-ai-chip .ravs-count-btn, .ravs-ai-chip .ravs-send-btn { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; font-size: 11px; color: var(--muted-foreground); background: transparent; line-height: 1; } .ravs-ai-chip .ravs-count-btn { border-right: 1px solid var(--border); } .ravs-ai-chip .ravs-send-btn { padding: 3px 7px; position: relative; } .ravs-send-glow { position: absolute; inset: 0; background: rgba(34, 197, 94, 0.18); opacity: 0; transition: opacity 280ms ease; pointer-events: none; } .ravs-ai-chip .ravs-send-btn.is-flash .ravs-send-glow { opacity: 1; } .ravs-count-num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--foreground); font-weight: 600; } .ravs-diffbody { flex: 1; min-height: 0; position: relative; background: var(--editor-surface, var(--card)); } .ravs-diffscroll { position: absolute; inset: 0; overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; line-height: 1.55; color: var(--foreground); padding: 4px 0 8px; transition: opacity 240ms ease; } .ravs-diffscroll.is-hidden { opacity: 0; pointer-events: none; } .ravs-term { position: absolute; inset: 0; background: var(--editor-surface, var(--card)); color: var(--foreground); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45; overflow: hidden; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 240ms ease; z-index: 4; } .ravs-term.is-visible { opacity: 1; } .ravs-term-body { flex: 1; min-height: 0; padding: 10px 12px; overflow: hidden; display: flex; flex-direction: column; gap: 6px; } .ravs-term-line { white-space: pre-wrap; word-break: break-word; line-height: 1.45; } .ravs-term-muted { color: var(--muted-foreground); } .ravs-term-glyph { color: rgb(217 119 6); margin-right: 6px; } .ravs-term-check { color: rgb(16 185 129); font-weight: 700; margin-right: 6px; } .ravs-term-spinner { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 999px; border: 1.5px solid color-mix(in srgb, var(--foreground) 20%, transparent); border-top-color: var(--foreground); vertical-align: -1px; animation: ravs-term-spin 0.9s linear infinite; } @keyframes ravs-term-spin { to { transform: rotate(360deg) } } .ravs-hunk-header { display: grid; grid-template-columns: 36px 36px 16px minmax(0,1fr); align-items: center; padding: 1px 8px 1px 0; background: rgba(99, 102, 241, 0.06); color: var(--muted-foreground); font-size: 10.5px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); } .ravs-hunk-header .ravs-text { grid-column: 4 / -1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgb(99 102 241); font-size: 10.5px; } .ravs-diff-line { display: grid; grid-template-columns: 36px 36px 16px minmax(0,1fr); align-items: stretch; position: relative; } .ravs-ln { text-align: right; padding: 0 6px 0 0; color: var(--muted-foreground); font-size: 10.5px; user-select: none; opacity: 0.85; } .ravs-marker { text-align: center; color: var(--muted-foreground); font-weight: 700; opacity: 0.7; } .ravs-text-cell { padding-right: 8px; white-space: pre; overflow: hidden; } .ravs-tok-kw { color: #a855f7; } .ravs-tok-id { color: #2563eb; } .ravs-tok-str { color: #16a34a; } .ravs-diff-line.is-add { background: color-mix(in srgb, var(--git-decoration-added) 14%, transparent); } .ravs-diff-line.is-add .ravs-marker { color: color-mix(in srgb, var(--git-decoration-added) 72%, transparent); opacity: 1; } .ravs-diff-line.is-rem { background: color-mix(in srgb, var(--git-decoration-deleted) 14%, transparent); } .ravs-diff-line.is-rem .ravs-marker { color: color-mix(in srgb, var(--git-decoration-deleted) 72%, transparent); opacity: 1; } .ravs-add-note-btn { position: absolute; left: 4px; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid color-mix(in srgb, currentColor 22%, var(--border)); border-radius: 4px; background: var(--ravs-soft-fill); color: var(--foreground); z-index: 5; opacity: 0; box-shadow: 0 1px 2px rgb(0 0 0 / 0.14); pointer-events: none; transition: opacity 160ms ease; } .ravs-add-note-btn.is-visible { opacity: 1; } .ravs-note-row { padding: 4px 8px 4px 0; max-height: 0; overflow: hidden; opacity: 0; transition: max-height 360ms cubic-bezier(.4,0,.2,1), opacity 280ms ease 60ms, padding 360ms cubic-bezier(.4,0,.2,1); } .ravs-note-row.is-visible { max-height: 90px; opacity: 1; } .ravs-note-card { margin: 0 12px; position: relative; border: 1px solid var(--ravs-panel-border); border-left: 3px solid var(--ravs-emphasis-border); border-radius: 6px; background-color: var(--card); padding: 5px 8px 5px 10px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.16); } .ravs-note-meta { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); } .ravs-note-body { font-size: 11.5px; color: var(--foreground); line-height: 1.35; margin-top: 2px; } .ravs-popover { position: absolute; left: 12px; right: 12px; max-width: none; z-index: 20; padding: 8px 10px; border: 1px solid var(--ravs-panel-border); border-left: 3px solid var(--ravs-emphasis-border); border-radius: 6px; background-color: var(--card); color: var(--foreground); box-shadow: var(--ravs-floating-shadow); display: flex; flex-direction: column; gap: 6px; opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; } .ravs-popover.is-visible { opacity: 1; transform: none; pointer-events: auto; } .ravs-pop-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); } .ravs-pop-input { min-height: 38px; max-height: 80px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--editor-surface, var(--card)); font-size: 12px; line-height: 1.4; color: var(--foreground); white-space: pre-wrap; word-break: break-word; overflow: hidden; } .ravs-pop-footer { display: flex; justify-content: flex-end; gap: 6px; } .ravs-pop-btn { font-size: 11px; font-weight: 500; padding: 4px 9px; border-radius: 5px; line-height: 1; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 5px; } .ravs-pop-btn.is-cancel { color: var(--muted-foreground); background: transparent; } .ravs-pop-btn.is-add { color: var(--primary-foreground); background: var(--primary); } .ravs-send-menu { position: absolute; z-index: 30; right: 8px; top: 6px; min-width: 200px; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: 8px; padding: 4px; box-shadow: var(--ravs-floating-shadow); opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; } .ravs-send-menu.is-visible { opacity: 1; transform: none; pointer-events: auto; } .ravs-menu-section { padding: 4px 8px 2px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); } .ravs-menu-row { display: grid; grid-template-columns: 16px minmax(0,1fr); align-items: center; gap: 8px; padding: 6px 8px; border-radius: 5px; font-size: 12px; color: var(--popover-foreground); } .ravs-menu-row.is-hot { background: var(--accent); box-shadow: inset 0 0 0 1px var(--border); } .ravs-cursor { position: absolute; z-index: 40; pointer-events: none; transition: transform 600ms cubic-bezier(.45,.05,.2,1), opacity 200ms ease; transform: translate(-30px, 220px); opacity: 0; } .ravs-cursor.is-visible { opacity: 1; } .ravs-cursor .ravs-ripple { position: absolute; left: -6px; top: -6px; width: 28px; height: 28px; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--foreground) 52%, transparent); opacity: 0; } .ravs-cursor.is-clicking .ravs-ripple { animation: ravs-ripple 460ms ease-out forwards; } @keyframes ravs-ripple { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } } .ravs-caret { display: inline-block; width: 1.5px; height: 1em; background: currentColor; vertical-align: -2px; margin-left: 1px; animation: ravs-caret-blink 1.05s steps(1) infinite; } @keyframes ravs-caret-blink { 0%, 50% { opacity: 1 } 51%, 100% { opacity: 0 } }"
+                  }
+                },
+                "pr": {
+                  "view": {
+                    "styles": {
+                      "fc9a23c83d": ".ravpr-stage { position: absolute; inset: 0; overflow: hidden; } .ravpr-stack { position: absolute; inset: 0; display: flex; justify-content: flex-end; padding: 4px 34px 4px 2px; overflow: hidden; } .ravpr-sidebar, .ravpr-card { position: absolute; top: 4px; right: 2px; width: 464px; height: calc(100% - 8px); background: var(--card, #fff); border: 1px solid var(--border); border-radius: 10px; color: var(--foreground, #18181b); overflow: hidden; box-shadow: 0 1px 2px rgba(24,24,27,0.04); } .ravpr-sidebar { opacity: 0; transition: opacity 220ms ease; } .ravpr-sidebar.is-visible { opacity: 1; } .ravpr-sidebar.is-hiding { opacity: 0; } .ravpr-card { display: flex; flex-direction: column; min-width: 0; opacity: 0; transition: opacity 260ms ease; } .ravpr-card.is-visible { opacity: 1; } .ravpr-tabs { position: relative; display: flex; align-items: center; gap: 14px; height: 36px; padding: 0 14px; background: rgba(24,24,27,0.015); color: var(--muted-foreground, #71717a); } .ravpr-tab { position: relative; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted-foreground, #71717a); } .ravpr-tab.is-active, .ravpr-tab.is-hovered { color: var(--foreground, #18181b); } .ravpr-tab.is-active::after { content: ''; position: absolute; left: -5px; right: -5px; bottom: -10px; height: 1px; background: var(--foreground, #18181b); } .ravpr-tooltip { position: absolute; top: 34px; left: 106px; z-index: 6; padding: 7px 11px; border-radius: 8px; background: var(--card, #fff); color: var(--foreground, #18181b); font-size: 12px; line-height: 1; box-shadow: 0 8px 22px rgba(0,0,0,0.22); opacity: 0; transform: translateY(-3px); pointer-events: none; transition: opacity 160ms ease, transform 160ms ease; } .ravpr-tooltip.is-visible { opacity: 1; transform: translateY(0); } .ravpr-explorer { padding: 10px 12px 12px; } .ravpr-heading { color: var(--muted-foreground, #71717a); font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; } .ravpr-file-list { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; } .ravpr-file { display: grid; grid-template-columns: 14px minmax(0,1fr) 22px; align-items: center; gap: 8px; min-height: 28px; padding: 4px 6px; border-radius: 6px; } .ravpr-file.is-active { background: rgba(24,24,27,0.06); box-shadow: inset 0 0 0 1px rgba(24,24,27,0.06); } .ravpr-file-icon { width: 12px; height: 12px; border-radius: 3px; background: rgba(24,24,27,0.14); } .ravpr-file-name { height: 8px; border-radius: 999px; background: rgba(24,24,27,0.14); } .ravpr-file-status { width: 14px; height: 8px; border-radius: 999px; background: rgba(24,24,27,0.12); } .ravpr-body { padding: 10px 12px 18px; display: flex; flex-direction: column; gap: 5px; min-height: 0; } .ravpr-number-row { display: flex; align-items: center; gap: 7px; } .ravpr-number { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 700; } .ravpr-open { display: inline-flex; align-items: center; justify-content: center; height: 18px; padding: 0 7px; border-radius: 5px; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.28); color: rgb(4 120 87); font-size: 9px; font-weight: 700; line-height: 1; } .ravpr-title { font-size: 12px; font-weight: 600; line-height: 1.35; color: var(--foreground, #18181b); margin-bottom: 2px; } .ravpr-merge { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; min-height: 30px; flex: 0 0 30px; border-radius: 7px; background: rgb(22 163 74); color: #fff; font-size: 11.5px; font-weight: 700; margin-bottom: 2px; box-shadow: 0 1px 2px rgba(22,163,74,0.18); transition: box-shadow 220ms ease, filter 220ms ease; } .ravpr-merge.is-ready { box-shadow: 0 0 0 3px rgba(34,197,94,0.22), 0 1px 2px rgba(22,163,74,0.18); } .ravpr-section-row, .ravpr-check-row { display: grid; grid-template-columns: 18px minmax(0,1fr) auto; align-items: center; gap: 7px; padding: 5px 0; font-size: 11.5px; color: var(--foreground, #18181b); } .ravpr-check-row { padding: 5px 7px; font-size: 10.5px; } .ravpr-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ravpr-meta, .ravpr-check-state { color: var(--muted-foreground, #71717a); font-size: 10.5px; } .ravpr-check-state { font-size: 10px; } .ravpr-ring { display: inline-block; width: 14px; height: 14px; border-radius: 999px; border: 2px solid rgba(245,158,11,0.35); border-top-color: rgb(245 158 11); animation: ravpr-spin 1.1s linear infinite; } .ravpr-check { width: 15px; height: 15px; border-radius: 999px; display: none; align-items: center; justify-content: center; background: rgba(34,197,94,0.14); color: rgb(22 163 74); } .ravpr-section-row.is-done .ravpr-ring, .ravpr-check-row.is-done .ravpr-ring { display: none; } .ravpr-section-row.is-done .ravpr-check, .ravpr-check-row.is-done .ravpr-check { display: inline-flex; } .ravpr-reveal { display: flex; flex-direction: column; gap: 3px; opacity: 0; transform: translateY(4px); transition: opacity 260ms ease, transform 260ms ease; pointer-events: none; } .ravpr-reveal.is-visible { opacity: 1; transform: translateY(0); pointer-events: auto; } .ravpr-check-list, .ravpr-comment-list { display: flex; flex-direction: column; gap: 4px; min-height: 0; } .ravpr-comment-card { border: 1px solid var(--border); border-radius: 8px; background: var(--card, #fff); overflow: hidden; opacity: 0; transform: translateY(4px); transition: opacity 260ms ease, transform 260ms ease; } .ravpr-comment-card.is-visible { opacity: 1; transform: translateY(0); } .ravpr-comment-head { display: grid; grid-template-columns: 18px minmax(0,1fr) auto; align-items: center; gap: 7px; padding: 5px 7px; background: rgba(24,24,27,0.015); } .ravpr-avatar { width: 16px; height: 16px; border-radius: 999px; background: rgba(24,24,27,0.16); } .ravpr-author { width: 78px; height: 8px; border-radius: 999px; background: rgba(24,24,27,0.18); } .ravpr-comment-path { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; color: var(--muted-foreground, #71717a); } .ravpr-comment-body { padding: 5px 7px 6px; font-size: 11px; line-height: 1.32; color: var(--foreground, #18181b); } .ravpr-comment-body code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; padding: 1px 4px; border-radius: 4px; background: rgba(24,24,27,0.06); } .ravpr-cursor { position: absolute; z-index: 40; pointer-events: none; transition: transform 600ms cubic-bezier(.45,.05,.2,1), opacity 200ms ease; transform: translate(-30px, 220px); opacity: 0; } .ravpr-cursor.is-visible { opacity: 1; } .ravpr-ripple { position: absolute; left: -6px; top: -6px; width: 28px; height: 28px; border-radius: 999px; border: 2px solid rgba(24,24,27,0.5); opacity: 0; } .ravpr-cursor.is-clicking .ravpr-ripple { animation: ravpr-ripple 460ms ease-out forwards; } @keyframes ravpr-ripple { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } } @keyframes ravpr-spin { to { transform: rotate(360deg); } }"
+                    }
+                  }
+                },
+                "ship": {
+                  "styles": {
+                    "90cdcd2ecc": ".ravs-ship-root { position: absolute; inset: 0; } .ravs-ship-stack { position: absolute; inset: 0; display: grid; grid-template-columns: 232px minmax(0,1fr); gap: 14px; padding: 4px 2px; /* Why: cards size to their content rather than stretch to the parent's full height, so the two cards don't show empty space below their content. */ align-items: start; } /* Source Control mini-sidebar — ahead-count header, commit textarea + split Commit button, then a CHANGES section with file rows. The file rows are the surface the \"reading\" pulse animates over. */ .ravs-sc-card { display: flex; flex-direction: column; background: var(--card, #fff); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(24,24,27,0.04); } /* Both card headers share the same fixed height so the SC card and PR dialog align across the top edge regardless of header content. */ .ravs-sc-header, .ravs-pr-head { height: 36px; box-sizing: border-box; } .ravs-sc-header { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid var(--border); } .ravs-sc-ahead { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--foreground, #18181b); } .ravs-sc-ahead svg { color: var(--muted-foreground, #71717a); } .ravs-sc-commit-area { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; } .ravs-sc-textarea { position: relative; border: 1px solid var(--border); border-radius: 6px; background: var(--editor-surface, var(--card)); padding: 6px 26px 6px 8px; min-height: 56px; font-size: 12px; line-height: 1.45; color: var(--foreground, #18181b); white-space: pre-wrap; word-break: break-word; overflow: hidden; } .ravs-sc-textarea .ravs-placeholder { color: rgba(113,113,122,0.7); } .ravs-sc-sparkle { position: absolute; right: 6px; top: 6px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; color: var(--muted-foreground, #71717a); background: transparent; transition: color 160ms ease, background 160ms ease; } .ravs-sc-sparkle.is-scanning { color: rgb(109 40 217); background: color-mix(in srgb, rgb(139 92 246) 18%, transparent); } .ravs-sc-split { display: flex; align-items: stretch; } /* Why: Commit + Create PR are surrounding chrome — the violet AI affordances are the focal points. Render them as quiet secondary buttons so they don't compete with the sparkle/scan signals. */ .ravs-sc-split .ravs-primary { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 10px; background: var(--secondary, #f5f5f5); color: var(--secondary-foreground, #171717); font-size: 11px; font-weight: 500; border-radius: 6px 0 0 6px; border: 1px solid var(--border); transition: background 240ms ease, border-color 240ms ease, color 240ms ease; } .ravs-sc-split .ravs-chev { display: inline-flex; align-items: center; justify-content: center; width: 22px; background: var(--secondary, #f5f5f5); color: var(--muted-foreground, #71717a); border-radius: 0 6px 6px 0; border: 1px solid var(--border); border-left: 1px solid var(--border); transition: background 240ms ease, border-color 240ms ease, color 240ms ease; } /* Why: when AI has filled the commit message, tint the Commit button green to signal \"ready to commit\". Uses the same success-green family as the PR flash so the two beats rhyme. Mix is intentionally strong (~28%) — at 14% it disappeared next to the violet sparkle and PR flash, so users only saw the PR change color. */ .ravs-sc-split.is-ready .ravs-primary, .ravs-sc-split.is-ready .ravs-chev { background: color-mix(in srgb, rgb(34 197 94) 28%, var(--secondary, #f5f5f5)); border-color: rgb(34 197 94); color: rgb(21 128 61); transition: background 220ms ease, border-color 220ms ease, color 220ms ease; } .ravs-sc-split.is-ready .ravs-chev { border-left-color: rgba(34, 197, 94, 0.55); } .ravs-sc-changes-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground, #71717a); } .ravs-sc-changes-count { color: var(--foreground, #18181b); font-weight: 600; margin-left: 2px; } .ravs-sc-view-all { font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted-foreground, #71717a); } .ravs-sc-files { display: flex; flex-direction: column; padding: 2px 6px 8px; flex: 1; min-height: 0; overflow: hidden; } .ravs-sc-file { display: grid; grid-template-columns: 14px minmax(0,1fr) 12px; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; font-size: 11px; line-height: 1.35; color: var(--foreground, #18181b); position: relative; transition: background 220ms ease; } .ravs-sc-ficon { color: rgb(180 83 9); display: inline-flex; } .ravs-sc-fname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ravs-sc-fmark { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; text-align: right; color: rgb(180 83 9); } .ravs-sc-file.is-reading { background: color-mix(in srgb, rgb(139 92 246) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, rgb(139 92 246) 28%, transparent); } /* PR dialog — matches the .ravs-sc-card chrome (same border, radius, elevation) so the two cards read as one design language. */ .ravs-pr-dialog { background: var(--card, #fff); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 2px rgba(24,24,27,0.04); display: flex; flex-direction: column; min-width: 0; overflow: hidden; } .ravs-pr-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 10px; border-bottom: 1px solid var(--border); } .ravs-pr-title-text { font-size: 11px; font-weight: 500; color: var(--foreground, #18181b); } /* Icon-only AI-assist chip — mirrors .ravs-sc-sparkle so the affordance reads identically across both cards. */ .ravs-pr-gen-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border-radius: 4px; color: var(--muted-foreground, #71717a); background: transparent; border: 0; cursor: pointer; transition: color 160ms ease, background 160ms ease; } .ravs-pr-gen-btn:hover { background: rgba(24,24,27,0.06); color: var(--foreground, #18181b); } .ravs-pr-gen-btn.is-scanning { color: rgb(109 40 217); background: color-mix(in srgb, rgb(139 92 246) 18%, transparent); } .ravs-pr-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; } .ravs-pr-field { display: flex; flex-direction: column; gap: 4px; } .ravs-pr-field-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground, #71717a); } .ravs-pr-base { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--foreground, #18181b); background: var(--editor-surface, var(--card)); align-self: flex-start; } .ravs-pr-base svg { color: var(--muted-foreground, #71717a); } .ravs-pr-input { position: relative; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--editor-surface, var(--card)); min-height: 28px; font-size: 12px; line-height: 1.45; color: var(--foreground, #18181b); white-space: pre-wrap; word-break: break-word; overflow: hidden; } .ravs-pr-input.is-body { min-height: 50px; font-size: 11px; line-height: 1.4; } .ravs-pr-input .ravs-placeholder { color: rgba(113,113,122,0.7); } .ravs-pr-footer { display: flex; align-items: center; gap: 6px; justify-content: flex-end; margin-top: 2px; } .ravs-pr-btn { font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; line-height: 1; border: 1px solid transparent; outline: none; } .ravs-pr-btn:focus, .ravs-pr-btn:focus-visible { outline: none; } /* Cancel reads as a quiet ghost button so it doesn't compete with the affirmative Create PR action. */ .ravs-pr-btn.is-outline { background: transparent; color: var(--muted-foreground, #71717a); border-color: transparent; } .ravs-pr-btn.is-outline:hover { background: rgba(24,24,27,0.05); color: var(--foreground, #18181b); } /* Quiet secondary fill — see the .ravs-sc-split note above. The flash ring still uses success-green so the \"PR created\" beat reads. The Create-PR button is slightly larger than Cancel so the affirmative action remains the bigger target. */ .ravs-pr-btn.is-solid { background: var(--secondary, #f5f5f5); color: var(--secondary-foreground, #171717); border-color: var(--border); font-size: 12px; padding: 7px 14px; transition: background 220ms ease, border-color 220ms ease, color 220ms ease, box-shadow 220ms ease; } .ravs-pr-btn.is-solid.is-ready { background: color-mix(in srgb, rgb(34 197 94) 28%, var(--secondary, #f5f5f5)); border-color: rgb(34 197 94); color: rgb(21 128 61); } .ravs-pr-btn.is-solid.is-flash { box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.30); } .ravs-cursor { position: absolute; z-index: 40; pointer-events: none; transition: transform 600ms cubic-bezier(.45,.05,.2,1), opacity 200ms ease; transform: translate(-30px, 220px); opacity: 0; } .ravs-cursor.is-visible { opacity: 1; } .ravs-cursor .ravs-ripple { position: absolute; left: -6px; top: -6px; width: 28px; height: 28px; border-radius: 999px; border: 2px solid rgba(24,24,27,0.5); opacity: 0; } .ravs-cursor.is-clicking .ravs-ripple { animation: ravs-ripple 460ms ease-out forwards; } @keyframes ravs-ripple { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } } .ravs-caret { display: inline-block; width: 1.5px; height: 1em; background: currentColor; vertical-align: -2px; margin-left: 1px; animation: ravs-caret-blink 1.05s steps(1) infinite; } @keyframes ravs-caret-blink { 0%, 50% { opacity: 1 } 51%, 100% { opacity: 0 } }"
+                  }
+                }
+              }
+            }
           }
         }
       },
       "floating": {
         "terminal": {
           "FloatingTerminalPanel": {
-            "25d7817f79": "terminal"
+            "25d7817f79": "terminal",
+            "5ddc688c52": "\"{{value0}}\" has unsaved changes. Do you want to save before closing?",
+            "690b6fb98a": "Unsaved Changes",
+            "918c2139f3": "Don't Save",
+            "b085fb58b5": "This file has unsaved changes.",
+            "d6b563ae24": "Loading editor...",
+            "da508bd7f5": "Save",
+            "e7bf09d4d4": "Cancel"
           },
           "FloatingTerminalWindowControls": {
             "1e502f1284": "Open"
@@ -653,6 +813,15 @@
           }
         }
       },
+      "native": {
+        "chat": {
+          "NativeChatStructuredSession": {
+            "1f772bb5d0": "Message delivery is unconfirmed.",
+            "93ef441197": "Message was not sent.",
+            "a5e7f14068": "Retry"
+          }
+        }
+      },
       "new": {
         "workspace": {
           "SmartWorkspaceNameField": {
@@ -662,6 +831,11 @@
         }
       },
       "onboarding": {
+        "AgentStep": {
+          "yoloPermissionsInfo": "Agent permission info",
+          "yoloPermissionsLabel": "Yolo / Dangerously skip permissions",
+          "yoloPermissionsTooltip": "Skip permission checks for agents for less interruptions"
+        },
         "IntegrationsStep": {
           "93f0c49ad1": "not-authenticated",
           "a3bcf13694": "connected",
@@ -669,6 +843,7 @@
         },
         "NotificationStep": {
           "2c47f5465f": "Turn on Allow notifications for Orca in System Settings. This step updates automatically once enabled.",
+          "53aaffe49a": "Notification Sound",
           "8124d085a6": "Open Mac Settings",
           "94562ba367": "macOS is asking for permission. Click Allow in the dialog and this step updates automatically.",
           "aa36281b00": "Open System Settings and make sure Orca is allowed to send notifications.",
@@ -700,6 +875,8 @@
             "localSessionSshWorkspaceUnsupported": "This session's history is stored on this machine, so it can't resume in an SSH workspace. Open a local workspace instead.",
             "localWorkspacesOnly": "Resume from history is only available in local workspaces.",
             "remoteBrowseLocalHistory": "Remote workspaces can browse local history. Resume actions run from local workspaces.",
+            "sessionsShownCompact": "{{value0}} shown",
+            "shownRecent": "{{value0}} shown · {{value1}} recent",
             "valueCopyFailed": "Unable to copy {{value0}}"
           },
           "AiVaultPanelControls": {
@@ -708,6 +885,7 @@
             "currentWorktreeLower": "current worktree",
             "globalScope": "Global",
             "scope": "Scope",
+            "sort": "Sort",
             "thisScope": "This",
             "worktreeScope": "Worktree"
           },
@@ -754,6 +932,7 @@
           },
           "AiVaultSessionRow": {
             "resumeAgentSession": "Resume {{value0}} session",
+            "resumeInNewChat": "Resume in New Chat",
             "tokenCount": "{{value0}} tok"
           },
           "ChecksPanel": {
@@ -864,6 +1043,7 @@
           },
           "SourceControlAgentActionDialogForm": {
             "1bb611240f": "Use {basePrompt} for Orca's default prompt.",
+            "1bc0bdbb5e": "Launch:",
             "3e8f21954f": "error",
             "74168d7ada": "idle",
             "d8f40128ee": "{basePrompt} is Orca's default prompt."
@@ -874,6 +1054,9 @@
                 "f1132ea95d": "neutral"
               }
             }
+          },
+          "aiVaultSessionLogOpen": {
+            "notAuthorized": "Couldn't open log — path not authorized."
           },
           "checks": {
             "panel": {
@@ -887,6 +1070,7 @@
                 "9fecebb29d": "Add",
                 "a916648574": "Open details",
                 "actionRequiredHint": "This check needs a manual action on GitHub (for example, approving the workflow run) before merging is unblocked.",
+                "b8c4e2a1f7": "View full logs",
                 "d098e5529a": "Output"
               },
               "empty": {
@@ -1087,13 +1271,16 @@
           "566d9a99ab": "_token=…; minimax_group_id_v2=…",
           "5e08b0fe57": "Stored locally and sent only to platform.minimax.io for usage refreshes.",
           "79418c782a": "Open platform.minimax.io/console/usage in your browser, sign in, then copy the Cookie request header from DevTools (Network → any remains request → Cookie).",
+          "79e484c3b2": "Optional account switcher for the shared Claude auth files.",
           "7ce0e1907c": "). Find it in your browser's DevTools → Network → any opencode.ai request → Cookie header. OpenCode Go auth is web-based and shared across Windows and WSL terminals.",
+          "854ebbcc45": "Orca will delete the managed Claude auth for this saved account. If it is currently active, Orca falls back to the system default Claude login.",
           "8951c5309f": "auth=Fe26.2**…",
           "9107406589": "Could not load Claude accounts.",
           "922b51e02d": "Fe26.2**…",
           "a7e38affcd": "Fe26.2**… token or auth=Fe26.2**… header",
           "b10cb4f696": "adding",
           "b11078a9c2": "wsl",
+          "b15ce90870": "{{value0}} -> {{value1}}. Restart live Claude terminals before continuing old sessions.",
           "b2b1aa936d": "Paste your opencode.ai session cookie for rate limit fetching.",
           "b8c2905c2b": "Could not load Codex accounts.",
           "f5d8d2a6a1": "Open platform.minimax.io/console/usage in your browser and sign in.",
@@ -1119,9 +1306,16 @@
           "a31e2aa302": "Failed to copy command."
         },
         "AgentsPane": {
+          "110b74b022": "No agent (blank terminal)",
           "9b175d0f5e": "Pre-selected agent when opening a new workspace.",
+          "agentPermissionsDescription": "Choose whether Orca launches agents with fewer permission prompts or with manual checks.",
+          "agentPermissionsInfo": "Agent permissions info",
+          "agentPermissionsTooltip": "Doesn't apply to agents where you've overridden launch arguments.",
           "c8794e622e": "Detected",
+          "cea7d97be1": "Collapse command override",
+          "d7625cf8b2": "Default agent",
           "db9e9e5887": "Customize command",
+          "dc4a2ffdc0": "Expand command override",
           "df123171d1": "Not installed"
         },
         "AppearancePane": {
@@ -1143,7 +1337,17 @@
           "workspaceCardLayoutGuidance": "Managed from the workspace sidebar."
         },
         "AutoRenameBranchFromWorkSetting": {
-          "ef787db0e3": "Auto-Rename Branch"
+          "2ee2779c05": "{firstPrompt}",
+          "56580dcf60": ". You can also reference",
+          "570817d126": "and",
+          "5d569f5199": ". Orca generates only the final segment, like",
+          "69bf4830c2": "to include Orca's",
+          "800edb1e54": "fix-login-flow",
+          "9241b59bf5": "Use",
+          "9c9b54e4ea": "built-in branch-name prompt",
+          "a4fa380b67": "{assistantMessage}",
+          "ef787db0e3": "Auto-Rename Branch",
+          "f19a56498d": "; your branch prefix setting still applies."
         },
         "AutoRenameBranchPromptEditor": {
           "0691753cf2": "Unsaved changes",
@@ -1167,13 +1371,27 @@
           "b5c0479e21": "Unmodified user agent",
           "d420c43729": "Imported {{value0}} cookies from {{value1}}{{value2}} into {{value3}}."
         },
+        "BrowserTerminalLinkActionsSetting": {
+          "description": "Show available actions when you click a link in the terminal or a chat transcript. Turn this off to require {{modifier}}-click in the terminal."
+        },
         "BrowserUsePane": {
+          "0289434ed6": "Enabled",
+          "180a9abf3a": "Failed to load CLI status.",
+          "702488a5f7": "Let coding agents drive this browser with your logins. Finish the three steps below.",
+          "721aee31b4": "Registered the Orca CLI in PATH.",
+          "8b3054dac7": "Registering...",
+          "9fca1f7f5d": "Registers the Orca CLI command so agents can orchestrate the browser from their shell.",
+          "ad8cb0ee22": "Fix PATH",
+          "c6065d205d": "Enable Orca CLI",
+          "c79eff0213": "Register the Orca CLI so agents can drive the browser.",
           "de9b2f32f3": "Enable",
-          "e44c5d681e": "From"
+          "e44c5d681e": "From",
+          "e9f3f3b488": "Installed at"
         },
         "CliSection": {
           "4c7e3e4c5f": "install",
           "5d432fe44d": "installed",
+          "6930feda9e": "Use Orca from your terminal to open the app, manage worktrees, and interact with Orca terminals.",
           "8a9b784c60": "stale",
           "8d96213669": "remove",
           "cliSkillTerminalAria": "CLI skill install terminal",
@@ -1224,6 +1442,17 @@
           "a05bcdaf57": "Agents View",
           "f63ea281e3": "Threaded left-sidebar feed for agent completions and blocking states.",
           "fb82ea1d7a": "Automatically materialize configured files or folders into newly created worktrees.",
+          "nativeChat": {
+            "defaultCopy": "Choose how new supported agent terminal tabs open.",
+            "defaultTitle": "Default view",
+            "defaultViewLabel": "Default Chat UI view",
+            "defaultViewNative": "Chat UI",
+            "defaultViewTerminal": "Terminal chat",
+            "structuredCopy": "Opt in to the host-owned structured chat runtime for Codex and Claude. Off keeps the existing terminal-backed chat path.",
+            "structuredScope": "Local sessions only for now. WSL and remote execution hosts (including SSH) continue to use terminal chat, and Windows falls back to it unless Orca can read process start times.",
+            "structuredTitle": "Use updated structured native chat",
+            "structuredToggleLabel": "Toggle updated structured native chat"
+          },
           "newWorktreeCardStyle": {
             "copy": "Preview updated worktree-card layout, metadata placement, card-display menu options, and status presentation."
           }
@@ -1256,7 +1485,14 @@
           "show": "Show"
         },
         "GitPane": {
-          "f35007e6e8": "git-username"
+          "36e3de3619": "from comparing against stale history. Orca skips the update if that branch has uncommitted changes or local-only commits.",
+          "3ae3de8898": "master",
+          "5bf885be48": "or",
+          "976afc6b3e": "When you create a workspace, Orca refreshes the remote base and safely fast-forwards your matching local branch, such as",
+          "d072a12995": "git diff main...HEAD",
+          "db3a127eb1": ". This keeps commands like",
+          "f35007e6e8": "git-username",
+          "ffba483bae": "main"
         },
         "GrokAccountsSection": {
           "c3d4e5f6a7": "Signed in. Orca only reads that file on disk — run grok login again if usage fails.",
@@ -1346,6 +1582,12 @@
         },
         "MobileEmulatorAgentControlRow": {
           "1861982430": "Failed to load CLI status.",
+          "2fef055608": "Registers the Orca CLI command so agents can control the active emulator from their shell.",
+          "3941719a56": "Checking Orca CLI before opening skill setup.",
+          "3be27641c9": "so emulator commands can run from agent shells.",
+          "3d34423e88": "Registering the Orca CLI",
+          "4f2205f3b6": "Enable Orca CLI",
+          "aaf62a3dd2": "Installed at",
           "cdeaed9e37": "Registered the Orca CLI in PATH."
         },
         "MobileEmulatorSdkStatus": {
@@ -1367,7 +1609,11 @@
           "c541f67790": "Generate QR Code",
           "d536b5e20d": "Choose which network address to advertise in the QR code. Use your LAN address for same-network pairing, or an overlay network address (Tailscale, ZeroTier) for cross-network access."
         },
+        "MobilePairingConnectionOptions": {
+          "signInRequired": "Relay only — LAN does not need an account."
+        },
         "MobilePane": {
+          "35100bca5d": "While you're using a terminal on your phone, Orca shrinks it to fit your phone screen. When you close the app or switch away, this controls whether it stays at phone size (so interactive CLI tools don't reflow) or resizes back to your desktop. You can always use Restore this terminal or Restore all terminals on the banner to resize manually.",
           "relayDegradedNotice": "Relay couldn’t be reached — this code only works on your LAN or Tailscale. Regenerate to try again."
         },
         "MobileRelayBetaAvailability": {
@@ -1395,6 +1641,9 @@
           "9a3c280e49": "GitHub Releases",
           "b0088412a1": "or the Android APK from",
           "c8491c17ef": "Control Orca from your phone by scanning a QR code. Beta / early preview - expect bugs and breaking changes. Get the iOS app from the"
+        },
+        "NativeChatSupportedAgents": {
+          "label": "Supported agents:"
         },
         "NotificationsPane": {
           "274af61bc0": "system",
@@ -1438,10 +1687,18 @@
         "RepositoryHooksSection": {
           "0e0dd5b9a5": "loaded",
           "32f417fe17": "text-emerald-700 dark:text-emerald-300",
+          "3397879bee": "and local commands exist, choose which run.",
+          "52aef29e69": "Leave blank to use the repo default from",
+          "70ad20f883": "for the linked issue or PR URL.",
           "8dbe6bedf5": "invalid",
           "925f9e0dc4": "text-foreground",
+          "9b12f15b1e": "when one exists.",
+          "ac9038d2cc": "When both",
           "b5e3e77e89": "action",
-          "c90b858573": "text-amber-700 dark:text-amber-300"
+          "b997331366": "Optional override. Use",
+          "c85c2c88a2": "{{artifact_url}}",
+          "c90b858573": "text-amber-700 dark:text-amber-300",
+          "waitForSetupBeforeAgentHelp": "Turn this on when setup installs dependencies, MCP servers, or config files the agent needs during startup."
         },
         "RepositoryIconPicker": {
           "2b7d27b93c": "Use {{value0}} repo color"
@@ -1488,6 +1745,7 @@
           "54dee18f5c": "Hide Form",
           "54ebacc600": "Server name",
           "55fcc964cd": "on the server and paste the printed pairing URL.",
+          "5ef712f407": "A server named \"{{value0}}\" already exists.",
           "64b6bea541": "Default host for new projects",
           "6ce4664003": "Refresh servers",
           "6e1280ca55": "Share this Orca server",
@@ -1607,27 +1865,51 @@
           "fde7ff2cc3": "packages/web shared/ui"
         },
         "SshPane": {
+          "025e107643": "Failed to end remote terminals",
+          "2c4ee7332b": "Failed to reset remote relay",
+          "3879cbaa52": "Terminal timeout must be between 60 and {{value0}} seconds, or keep terminals alive until reset.",
           "51d7dba44d": "Import",
           "639ceb3698": "Add Target",
+          "90e308c98b": "Remote terminals ended",
           "94c5284560": "Targets",
           "a7d28dff81": "Add a remote host to connect to it in Orca.",
+          "db2e48975e": "Remote relay reset",
+          "f8050f6307": "Synced {{value0}} server{{value1}}",
           "syncedServerPlural": "Synced {{count}} servers",
-          "syncedServerSingular": "Synced {{count}} server"
+          "syncedServerSingular": "Synced {{count}} server",
+          "terminateUnverifiable": "{{terminals}} remote terminal(s) could not be reached. Reconnect to end them."
         },
         "SshTargetCard": {
           "0e53e9f8e8": "Test",
           "3d21a22d0e": "Removing target",
           "3d8af2949f": "Edit target",
           "47e94bd6ba": "connected",
+          "762a48c662": "Reset remote relay",
           "7f7b3d7ab4": "Remove target",
+          "8ce71262f4": "terminals until reset",
+          "97dea4e8cf": "Resetting remote relay",
+          "a883f5a00f": "terminal timeout: {{value0}}",
+          "c77f1abfe3": "Ending remote terminals",
+          "da16e108e6": "End remote terminals",
           "f0871e6bfb": "connect"
+        },
+        "SshTargetDestructiveActions": {
+          "26be00392d": "This force-stops the remote relay for this SSH target. Active remote terminals and port forwards for this target will end.",
+          "570a7a0574": "Reset Remote Relay?",
+          "7e66942808": "This will stop active terminal sessions on this SSH target. Reconnecting will not restore them.",
+          "accf177a03": "End Remote Terminals?"
         },
         "SshTargetForm": {
           "137e88ce8d": "Remote terminals keep running after Orca disconnects from this host.",
+          "1b19b00e93": "Bounded timeouts must be between 60 seconds and 7 days.",
           "29af933cd5": "New SSH Target",
           "4a342f44c1": "Advanced Connection",
+          "55c56cf2c7": "Timeout after disconnect (seconds)",
+          "71fc546097": "Keep terminals alive until reset",
+          "7c13f58c91": "Until reset",
           "92f80edbfd": "Remote Terminal Persistence",
           "9518545cb6": "Add Target",
+          "b574994adc": "Use End Remote Terminals or Reset Relay when you want to stop them.",
           "e9609ddca6": "Proxy, jump host, and connection reuse",
           "f2331ce599": "Edit SSH Target"
         },
@@ -1657,6 +1939,7 @@
           "332e8a2872": "Split Vertically",
           "348246b06f": "false",
           "34a0dfa06e": "Where the repository setup script runs when a new workspace is created.",
+          "4729c645fc": "Automatically copy terminal selections to the clipboard.",
           "5936387ddd": "auto",
           "5fe79a5e56": "Choose which WSL distribution new WSL terminals and local agent scans use.",
           "623e62df99": "Split horizontally",
@@ -1681,8 +1964,13 @@
           "target_label": "Theme Mode"
         },
         "VoicePane": {
+          "295d84b849": "once to start, again to stop. Hold: dictate while",
+          "366e1b4f36": "to dictate text into any focused pane.",
+          "4465596675": "Press",
+          "7cf715f891": "is held.",
           "901985625d": "toggle",
-          "b6536a1d12": "extracting"
+          "b6536a1d12": "extracting",
+          "ff9a680010": "Toggle: press"
         },
         "WarpThemeImportModal": {
           "found_theme_one": "Found 1 theme",
@@ -1756,6 +2044,7 @@
             "agent-trust-folder": "folder",
             "agent-trust-trust": "trust",
             "agent-trust-worktree": "worktree",
+            "agentPermissionsDescription": "Switch agent permission defaults between Yolo and Manual.",
             "be59907510": "override",
             "be7ea3553b": "tab",
             "c1317fe641": "restore",
@@ -1778,7 +2067,8 @@
           "enable": "Enable Artifacts",
           "enableDescription": "Add Artifacts to the sidebar so you can open and delete shared files.",
           "openArtifactsDescription": "View and delete links shared through your account.",
-          "signInRequired": "Sign in is required to upload and manage artifacts."
+          "signInRequired": "Sign in is required to upload and manage artifacts.",
+          "signingIn": "Signing in…"
         },
         "auto": {
           "rename": {
@@ -1793,6 +2083,21 @@
           "credentials": {
             "dialog": {
               "remoteRuntime": "Bitbucket credentials saved here are stored on this local machine only. Set ORCA_BITBUCKET_* environment variables on the remote runtime instead."
+            }
+          }
+        },
+        "browser": {
+          "use": {
+            "search": {
+              "034c5e8d7f": "enable",
+              "30c74aaa1f": "path",
+              "3ffafc9b95": "command",
+              "50f0860e18": "Enable Orca CLI",
+              "7e0dcb257a": "shell",
+              "85fab5e12c": "cli",
+              "890ddf943d": "Register the Orca CLI so agents can drive the browser.",
+              "e56c7b55c9": "setup",
+              "ff05cbc344": "orca"
             }
           }
         },
@@ -1905,7 +2210,6 @@
           "outcome": {
             "activeServer": "Not done: this server is the default host for new projects. Choose another one in Advanced before stopping it."
           },
-          "row": {},
           "title": "Orca on your SSH hosts"
         },
         "mobile": {
@@ -1914,6 +2218,9 @@
               "b730ff7049": "experimental"
             }
           }
+        },
+        "orcaAccount": {
+          "signingIn": "Signing in…"
         },
         "providerAccountScope": {
           "localCredentials": "Credentials and account checks for this provider are owned by this desktop client. To use a server, change Settings > Remote Orca Servers > Advanced > Default host for new projects.",
@@ -1937,14 +2244,14 @@
             }
           }
         },
-        "serverList": {},
         "settingOwnership": {
           "clientDefaultProjectScopes": "Client default + project scopes",
           "terminalQuickCommands": "Commands are saved on this client, then scoped globally or to a project setup so they run from the selected terminal context."
         },
         "shareSkills": {
           "refreshLinks": "Refresh",
-          "showButton": "Show Skills button"
+          "showButton": "Show Skills button",
+          "signingIn": "Signing in…"
         },
         "ssh": {
           "search": {
@@ -1966,15 +2273,22 @@
           "tracker": {
             "integration": {
               "cards": {
+                "9fa04a032e": "{{value0}} site{{value1}} connected",
                 "connectedSitePlural": "{{count}} sites connected",
                 "connectedSiteSingular": "{{count}} site connected",
                 "connectedWorkspacePlural": "{{count}} workspaces connected",
-                "connectedWorkspaceSingular": "{{count}} workspace connected"
+                "connectedWorkspaceSingular": "{{count}} workspace connected",
+                "e1f5e6424c": "{{value0}} workspace{{value1}} connected"
               }
             }
           }
         },
         "terminal": {
+          "clipboard": {
+            "search": {
+              "603818e8d8": "Automatically copy terminal selections to the clipboard as soon as a selection is made."
+            }
+          },
           "search": {
             "2610ee3b56": "Where the repository setup script runs when a new workspace is created: a vertical split (default), a horizontal split, or a background tab titled 'Setup'.",
             "4529806908": "setup",
@@ -2031,6 +2345,13 @@
           "remove": "Remove"
         }
       },
+      "setup": {
+        "guide": {
+          "SetupGuideModal": {
+            "28cf59fcb4": "This will hide the checklist from the sidebar"
+          }
+        }
+      },
       "shared": {
         "useDaemonActions": {
           "28c8e53176": "This force-quits every running terminal pane across all workspaces. Any unsaved work in those sessions is lost. The daemon itself keeps running, and new terminals can be opened immediately. This can't be undone.",
@@ -2046,6 +2367,9 @@
         }
       },
       "sidebar": {
+        "AddProjectFromFolderDialog": {
+          "e643b30398": "Project added on SSH host"
+        },
         "AddRemoteHostDialog": {
           "pairingCode": "Pairing code",
           "pairingCommand": "orca serve --pairing-address <host>",
@@ -2054,7 +2378,11 @@
           "serverName": "Server name",
           "sshConfigPickerBulkHint": "Bulk sync stays in Settings → SSH",
           "sshConfigPickerDescription": "Pick a host to fill the form. Nothing is saved until you click Save.",
-          "sshPersistenceDefault": "Remote terminals on this host stay alive until you end them or reset the relay."
+          "sshPersistenceDefault": "Remote terminals on this host stay alive until you end them or reset the relay.",
+          "sshRelayGraceInvalid": "Terminal timeout must be between 60 and {{value0}} seconds."
+        },
+        "AddRepoCreateStep": {
+          "ssh_parent_manual": "Enter an SSH parent path."
         },
         "AddRepoHostSelector": {
           "addRemoteHostTooltip": "Choose SSH for a machine you can log into, or remote server for an Orca server.",
@@ -2068,6 +2396,15 @@
           "5b2e6fe3c8": "Import separately",
           "5f857ba8e6": "in",
           "cf9d382ca1": "Import"
+        },
+        "AddRepoRemoteStep": {
+          "0416bde073": "Add in Settings",
+          "5b205b5281": "Stop scan",
+          "80557be85a": "Choose a connected SSH target and enter the path to a Git repository.",
+          "93e0221434": "Connect",
+          "df6fbcf880": "No SSH targets configured.",
+          "lockedDescription": "Enter the path to a Git repository on {{value0}}.",
+          "lockedDisconnected": "{{value0}} is disconnected."
         },
         "AddRepoSteps": {
           "04a4c4e84a": "Clone location"
@@ -2089,9 +2426,19 @@
           "63f36455cc": "Reconnect"
         },
         "LinearAgentSkillSetupPrompt": {
+          "install": "Install CLI & Skill",
           "missingBoth": "Orca CLI and Linear agent skill are missing.",
+          "missingCli": "Orca CLI is missing.",
+          "missingCliAndSkill": "Orca CLI and Linear agent skill are missing.",
           "panelDescription": "Install the host agent skill for linked Linear task handoffs.",
-          "panelTitle": "Linear agent skill"
+          "panelTitle": "Linear agent skill",
+          "toastInstallCliAndSkillDescription": "Install the Orca CLI and the Linear skill to enable your agents to read and edit Linear tasks.",
+          "toastInstallCliDescription": "Install the Orca CLI to enable your agents to read and edit Linear tasks.",
+          "toastMissingCli": "Orca CLI is missing",
+          "toastMissingCliAndSkill": "Orca CLI and Linear skill are missing"
+        },
+        "MarkdownImageLightbox": {
+          "close": "Close"
         },
         "NewExternalWorktreesInboxLine": {
           "5e1b8d3f62": "Hide external worktrees permanently"
@@ -2137,9 +2484,11 @@
           "abc62b6328": "Add Project"
         },
         "SidebarWorkspaceOptionsMenu": {
+          "1a0eec0d35": "Status",
           "2d4f0eb933": "Default",
           "631b97eea9": "Host scope",
           "680043342f": "compact",
+          "b5536d5a88": "Tasks",
           "bc96dbd041": "Workspace options ({{value0}})",
           "c7591b6014": "repo"
         },
@@ -2152,6 +2501,7 @@
         "WorktreeCard": {
           "01f45d3d8a": "sidebar",
           "021538e1d1": "SSH disconnected",
+          "0777de5970": "Primary worktree (original clone directory)",
           "1d66d84f0b": "string",
           "93aebe4529": "Folder",
           "automationCreated": "Created by automation",
@@ -2169,6 +2519,9 @@
         "WorktreeCardPorts": {
           "34f733dda2": "Go to Worktree",
           "3e5f66564e": "Workspace unavailable"
+        },
+        "WorktreeContextMenu": {
+          "primaryDeleteDisabled": "Primary worktree — can't be deleted. Remove the project instead."
         },
         "WorktreeIssueLinkField": {
           "0a7a2c6efd": "Not a GitHub issue number or issue URL.",
@@ -2230,7 +2583,11 @@
             "local": {
               "start": {
                 "actions": {
-                  "a6c20dca96": "Open a project from an SSH target"
+                  "3d162cc76f": "Project on SSH host",
+                  "a6c20dca96": "Open a project from an SSH target",
+                  "sshBrowseDescription": "Existing Git repository or folder on this SSH host",
+                  "sshBrowseTitle": "Open project on SSH host",
+                  "sshCreateUnavailable": "Not available for SSH hosts yet"
                 }
               }
             }
@@ -2317,6 +2674,15 @@
           "eb603f7888": "outside the current roster will be preserved.",
           "ed753624c0": "Delete Cloud package",
           "linkCopied": "Share link copied"
+        },
+        "SkillFreshnessRow": {
+          "chipNewer": "Newer",
+          "chipUnrecognized": "Unrecognized",
+          "skippedReasonNewer": "This copy is a later version than the one this build of Orca ships, so Orca left it alone rather than roll it back. Updating Orca will bring the two back in line.",
+          "skippedReasonStaleRecord": "The skills updater has no usable record of this copy, so it reports the skill as already up to date and changes nothing. Reinstall it to bring the record back in line: {{value0}}",
+          "skippedReasonUnrecognized": "The copy here doesn’t match the official version — it may be modified, or a different skill with the same name. Orca left it out of the update so it won’t overwrite it. Remove it if you want Orca to update this skill.",
+          "tipNewer": "This copy is a later version than the one this build of Orca ships.",
+          "tipUnrecognized": "This copy doesn’t match any official version — it may be modified, or a different skill with the same name."
         },
         "SkillInstallDialog": {
           "4a00d133c5": "Orca verifies access and package identity before changing the selected machine."
@@ -2479,6 +2845,9 @@
           "eb6a066185": "claude",
           "eee19cfade": "overview"
         },
+        "UsageOverviewPane": {
+          "60002bb22f": "No local Claude, Codex, or OpenCode usage found yet. The overview will populate after the next agent session writes token logs."
+        },
         "UsageSessionsTable": {
           "01476891c7": "Last active",
           "0f03975d59": "Events",
@@ -2494,7 +2863,8 @@
         "usage": {
           "overview": {
             "sections": {
-              "9564a3b21b": "sessions -"
+              "9564a3b21b": "sessions -",
+              "f28ff1f852": "Recent combined Claude, Codex, and OpenCode token activity."
             }
           }
         }
@@ -2524,7 +2894,9 @@
             "connectedHostCount_other": "{{count}} hosts",
             "d09ec41831": "Remote Hosts",
             "fbb3f9f05e": "conflict",
-            "fd9a3c600e": "error"
+            "fd9a3c600e": "error",
+            "workspaceConflict": "Workspace conflict",
+            "workspaceSyncError": "Workspace sync error"
           },
           "StatusBar": {
             "06741a2f3d": "Open MiniMax usage details",
@@ -2534,6 +2906,7 @@
             "629251f4b6": "Open OpenCode Go usage details",
             "68efc0345c": "gemini",
             "76b06d4da5": "claude",
+            "8295903d17": "Restart live Claude terminals before continuing old conversations after switching.",
             "a28a5dd9b1": "error",
             "antigravityUsageDetails": "Open Antigravity usage details",
             "d2375976eb": "Open Gemini usage details",
@@ -2586,7 +2959,10 @@
             "1d04b1630b": "Split Down",
             "6b3efb106e": "Split Up",
             "e3ff145b98": "Split Left",
-            "f7c3d7d5af": "Split Right"
+            "f7c3d7d5af": "Split Right",
+            "openContainingFolder": "Open Containing Folder",
+            "revealInFileExplorer": "Reveal in File Explorer",
+            "revealInFinder": "Reveal in Finder"
           },
           "QuickLaunchButton": {
             "chatLoading": "Checking chat support…"
@@ -2749,7 +3125,16 @@
             "ebd2fa844d": "Close"
           },
           "MobileDriverOverlay": {
-            "3eed73394f": "Your keyboard is paused"
+            "3eed73394f": "Your keyboard is paused",
+            "54f7d6f69d": "Take back all terminals",
+            "7cffad954c": "Collapse",
+            "a6b1d8f3e2": "Your phone session ended. Restore to desktop size for this terminal, or for all terminals your phone left at phone size.",
+            "b3d8e1f42a": "Restore this terminal",
+            "c8f2e1a4b9": "Take back this terminal",
+            "d9f3c6e2a4": "Desktop keyboard is paused. Take back this terminal to type here, take back all terminals your phone controls, or collapse to keep watching.",
+            "e8c4f2a91b": "Restore all terminals",
+            "f2a8b9c1d3": "From your phone",
+            "faa367dc74": "Your phone left this at phone size"
           },
           "TerminalErrorToast": {
             "hostTerminalCap": "The host is already running as many terminals as Orca allows. Close a terminal you no longer need, then try again.",
@@ -2811,9 +3196,11 @@
             "41d594d01e": "{{value0}} workspace{{value1}} could not be removed",
             "4719327c9c": "All cleanup suggestions are ignored.",
             "4b93a235d8": "Suggested",
+            "4cc5b73efe": "Finding workspaces...",
             "592fbab446": "Sorted by oldest activity",
             "5bf2e88480": "{{value0}}/{{value1}} {{value2}} scanned",
             "73690b0031": "Unselect all in {{value0}}",
+            "7b7bde5181": "Checked workspaces so far: {{value0}}",
             "8b74d4ea6e": "Scanning worktrees and git state, then combining open tab, terminal, live agent, and remote availability signals before suggesting deletions.",
             "93b7381d50": "Filters",
             "97c772c4fe": "No inactive workspaces found in checked repositories.",
@@ -2878,6 +3265,8 @@
         }
       },
       "useComposerState": {
+        "7eb3f44ff7": "Selected agent is disabled. Choose an enabled agent before creating.",
+        "a9ff236145": "Some attachments could not be uploaded.",
         "dropPartiallyAttached_one": "{{failureCount}} of {{count}} item could not be attached.",
         "dropPartiallyAttached_other": "{{failureCount}} of {{count}} items could not be attached."
       },
@@ -2886,8 +3275,16 @@
         "nativeDropTempCopyFailed_other": "Orca couldn't copy {{count}} dropped files."
       },
       "useIpcEvents": {
+        "291c8ed902": "Browser tabs are unavailable while a remote runtime is active",
+        "2ec42e1c52": "No remote workspace yet",
+        "2fe88c2e06": "Remote workspace sync unavailable",
+        "4f78ba5885": "Workspace synced",
         "60428567b4": "Local terminal reveal is unavailable while a remote runtime is active",
-        "f6300deb8b": "New Browser Tab"
+        "88214a785b": "Workspace sync waited for local session hydration and timed out",
+        "f45fa2b03c": "Browser profiles are unavailable while a remote runtime is active",
+        "f6300deb8b": "New Browser Tab",
+        "f8aaf2bde3": "Workspace uploaded",
+        "workspaceChangedOnAnotherDevice": "Workspace changed on another device"
       },
       "useSettingsNavigationMetadata": {
         "5235c215ca": "Choose which task providers appear in the Tasks page and sidebar."
@@ -2908,6 +3305,15 @@
         "permissionDenied": "Permission denied.",
         "symlink": "Symbolic links cannot be attached.",
         "unsupported": "Unsupported file type."
+      },
+      "launch": {
+        "worktree": {
+          "background": {
+            "terminals": {
+              "setupTitle": "Setup"
+            }
+          }
+        }
       },
       "terminal": {
         "shortcut": {
@@ -2976,6 +3382,9 @@
     }
   },
   "components": {
+    "agentSessionContinuation": {
+      "continueInNewSession": "Continue in New Session…"
+    },
     "native-chat": {
       "ask": {
         "asked": "Asked:",
@@ -3007,6 +3416,7 @@
         "monitor": "Background monitor",
         "monitoring": "Monitoring background tasks",
         "reasonBlocked": "failed",
+        "reasonUnverifiable": "no contact",
         "reasonWaiting": "needs approval",
         "stateBlocked": "blocked",
         "stateBlockedCount": "{{value0}} blocked",
@@ -3030,7 +3440,19 @@
       },
       "composer": {
         "effort": "Effort",
-        "imageUnsupported": "Image paste is not supported for this agent."
+        "imagePreview": "Full-size image preview",
+        "imageUnsupported": "Image paste is not supported for this agent.",
+        "mentionHint": "Referencing file:",
+        "optionValue": {
+          "off": "Off",
+          "on": "On"
+        },
+        "options": "Options",
+        "uploadingAttachments": "Uploading {{value0}} file(s) to remote…",
+        "valueUnknown": "Current value unknown — pick On or Off"
+      },
+      "conversationCommand": {
+        "unconfirmed": "Conversation operation was not confirmed."
       },
       "failureWords": {
         "accountSwitchInProgress": "{{agent}}'s setup is changing on this host. Try again after it finishes.",
@@ -3137,6 +3559,38 @@
         "usageLimitWindowWeeklyModel": "weekly model",
         "writeFailed": "Orca couldn't hand this message to the agent, so it was not sent."
       },
+      "handoff": {
+        "agentOpen": "Agent is open in terminal.",
+        "agentOpenOnHost": "Agent is open in terminal on {{value0}}.",
+        "cancel": "Cancel",
+        "details": "Details",
+        "exitTerminal": "Exit the agent terminal to continue in chat.",
+        "mode": {
+          "chat": "Chat",
+          "switching": "Switching",
+          "terminal": "Terminal"
+        },
+        "openAgentTui": "Open agent TUI",
+        "retry": "Retry",
+        "retryProof": "Retry proof",
+        "returnAfterTurn": "Return after this turn",
+        "returnToChat": "Return to chat",
+        "returningAfterTurn": "Returning after this turn",
+        "stage": {
+          "finishingChat": "Finishing chat session…",
+          "finishingTerminal": "Finishing agent terminal…",
+          "manualRecovery": "Agent session needs recovery",
+          "openingTerminal": "Opening agent terminal…",
+          "recovering": "Recovering agent session…",
+          "resumingChat": "Resuming chat session…",
+          "verifyingChat": "Verifying chat session…",
+          "verifyingTerminal": "Verifying agent terminal…"
+        },
+        "stopTurnAndSwitch": "Stop turn and switch",
+        "switchAfterTurn": "Switch after this turn",
+        "switchingAfterTurn": "Switching after this turn",
+        "switchingOwner": "Switching session owner…"
+      },
       "notices": {
         "compaction": "Context compacted",
         "contextCleared": "Context cleared",
@@ -3190,6 +3644,13 @@
         "workedFor": "Worked for {{value0}}",
         "workingFor": "Working for {{value0}}"
       },
+      "structuredSessionCloseFailed": "Could not close this chat session",
+      "structuredSessionCloseFailedDescription": "The terminal stayed open so the provider remains recoverable.",
+      "structuredSessionFellBackToTerminal": "Structured chat isn't available",
+      "structuredSessionFellBackToTerminalDescription": "Orca tried to open a {{value0}} terminal instead.",
+      "structuredSessionLaunchFailed": "Could not open {{value0}} chat",
+      "structuredSessionLaunchFailedDescription": "Orca could not open a structured {{value0}} chat. See the logs for details.",
+      "structuredSessionLaunchPending": "Starting {{value0}} chat…",
       "subagents": {
         "ranN": "Ran {{value0}} subagents",
         "ranOne": "Ran 1 subagent",
@@ -3210,9 +3671,15 @@
         },
         "tokens": "{{value0}} tokens"
       },
+      "toggle": {
+        "showChat": "Show chat view"
+      },
       "tool": {
+        "addedFile": "Added file",
         "countN": "{{value0}} tool calls",
         "countOne": "1 tool call",
+        "deletedFile": "Deleted file",
+        "editedFile": "Edited file",
         "failedCallsLabel": "Failed tool calls: {{value0}}",
         "failedCount": "{{value0}} failed",
         "interruptedCallsLabel": "Interrupted tool calls: {{value0}}",
@@ -3222,6 +3689,7 @@
         "ranCommandOneToolSummary": "Ran {{commandCount}} command and used {{toolCount}} tool",
         "ranCommandsManyToolsSummary": "Ran {{commandCount}} commands and used {{toolCount}} tools",
         "ranCommandsOneToolSummary": "Ran {{commandCount}} commands and used {{toolCount}} tool",
+        "renamedFile": "Renamed file",
         "running": "Running…",
         "runningCommand": "Running command",
         "runningNamed": "Running {{toolName}}",
@@ -3229,6 +3697,9 @@
         "runningPreview": "Running {{preview}}",
         "usedManySummary": "Used {{toolCount}} tools",
         "usedOneSummary": "Used 1 tool"
+      },
+      "turnDiff": {
+        "recorded": "Totals from recorded edits in this turn."
       },
       "writeNotice": {
         "agentRefused": "The agent turned this down.",
@@ -3263,8 +3734,8 @@
         "notDoneAnswer": "Your answer was not sent.",
         "notDoneCommand": "The command didn't run.",
         "notDoneGoal": "The goal wasn't changed.",
-        "notDoneQueuedEdit": "Your edit wasn't saved.",
         "notDoneOption": "The setting wasn't changed.",
+        "notDoneQueuedEdit": "Your edit wasn't saved.",
         "notDoneReadHistory": "This chat's history couldn't be loaded.",
         "notDoneSend": "Your message was not sent.",
         "notDoneStop": "The agent wasn't stopped.",
@@ -3357,9 +3828,84 @@
       "subagents_one": "{{count}} subagent",
       "subagents_other": "{{count}} subagents"
     },
+    "filters": {
+      "removeChip": "Remove {{filter}}"
+    },
+    "map": {
+      "agentCount": "{{count}} agents",
+      "agentCount_one": "{{count}} agent",
+      "agentCount_other": "{{count}} agents",
+      "canvasLabel": "Nested project, workspace, and agent map",
+      "empty": "No agents match the current filters.",
+      "filters": {
+        "agentlessWorkspaces": "Workspaces without agents",
+        "agents": "Agents",
+        "lifespan": "Session lifespan",
+        "ofTotalAgents": "of {{total}} agents shown",
+        "orchestrationLinks": "Orchestration links",
+        "orchestrationLinksHidden": "Orchestration links hidden",
+        "quickViews": "Quick views",
+        "reset": "Reset",
+        "resetRanges": "Reset ranges",
+        "showStates": "Agent states",
+        "sinceMessage": "Since last message",
+        "stateChip": "State: {{states}}",
+        "summaryAll": "All",
+        "summaryCount": "{{shown}} of {{total}}",
+        "summarySelected": "{{count}} selected",
+        "time": "Time",
+        "timeAny": "any",
+        "timeInState": "Time in current state",
+        "timeMaximum": "{{label}} maximum",
+        "timeMinimum": "{{label}} minimum",
+        "timeRangeCount": "{{count}} ranges",
+        "title": "Map controls",
+        "workspace": "Workspace",
+        "workspaceVisibility": "Map content"
+      },
+      "fit": "Fit",
+      "host": {
+        "local": "Local",
+        "remote": "Remote",
+        "ssh": "SSH",
+        "wsl": "WSL"
+      },
+      "liveContainmentMap": "Live containment map",
+      "noLaunchableAgents": "No enabled agents detected.",
+      "noWorkspaceAgents": "No agents in this workspace.",
+      "openFolderWorkspace": "Open {{workspace}} folder workspace details",
+      "openWorktree": "Open {{worktree}} worktree details",
+      "projectCount": "{{agents}} agents · {{workspaces}} workspaces",
+      "quickView": {
+        "attention": "Needs me",
+        "everything": "Everything",
+        "longRunning": "Long runners",
+        "orchestration": "Orchestration",
+        "recent": "Last 30 min",
+        "stale": "Stale > 3d",
+        "stuck": "Stuck",
+        "unread": "Unread"
+      },
+      "runningAgents": "Agents",
+      "sleepWorkspace": "Sleep",
+      "spawnAgent": "Start a new agent",
+      "status": {
+        "doneSeen": "Done, seen"
+      },
+      "worktreeSummary": "{{total}} agents · {{active}} active · {{done}} done",
+      "worktreeSummary_one": "{{total}} agent · {{active}} active · {{done}} done",
+      "worktreeSummary_other": "{{total}} agents · {{active}} active · {{done}} done",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
+    },
     "placeholder": {
       "description": "This is where all your agents will show up at a glance. The board is coming soon.",
       "title": "Agent dashboard"
+    },
+    "view": {
+      "board": "Dashboard",
+      "label": "Dashboard view",
+      "map": "Agent Map"
     }
   },
   "fileExplorer": {

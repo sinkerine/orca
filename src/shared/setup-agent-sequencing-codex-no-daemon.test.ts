@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createSequencedSetupAgentCommands } from './setup-agent-sequencing'
+import { stripAnsiEscapeSequences } from './ansi-escape-sequences'
 
 // Why: the POSIX gate evals the agent in a fresh `bash -lc`, which never reads
 // Orca's shell wrapper, so it must carry the codex --no-daemon rule itself.
@@ -39,7 +40,12 @@ function prepareGate(startupCommand: string) {
   return {
     sequenced,
     // Why HOME and CODEX_HOME: `bash -l` must read no real profile, and nothing may touch ~/.codex.
-    env: { HOME: root, CODEX_HOME: root, PATH: `${bin}:/usr/bin:/bin`, ...sequenced.startupEnv },
+    env: {
+      HOME: root,
+      CODEX_HOME: root,
+      PATH: `${bin}:${process.env.PATH ?? '/usr/bin:/bin'}`,
+      ...sequenced.startupEnv
+    },
     finishSetup: (help: string) => {
       const codex = join(bin, 'codex')
       writeFileSync(
@@ -55,10 +61,12 @@ function prepareGate(startupCommand: string) {
 function runGate(startupCommand: string, help: string, env: Record<string, string> = {}): string {
   const gate = prepareGate(startupCommand)
   gate.finishSetup(help)
-  return spawnSync('bash', ['-c', gate.sequenced.startupCommand], {
-    encoding: 'utf8',
-    env: { ...gate.env, ...env }
-  }).stdout
+  return stripAnsiEscapeSequences(
+    spawnSync('bash', ['-c', gate.sequenced.startupCommand], {
+      encoding: 'utf8',
+      env: { ...gate.env, ...env }
+    }).stdout
+  )
 }
 
 describe.skipIf(process.platform === 'win32')('sequenced setup gate runs codex', () => {
@@ -85,6 +93,6 @@ describe.skipIf(process.platform === 'win32')('sequenced setup gate runs codex',
     await new Promise((resolve) => setTimeout(resolve, 300))
     gate.finishSetup('--no-daemon')
     await exited
-    expect(stdout).toBe('ARGV:--no-daemon --yolo\n')
+    expect(stripAnsiEscapeSequences(stdout)).toBe('ARGV:--no-daemon --yolo\n')
   })
 })

@@ -76,6 +76,10 @@ function fixture(fields: Pick<Repo, 'connectionId' | 'executionHostId'>) {
     removeWorkspaceSessionStateForWorktree: vi.fn()
   }
   const context = {
+    runtime: {
+      getOwnPeerFingerprint: () => 'test-peer',
+      schedulePrimaryWorkspaceLifecycleFromAuthoritativeCatalog: vi.fn()
+    },
     store,
     detectedWorktreeCancellations: {
       begin: () => new AbortController(),

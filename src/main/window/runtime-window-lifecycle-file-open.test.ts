@@ -23,6 +23,7 @@ function attachNotifier(): { notifier: RuntimeNotifier; send: ReturnType<typeof 
     id: 1,
     isDestroyed: () => false,
     on: vi.fn(),
+    once: vi.fn(),
     webContents: { isDestroyed: () => false, send, on: vi.fn() }
   }
   const runtime = {

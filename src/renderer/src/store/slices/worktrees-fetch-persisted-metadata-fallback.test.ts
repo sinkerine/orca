@@ -84,7 +84,7 @@ describe('fetchWorktrees', () => {
     await expect(store.getState().fetchWorktrees(sshRepo.id)).resolves.toBe(false)
 
     expect(store.getState().worktreesByRepo[sshRepo.id]).toEqual([
-      { ...queued, hostId: 'ssh:ssh-1' }
+      { ...queued, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
     ])
     expect(listKnownForExecutionHostMock).toHaveBeenCalledWith({
       repoId: sshRepo.id,
@@ -136,7 +136,7 @@ describe('fetchWorktrees', () => {
 
     expect(store.getState().worktreesByRepo[sshRepo.id]).toEqual([
       existing,
-      { ...queued, hostId: 'ssh:ssh-1' }
+      { ...queued, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
     ])
   })
 
@@ -187,7 +187,7 @@ describe('fetchWorktrees', () => {
 
     expect(store.getState().worktreesByRepo[sshRepo.id]).toEqual([
       sshExisting,
-      { ...queued, hostId: 'ssh:ssh-1' },
+      { ...queued, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' },
       localExisting
     ])
   })
@@ -286,7 +286,7 @@ describe('fetchWorktrees', () => {
 
     await store.getState().fetchWorktrees(sshRepo.id)
     expect(store.getState().worktreesByRepo[sshRepo.id]).toEqual([
-      { ...stale, hostId: 'ssh:ssh-1' }
+      { ...stale, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
     ])
 
     worktreeListMock.mockResolvedValueOnce([live])
@@ -381,7 +381,7 @@ describe('fetchWorktrees', () => {
 
     await store.getState().fetchWorktrees(sshRepo.id)
     expect(store.getState().worktreesByRepo[sshRepo.id]).toEqual([
-      { ...deletedOnRemote, hostId: 'ssh:ssh-1' }
+      { ...deletedOnRemote, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
     ])
 
     // The host connects and an authoritative scan proves the worktree is gone.

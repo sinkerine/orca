@@ -23,9 +23,26 @@ let projectGroups: unknown[] = []
 let workspaceDeleteModifierPressed = false
 let gitConflictOperationByWorktree: Record<string, GitConflictOperation> = {}
 let WorktreeCard: typeof WorktreeCardComponent
+let primaryWorktree: Worktree | undefined
 
 vi.mock('@/store', () => {
   const getState = () => ({
+    projects: primaryWorktree
+      ? [
+          {
+            id: 'project-1',
+            primaryWorkspace: {
+              instanceId: 'primary-instance',
+              peerFingerprint: 'peer-1',
+              authorityFingerprint: 'peer-1',
+              hostId: 'local',
+              worktreeId: primaryWorktree.id,
+              path: primaryWorktree.path
+            }
+          }
+        ]
+      : [],
+    worktreesByRepo: primaryWorktree ? { 'repo-1': [primaryWorktree] } : {},
     deleteStateByWorktreeId: {},
     fetchHostedReviewForBranch,
     fetchIssue,
@@ -142,6 +159,7 @@ describe('WorktreeCard quick actions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    primaryWorktree = undefined
     worktreeCardProperties = ['status']
     tabsByWorktree = {}
     ptyIdsByTabId = {}
@@ -396,18 +414,18 @@ describe('WorktreeCard quick actions', () => {
 
   it('uses the left status lane and primary badge when compact cards are disabled', () => {
     worktreeCardProperties = ['status']
+    primaryWorktree = makeWorktree({
+      projectId: 'project-1',
+      instanceId: 'primary-instance',
+      peerFingerprint: 'peer-1',
+      ownerHostId: 'local',
+      displayName: 'main',
+      branch: 'main',
+      isMainWorktree: true
+    })
 
     const markup = renderToStaticMarkup(
-      <WorktreeCard
-        worktree={makeWorktree({
-          displayName: 'main',
-          branch: 'main',
-          isMainWorktree: true
-        })}
-        repo={makeRepo()}
-        isActive={false}
-        hideRepoBadge
-      />
+      <WorktreeCard worktree={primaryWorktree} repo={makeRepo()} isActive={false} hideRepoBadge />
     )
 
     expect(markup).toContain('primary')
@@ -418,18 +436,18 @@ describe('WorktreeCard quick actions', () => {
   it('keeps unread in the status lane and moves primary into the title row when compact cards are enabled', () => {
     worktreeCardProperties = ['status']
     settings = { compactWorktreeCards: true }
+    primaryWorktree = makeWorktree({
+      projectId: 'project-1',
+      instanceId: 'primary-instance',
+      peerFingerprint: 'peer-1',
+      ownerHostId: 'local',
+      displayName: 'main',
+      branch: 'main',
+      isMainWorktree: true
+    })
 
     const markup = renderToStaticMarkup(
-      <WorktreeCard
-        worktree={makeWorktree({
-          displayName: 'main',
-          branch: 'main',
-          isMainWorktree: true
-        })}
-        repo={makeRepo()}
-        isActive={false}
-        hideRepoBadge
-      />
+      <WorktreeCard worktree={primaryWorktree} repo={makeRepo()} isActive={false} hideRepoBadge />
     )
 
     expect(markup).toContain('aria-label="Primary worktree"')

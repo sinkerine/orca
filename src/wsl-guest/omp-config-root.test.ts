@@ -77,7 +77,9 @@ describe('relay OMP config root', () => {
     'uses the guest profile only when no pane override exists',
     async () => {
       writeFileSync(join(home, '.bash_profile'), 'export PI_CONFIG_DIR=".profile-omp"\n')
-      expect(await resolveOmpConfigDirName({ HOME: home }, '/bin/bash')).toBe('.profile-omp')
+      expect(
+        await resolveOmpConfigDirName({ HOME: home, PATH: process.env.PATH ?? '' }, 'bash')
+      ).toBe('.profile-omp')
       expect(await resolveOmpConfigDirName({ HOME: home, PI_CONFIG_DIR: '' }, '/bin/bash')).toBe(
         '.omp'
       )

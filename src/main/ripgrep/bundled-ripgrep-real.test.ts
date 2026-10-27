@@ -1,7 +1,7 @@
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAppEnvironment, setAppEnvironment } from '../../shared/app-environment'
 import { bundledRipgrepBinaryName } from '../../shared/bundled-ripgrep'
 import { bundledRipgrepCommand, resetBundledRipgrepPathCacheForTests } from './bundled-ripgrep-path'
@@ -14,6 +14,7 @@ describe('packaged ripgrep execution', () => {
   const resourcesPath = process.resourcesPath
 
   beforeEach(() => {
+    vi.stubEnv('ORCA_RIPGREP_PATH', '')
     resetBundledRipgrepPathCacheForTests()
     const source = bundledRipgrepCommand()
     fixture = mkdtempSync(join(tmpdir(), 'orca bundled rg '))
@@ -38,6 +39,7 @@ describe('packaged ripgrep execution', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllEnvs()
     Object.defineProperty(process, 'resourcesPath', { configurable: true, value: resourcesPath })
     resetBundledRipgrepPathCacheForTests()
     rmSync(fixture, { recursive: true, force: true })

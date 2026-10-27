@@ -6,6 +6,10 @@ const mocks = vi.hoisted(() => ({
   getState: vi.fn()
 }))
 
+vi.mock('../../window/main-window-registry', () => ({
+  broadcastToMainWindows: (...args: unknown[]) => mocks.send(...args)
+}))
+
 vi.mock('./ssh-ipc-context', () => ({
   connectionManager: { getState: mocks.getState },
   currentRuntime: { notifySshStateChanged: mocks.notify },

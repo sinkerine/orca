@@ -49,6 +49,7 @@ describe('bundled ripgrep path', () => {
 
   it('resolves the checkout binary for this host in development', () => {
     setResourcesPath(undefined)
+    vi.stubEnv('ORCA_RIPGREP_PATH', '')
     const command = bundledRipgrepCommand()
 
     expect(command).toContain(join('@vscode', 'ripgrep-universal', 'bin'))
@@ -112,7 +113,7 @@ describe('bundled ripgrep path', () => {
         'C:\\Orca\\resources\\ripgrep\\linux-x64\\rg'
       )
       const result = await runProcess({
-        program: '/bin/bash',
+        program: 'bash',
         args: [
           '-c',
           `wslpath() { return 1; }; rg() { echo WRONG_RIPGREP; }; ${wslShellCommand} --version`

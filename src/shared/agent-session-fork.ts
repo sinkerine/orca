@@ -3,6 +3,7 @@ import type { AgentProviderSessionMetadata, ResumableTuiAgent } from './agent-se
 export const FORKABLE_TUI_AGENTS = [
   'claude',
   'codex',
+  'grok',
   'pi'
 ] as const satisfies readonly ResumableTuiAgent[]
 
@@ -27,6 +28,8 @@ export function getAgentForkArgv(
       return ['claude', '--resume', providerSession.id, '--fork-session']
     case 'codex':
       return ['codex', 'fork', providerSession.id]
+    case 'grok':
+      return ['grok', '--resume', providerSession.id, '--fork-session']
     case 'pi':
       return providerSession.transcriptPath
         ? ['pi', '--fork', providerSession.transcriptPath]

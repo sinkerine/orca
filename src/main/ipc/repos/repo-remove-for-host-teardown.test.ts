@@ -29,7 +29,14 @@ const repo = (fields: Partial<Repo>): Repo => ({
 
 function register(repos: Repo[]) {
   const store = { getRepos: () => repos, removeProjectForHost: vi.fn() }
-  const runtime = { removeProject: vi.fn(async () => ({ removed: true as const })) }
+  const runtime = {
+    removeProject: vi.fn(async () => ({ removed: true as const })),
+    guardPrimaryProjectRemoval: async <T>(
+      _repoId: string,
+      _hostId: string,
+      operation: () => Promise<T>
+    ) => operation()
+  }
   const mainWindow = { isDestroyed: () => false, webContents: { send: vi.fn() } }
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: removeForHost reads only getRepos and removeProjectForHost.
   registerRepoCatalogHandlers(mainWindow as never, store as never, runtime)

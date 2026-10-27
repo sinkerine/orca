@@ -82,6 +82,7 @@ describe('registerPtyHandlers', () => {
       getProfiles: vi.fn()
     } as never)
     const runtime = {
+      registerPtyOwnerWindow: vi.fn(),
       setPtyController: vi.fn(),
       resolveTerminalPane: vi.fn(() => ({
         handle: 'term-runtime-owner',
@@ -248,6 +249,7 @@ describe('registerPtyHandlers', () => {
     }
     let controller: RuntimeSpawnController | null = null
     const runtime = {
+      registerPtyOwnerWindow: vi.fn(),
       setPtyController: vi.fn((value) => {
         controller = value
       }),

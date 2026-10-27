@@ -50,6 +50,7 @@ import {
 } from './delivery/debug'
 import {
   registerRendererLifecycleResetHandlers,
+  clearRendererLifecycleResetHandlers,
   clearRendererGateResetHandlers
 } from './delivery/lifecycle-reset'
 import { createPtyIpcSession, type PtyIpcSessionOptions, type PtyRendererDelivery } from './session'
@@ -100,6 +101,8 @@ export function registerPtyHandlers(
   setRebindProviderListeners(() => {})
   if (mainWindow && !options?.headless) {
     registerRendererLifecycleResetHandlers(mainWindow.webContents as Electron.WebContents)
+  } else {
+    clearRendererLifecycleResetHandlers()
   }
 
   // Why only `local`: the daemon swap re-owns this machine's PTYs; no other host waits on it.
@@ -227,8 +230,10 @@ export function registerPtyHandlers(
 
   registerWindowOrphanSweep({ mainWindow, runtime, options })
 
-  const assertWorkspaceAcceptsNewPty = (worktreeId: string | undefined, sessionId?: string): Promise<void> | void =>
-    assertWorkspaceAcceptsNewPtyImpl(store, worktreeId, sessionId)
+  const assertWorkspaceAcceptsNewPty = (
+    worktreeId: string | undefined,
+    sessionId?: string
+  ): Promise<void> | void => assertWorkspaceAcceptsNewPtyImpl(store, worktreeId, sessionId)
   const resolvePtySpawnStartupCwd = (
     worktreeId: string | undefined,
     cwd: string | undefined,
@@ -308,7 +313,7 @@ export function registerPtyHandlers(
     syncPtyBackgroundedDelivery: session.syncPtyBackgroundedDelivery,
     stopReplacedPty: (id) => stopReplacedPanePty(killDeps, id)
   })
-  installPtyWriteIpcHandlers({ mainWindow, runtime })
+  installPtyWriteIpcHandlers({ mainWindow, runtime, headless: options?.headless })
   installPtyResizeVisibilityIpc(session)
   installPtyAckCreditIpc(session)
   installPtyInspectIpcHandlers({ getLocalPtyProviderStartupPromise })

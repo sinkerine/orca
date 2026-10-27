@@ -148,9 +148,9 @@ function claudeShellProbe(root: string): (env: Record<string, string>, rc?: stri
   chmodSync(join(bin, 'claude'), 0o700)
   return (env, rc = '') =>
     spawnSync(
-      '/bin/bash',
+      'bash',
       ['--norc', '--noprofile', '-c', `${getPosixClaudeShellFunction()}\n${rc}claude`],
-      { env: { ...env, PATH: `${bin}:/usr/bin:/bin` }, encoding: 'utf8' }
+      { env: { ...env, PATH: `${bin}:${process.env.PATH ?? ''}` }, encoding: 'utf8' }
     ).stdout
 }
 

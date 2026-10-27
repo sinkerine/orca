@@ -89,6 +89,7 @@ const defaultStoreState = {
   setWorktreesPinnedAndReveal: vi.fn(),
   workspaceStatuses: [],
   openModal: vi.fn(),
+  projects: [],
   projectGroups: [],
   createProjectGroup: vi.fn(),
   moveProjectToGroup: vi.fn(),

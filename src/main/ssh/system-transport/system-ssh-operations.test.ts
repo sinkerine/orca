@@ -22,6 +22,7 @@ vi.mock('child_process', () => ({
   spawn: spawnMock
 }))
 
+import { clearWindowsRemoteWriteCapabilitiesForTests } from './system-ssh-windows-write-capabilities'
 import { buildSshArgs } from './system-ssh-args'
 import {
   downloadFileViaSystemSsh,
@@ -43,6 +44,10 @@ function decodePowerShellCommand(command: string): string {
 }
 
 function mockSystemSshExists(): void {
+  vi.stubEnv(
+    'ORCA_SYSTEM_SFTP_PATH',
+    process.platform === 'win32' ? 'C:\\Windows\\System32\\OpenSSH\\sftp.exe' : '/usr/bin/sftp'
+  )
   existsSyncMock.mockImplementation((p: string) => p === SYSTEM_SSH_PATH)
 }
 
@@ -170,6 +175,7 @@ describe('spawnSystemSsh', () => {
   }
 
   beforeEach(() => {
+    clearWindowsRemoteWriteCapabilitiesForTests()
     existsSyncMock.mockReset()
     spawnMock.mockReset()
 
@@ -857,6 +863,7 @@ describe('spawnSystemSsh', () => {
 
 describe('system SSH operation aborts', () => {
   beforeEach(() => {
+    clearWindowsRemoteWriteCapabilitiesForTests()
     existsSyncMock.mockReset()
     spawnMock.mockReset()
     mockSystemSshExists()

@@ -80,7 +80,7 @@ function runOnHost(
 }
 
 const read = (bin: string, name: string): string[] =>
-  runProcessSync({ program: '/bin/cat', args: [join(bin, name)] })
+  runProcessSync({ program: 'cat', args: [join(bin, name)] })
     .stdout.trim()
     .split('\n')
 const mirrored = (base: string): string =>

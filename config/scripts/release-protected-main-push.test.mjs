@@ -39,7 +39,13 @@ function pushRelease(mode, pushMain = 'true') {
       program: 'bash',
       args: ['step.sh'],
       cwd: directory,
-      env: { PUSH_MAIN: pushMain, TAG: 'v1.4.229', RUNNER_TEMP: '.', PUSH_TEST_MODE: mode }
+      env: {
+        ...process.env,
+        PUSH_MAIN: pushMain,
+        TAG: 'v1.4.229',
+        RUNNER_TEMP: '.',
+        PUSH_TEST_MODE: mode
+      }
     })
     return {
       ...result,

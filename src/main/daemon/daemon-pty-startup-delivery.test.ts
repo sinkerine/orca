@@ -101,12 +101,14 @@ describe('DaemonPtyAdapter startup delivery', () => {
     { command: 'codex', startupCommandDelivery: 'fast' as const },
     { command: "codex 'linked issue context'", startupCommandDelivery: 'shell-ready' as const }
   ])('waits past 300ms and submits once after readiness: %j', async (startup) => {
+    const resolveShell = vi.spyOn(localPtyUtils, 'resolveUnixShellPath').mockReturnValue('/bin/zsh')
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     try {
       await adapter.spawn({ cols: 80, rows: 24, ...startup, env: { SHELL: '/bin/zsh' } })
       await vi.advanceTimersByTimeAsync(350)
     } finally {
       vi.useRealTimers()
+      resolveShell.mockRestore()
     }
     expect(lastSubprocess.write).not.toHaveBeenCalled()
     expect(lastSpawnOpts).toEqual(

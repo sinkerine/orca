@@ -41,10 +41,10 @@ describe('WSL CLI PowerShell boundary', () => {
         const launcherPath = join(root, 'launcher.sh')
         const expectedCwd = await realpath(root)
         await writeFile(launcherPath, buildWslLauncher('C:\\Orca\\orca.exe', '/bridge.ps1'))
-        await writeFile(join(root, 'wslpath'), '#!/bin/bash\nprintf "%s" "$2"\n', {
+        await writeFile(join(root, 'wslpath'), '#!/bin/sh\nprintf "%s" "$2"\n', {
           mode: 0o700
         })
-        await writeFile(join(root, 'powershell.exe'), '#!/bin/bash\nprintf "%s\\0" "$@"\n', {
+        await writeFile(join(root, 'powershell.exe'), '#!/bin/sh\nprintf "%s\\0" "$@"\n', {
           mode: 0o700
         })
         for (const distro of [undefined, '', 'Ubuntu Work']) {
@@ -57,7 +57,7 @@ describe('WSL CLI PowerShell boundary', () => {
             env.WSL_DISTRO_NAME = distro
           }
           const result = runProcessSync({
-            program: '/bin/bash',
+            program: 'bash',
             args: [launcherPath, 'account', 'add', '--agent', 'codex'],
             env,
             cwd: root

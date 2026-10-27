@@ -21,7 +21,7 @@ fi
 # a single literal paste (ESC[200~…ESC[201~); without it, older readline builds
 # treat each embedded newline as Enter and mangle the prompt into PS2
 # continuation. Modern readline defaults this on; force it for the rest.
-[[ $- == *i* ]] && bind 'set enable-bracketed-paste on' 2>/dev/null
+[[ $- == *i* ]] && { bind 'set enable-bracketed-paste on' 2>/dev/null || :; }
 __orca_restore_agent_teams_path() {
   [[ -n "${ORCA_AGENT_TEAMS_SHIM_DIR:-}" ]] || return 0
   case "$PATH" in

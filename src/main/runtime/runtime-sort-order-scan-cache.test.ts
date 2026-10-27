@@ -89,6 +89,7 @@ describe('runtime sort-order saves', () => {
       id: 1,
       isDestroyed: () => false,
       on: vi.fn(),
+      once: vi.fn(),
       webContents: { isDestroyed: () => false, send, on: vi.fn() }
     }
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: registration only reads id, isDestroyed, on and webContents.

@@ -123,7 +123,7 @@ describe('bundled skill guide generator', () => {
           'bash',
           ['--noprofile', '--norc', '-u', '-c', script],
           {
-            env: { HOME: home, ORCA_BACKGROUND_LAUNCH: '1', ...environment }
+            env: { PATH: process.env.PATH, HOME: home, ORCA_BACKGROUND_LAUNCH: '1', ...environment }
           }
         )
         expect(stdout).toBe(expected)

@@ -29,6 +29,36 @@ type DeclaredDifference = {
 
 const DECLARED_HOST_DIFFERENCES: readonly DeclaredDifference[] = [
   {
+    wiring: 'ctor:getOwnPeerFingerprint',
+    missingOn: 'orcad',
+    reason: 'Desktop primary workspace authority identifies its paired peer.'
+  },
+  {
+    wiring: 'ctor:isDesktopPrimaryAuthority',
+    missingOn: 'orcad',
+    reason: 'Primary workspace selection belongs to the desktop authority.'
+  },
+  {
+    wiring: 'ctor:listAuthenticatedRuntimeWorktrees',
+    missingOn: 'orcad',
+    reason: 'The desktop aggregates catalogs from its authenticated paired hosts.'
+  },
+  {
+    wiring: 'ctor:onPtyOwnerWindowsChanged',
+    missingOn: 'orcad',
+    reason: 'A headless host has no Electron windows to receive PTY ownership.'
+  },
+  {
+    wiring: 'ctor:resolveWindowProjectGroupId',
+    missingOn: 'orcad',
+    reason: 'Project window groups belong to the desktop.'
+  },
+  {
+    wiring: 'host:setMainWindowElectronBindings',
+    missingOn: 'orcad',
+    reason: 'Electron window bindings are installed only by the desktop.'
+  },
+  {
     wiring: 'runtime.setArtifactService',
     missingOn: 'orcad',
     reason: 'Artifact sharing uses the desktop sign-in; a headless host has none yet.'

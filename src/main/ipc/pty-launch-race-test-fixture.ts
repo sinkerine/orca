@@ -28,6 +28,7 @@ type LaunchRaceRuntimeBase = Record<
   | 'cancelPendingPtyRegistration'
   | 'assertPtyRegistrationAllowed'
   | 'registerPty'
+  | 'registerPtyOwnerWindow'
   | 'noteTerminalSpawnCommand'
   | 'noteTerminalSpawnCommit'
   | 'reflowHeadlessTerminalToPtyGrid'
@@ -81,6 +82,7 @@ export function createLaunchRaceRuntime<T extends object = Record<never, never>>
     cancelPendingPtyRegistration: vi.fn(),
     assertPtyRegistrationAllowed: vi.fn(),
     registerPty: vi.fn(),
+    registerPtyOwnerWindow: vi.fn(),
     noteTerminalSpawnCommand: vi.fn(),
     noteTerminalSpawnCommit: vi.fn(),
     reflowHeadlessTerminalToPtyGrid: vi.fn(),

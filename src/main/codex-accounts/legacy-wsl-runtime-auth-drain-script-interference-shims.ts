@@ -1,8 +1,15 @@
 // Installs the hash and mutation shims each real guest-script case needs.
+import { execFileSync } from 'node:child_process'
 import { chmodSync, existsSync, symlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DRAIN_APPLY_INTERRUPTION_JS } from './legacy-wsl-runtime-auth-drain-interruption-source'
 import type { DrainApplyInterference } from './legacy-wsl-runtime-auth-drain-script-run-types'
+
+export function resolveDrainUtility(command: string): string {
+  return execFileSync('/bin/sh', ['-c', 'command -v "$1"', 'sh', command], {
+    encoding: 'utf8'
+  }).trim()
+}
 
 export function installDrainInterferenceShims(
   binDir: string,
@@ -59,7 +66,7 @@ export function installDrainInterferenceShims(
   const fs = require('node:fs')
   ${DRAIN_APPLY_INTERRUPTION_JS}
   const args = process.argv.slice(2)
-  const result = spawnSync('/bin/mv', args, { stdio: 'inherit' })
+  const result = spawnSync(${JSON.stringify(resolveDrainUtility('mv'))}, args, { stdio: 'inherit' })
   const from = args.at(-2) ?? ''
   const to = args.at(-1) ?? ''
   const sourceInstalled =

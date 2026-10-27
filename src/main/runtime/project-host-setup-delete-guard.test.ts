@@ -50,13 +50,15 @@ function makeController(options: {
     invalidateResolvedWorktrees: vi.fn(),
     invalidateWorktreeScan: vi.fn(),
     notifyReposChanged: vi.fn(),
+    flushPrimaryPersistence: async () => {},
+    guardSetupRemoval: async (_setupId, operation) => operation(),
     countLiveTerminalsForRepo: () => options.liveTerminals
   })
   return { controller, deleteProjectHostSetup, setupId: projectHostSetups[0].id }
 }
 
 describe('project setup delete guard', () => {
-  it('refuses a CLI delete while terminals are live, and deletes with --force', () => {
+  it('refuses a CLI delete while terminals are live, and deletes with --force', async () => {
     const { controller, deleteProjectHostSetup, setupId } = makeController({
       liveTerminals: 2,
       metaIds: []
@@ -67,7 +69,7 @@ describe('project setup delete guard', () => {
     )
     expect(deleteProjectHostSetup).not.toHaveBeenCalled()
 
-    controller.deleteSetup({ setupId, force: true })
+    await controller.deleteSetup({ setupId, force: true })
     expect(deleteProjectHostSetup).toHaveBeenCalledTimes(1)
   })
 
@@ -98,23 +100,23 @@ describe('project setup delete guard', () => {
     expect(deleteProjectHostSetup).not.toHaveBeenCalled()
   })
 
-  it('deletes an unused project without --force', () => {
+  it('deletes an unused project without --force', async () => {
     const { controller, deleteProjectHostSetup, setupId } = makeController({
       liveTerminals: 0,
       metaIds: ['other-repo::/work/other']
     })
 
-    controller.deleteSetup({ setupId, force: false })
+    await controller.deleteSetup({ setupId, force: false })
     expect(deleteProjectHostSetup).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps the unchecked delete for older clients that omit force', () => {
+  it('keeps the unchecked delete for older clients that omit force', async () => {
     const { controller, deleteProjectHostSetup, setupId } = makeController({
       liveTerminals: 3,
       metaIds: ['repo-1::/work/app']
     })
 
-    controller.deleteSetup({ setupId })
+    await controller.deleteSetup({ setupId })
     expect(deleteProjectHostSetup).toHaveBeenCalledTimes(1)
   })
 })

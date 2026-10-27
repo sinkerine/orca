@@ -12,6 +12,8 @@ import type { Worktree } from '../../../../shared/worktree/types'
 
 vi.mock('@/store', () => {
   const state = {
+    projects: [],
+    worktreesByRepo: {},
     unifiedTabsByWorktree: {},
     tabsByWorktree: {},
     ptyIdsByTabId: {},

@@ -188,6 +188,7 @@ describe('macOS clipboard image data beside a file URL', () => {
   })
 
   it('checks the renderer before attempting raw image recovery', async () => {
+    setTrustedClipboardRendererWebContentsId(null)
     setTrustedClipboardRendererWebContentsId(42)
     await expect(invoke('clipboard:saveImageAsTempFile')).rejects.toThrow(
       'Unauthorized clipboard IPC sender'
@@ -200,6 +201,7 @@ describe('macOS clipboard image data beside a file URL', () => {
   })
 
   it('checks the renderer before probing native image types', () => {
+    setTrustedClipboardRendererWebContentsId(null)
     setTrustedClipboardRendererWebContentsId(42)
     expect(() => invoke('clipboard:hasImage')).toThrow('Unauthorized clipboard IPC sender')
     expect(mocks.has).not.toHaveBeenCalled()

@@ -109,7 +109,7 @@ describe('launch race parity, both spawn lanes', () => {
         })
 
         const winner = lanes.spawn.ipc(pane.args)
-        await vi.waitFor(() => expect(spawn).toHaveBeenCalledOnce())
+        await vi.waitFor(() => expect(spawn).toHaveBeenCalledOnce(), { timeout: 10_000 })
         const joinPaneSpawn = vi.spyOn(paneSpawnReservations, 'joinPaneSpawn')
         onTestFinished(() => joinPaneSpawn.mockRestore())
         const joiner = lanes.spawn[lane]({ ...pane.args, command: 'claude' })

@@ -205,7 +205,7 @@ describe('registerWorktreeHandlers', () => {
       handlers['worktrees:remove'](null, {
         worktreeId: 'repo-1::/workspace/repo'
       })
-    ).rejects.toThrow('Refusing to delete protected worktree path')
+    ).rejects.toThrow('Select an available linked checkout')
 
     expect(killAllProcessesForWorktreeMock).not.toHaveBeenCalled()
     expect(runHookMock).not.toHaveBeenCalled()

@@ -69,6 +69,7 @@ async function runInteractiveZshLogin(args: {
     env: {
       PATH: process.env.PATH ?? '/usr/bin:/bin',
       HOME: args.tempHome,
+      __ETC_ZSHENV_SOURCED: '1',
       TERM: 'xterm-256color',
       ZDOTDIR: args.wrapperZdotdir,
       ORCA_ORIG_ZDOTDIR: args.tempHome,
@@ -109,6 +110,7 @@ async function runInteractiveZshRc(args: {
     env: {
       PATH: process.env.PATH ?? '/usr/bin:/bin',
       HOME: args.zdotdir,
+      __ETC_ZSHENV_SOURCED: '1',
       TERM: 'xterm-256color',
       ZDOTDIR: args.zdotdir,
       ORCA_SHELL_FEATURES: 'ready'

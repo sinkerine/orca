@@ -23,7 +23,7 @@ export function resolveElectronProbeLaunch({
   if (platform !== 'linux') {
     return { executable: electronBinary, args: [...electronArgs] }
   }
-  const linuxArgs = [...electronArgs, '--no-sandbox']
+  const linuxArgs = [...electronArgs, '--no-sandbox', '--ozone-platform=x11']
   if (display) {
     return { executable: electronBinary, args: linuxArgs }
   }

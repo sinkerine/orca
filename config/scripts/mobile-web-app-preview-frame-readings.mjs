@@ -155,13 +155,14 @@ export async function readPreviewArm({
   readImageHits,
   assetServer,
   cspReports,
-  nonce
+  nonce,
+  frameNavigated = false
 }) {
   const element = await readFrameElement(page)
   return {
     page,
     pixelBefore,
-    pixel: await probePreviewPixel(page, clip),
+    pixel: frameNavigated ? null : await probePreviewPixel(page, clip),
     declaredSandbox: await page.evaluate(() => window.__sandbox),
     togglesBefore,
     toggles: await readPreviewToggles(page),
@@ -176,8 +177,8 @@ export async function readPreviewArm({
     // What the shell told the page, read back off the document so an arm cannot assert against a
     // grant list it only believes it passed.
     grants: await page.evaluate(() => window.__grants ?? null),
-    links: await readFrameLinks(page),
-    inside: await readInsideFrame(page),
+    links: frameNavigated ? null : await readFrameLinks(page),
+    inside: frameNavigated ? null : await readInsideFrame(page),
     // What this document was actually served, so "the shipped policy, plus a report endpoint and
     // nothing else" is asserted rather than intended.
     servedCsp,

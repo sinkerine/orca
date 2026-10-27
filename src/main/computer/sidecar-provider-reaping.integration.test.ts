@@ -68,7 +68,7 @@ describe.skipIf(process.platform === 'win32')('real sidecar exit reaping', () =>
 
   async function isRunning(pid: number): Promise<boolean> {
     const result = await runProcess({
-      program: '/bin/ps',
+      program: 'ps',
       args: ['-o', 'stat=', '-p', String(pid)],
       timeoutMs: 5_000
     })

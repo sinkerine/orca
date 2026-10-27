@@ -72,6 +72,8 @@ export async function shellScriptTest(
     )
 
     const env: Record<string, string> = {
+      PATH: process.env.PATH ?? '',
+      __ETC_ZSHENV_SOURCED: '1',
       ...config.env,
       // Why: these examples inspect startup-file discovery, not the PTY-owner
       // protocol stream, so drop the tokens that write to stdout.
@@ -95,7 +97,7 @@ export async function shellScriptTest(
     if (setupScript) {
       const setupPath = join(testHome, '.setup.sh')
       writeFileSync(setupPath, setupScript, 'utf8')
-      const setupResult = spawnSync('/bin/bash', [setupPath], spawnOptions)
+      const setupResult = spawnSync('bash', [setupPath], spawnOptions)
       if (setupResult.status !== 0) {
         throw new Error(
           `Setup script failed with exit code ${setupResult.status}\nstderr: ${setupResult.stderr}`
@@ -106,7 +108,7 @@ export async function shellScriptTest(
     const runPath = join(testHome, '.run.sh')
     writeFileSync(runPath, runScript, 'utf8')
     const shellArgs = config.args ? [...config.args, runPath] : [runPath]
-    const result = spawnSync(wrapperShell, shellArgs, spawnOptions)
+    const result = spawnSync(basename(wrapperShell), shellArgs, spawnOptions)
 
     const normalizationContext = {
       testHome,

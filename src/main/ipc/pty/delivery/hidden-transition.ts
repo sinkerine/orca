@@ -3,7 +3,10 @@ import {
   shouldDropHiddenRendererPtyData,
   unmarkHiddenRendererPty
 } from '../../pty-hidden-delivery-gate'
-import { IMPLICIT_RENDERER_WINDOW_ID } from './renderer-pty-window-claims'
+import {
+  IMPLICIT_RENDERER_WINDOW_ID,
+  resolveRendererPtyClaimWindowId
+} from './renderer-pty-window-claims'
 import { invalidatePendingPtyDrainPolicy } from './visibility-state'
 import type { PtyIpcSession } from '../session'
 
@@ -35,7 +38,12 @@ export function transitionSpawnHiddenRendererPtyDeliveryState(
   id: string,
   hidden: boolean
 ): void {
-  const transition = transitionHiddenRendererPtyDeliveryState(session, id, hidden)
+  const transition = transitionHiddenRendererPtyDeliveryState(
+    session,
+    id,
+    hidden,
+    resolveRendererPtyClaimWindowId(session.resolveRendererWindow())
+  )
   if (transition.policyChanged) {
     invalidatePendingPtyDrainPolicy(id)
   }

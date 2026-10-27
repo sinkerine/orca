@@ -210,7 +210,7 @@ describe('fetchWorktrees', () => {
     expect(runtimeEnvironmentCall).not.toHaveBeenCalled()
     // Why: SSH worktrees are fetched via local IPC but belong to the SSH host, so they carry the repo's ssh host id.
     expect(store.getState().worktreesByRepo['repo-ssh']).toEqual([
-      { ...sshWorktree, hostId: 'ssh:ssh-1' }
+      { ...sshWorktree, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
     ])
   })
 
@@ -324,7 +324,7 @@ describe('fetchWorktrees', () => {
     )
     expect(runtimeEnvironmentCall).not.toHaveBeenCalled()
     expect(store.getState().worktreesByRepo['repo-missing']).toEqual([
-      { ...remote, hostId: 'ssh:ssh-1' }
+      { ...remote, hostId: 'ssh:ssh-1', ownerHostId: 'ssh:ssh-1' }
     ])
   })
 

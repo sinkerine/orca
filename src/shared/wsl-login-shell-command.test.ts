@@ -107,7 +107,7 @@ describe('wsl login shell command helpers', () => {
           encoding: 'utf8',
           env: {
             ...process.env,
-            PATH: `${tools}:/usr/bin:/bin`,
+            PATH: `${tools}:${process.env.PATH ?? '/usr/bin:/bin'}`,
             ORCA_TEST_LOGIN_SHELL: loginShell,
             ORCA_TEST_CODEX_BIN: codexBin
           }

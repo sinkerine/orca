@@ -40,9 +40,19 @@ export function createLoginShellHarness(): LoginShellHarness {
   writeFileSync(join(home, '.zprofile'), prependGlobal)
   writeFileSync(join(home, '.bash_profile'), prependGlobal)
   installFakeAppEnvironment({ isPackaged: () => false, getPath: () => userData })
-  const env = sealedChildEnv(SESSION_ID, { HOME: home, PATH: '/usr/bin:/bin' })
+  const env = sealedChildEnv(SESSION_ID, { HOME: home, PATH: process.env.PATH ?? '/usr/bin:/bin' })
   return {
-    run: async (spec) => (await runProcess({ ...spec, env })).stdout,
+    run: async (spec) => {
+      const result = await runProcess({
+        ...spec,
+        env: { ...env, __ETC_PROFILE_DONE: '1', __ETC_ZSHENV_SOURCED: '1' },
+        timeoutMs: 5_000
+      })
+      if (result.code !== 0) {
+        throw new Error(`Login-shell probe failed: ${result.stderr}`)
+      }
+      return result.stdout
+    },
     dispose: () => rmSync(root, { recursive: true, force: true })
   }
 }

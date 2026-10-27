@@ -142,13 +142,21 @@ export abstract class OrcaRuntimeWithRemoveManagedWorktree extends OrcaRuntimeWi
           runtime: this,
           store,
           removalTarget,
-      beginPrimaryRemoval: () => this.beginPrimaryRemovalForWorktree(removalTarget.id, removalHostId),
+          beginPrimaryRemoval: () =>
+            this.beginPrimaryRemovalForWorktree(removalTarget.id, removalHostId),
           cleanupHostId,
           removalHostId,
           repo
         })
         if (orphanOrFolderResult) {
-          return orphanOrFolderResult
+          const { primaryRemoval, ...result } = orphanOrFolderResult
+          if (primaryRemoval) {
+            await this.recordPrimaryRemovalCompletion(primaryRemoval.token, primaryRemoval.target)
+            if (!(await this.finishPrimaryRemoval(primaryRemoval.token, primaryRemoval.target))) {
+              throw new Error('Primary workspace removal could not be completed')
+            }
+          }
+          return result
         }
         // One host for the whole removal. Listing on a different host from the one the prune and
         // the delete use is how an `executionHostId: 'ssh:*'`-only row got listed remotely and

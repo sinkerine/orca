@@ -34,10 +34,14 @@ function run(
   shell: (typeof SHELLS)[number],
   env: Record<string, string>
 ): { code: number | null; stdout: string; stderr: string } {
+  const executable = runProcessSync({
+    program: '/bin/sh',
+    args: ['-c', `command -v ${shell.name}`]
+  }).stdout.trim()
   return runProcessSync({
-    program: shell.name,
+    program: executable,
     args: shell.args(`${WSL_MANAGED_CLI_PATH_RESTORE}\nprintf '%s' "$PATH"`),
-    env: { PATH: '/usr/bin:/bin', ...env }
+    env: { ...process.env, PATH: '/usr/bin:/bin', ...env }
   })
 }
 
